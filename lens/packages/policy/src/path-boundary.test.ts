@@ -13,10 +13,20 @@ describe("resolveSafePath", () => {
 		expect(win.absolutePath).toBe("C:\\ws\\src\\index.ts");
 	});
 
-	it("accepts the root itself", () => {
-		const r = resolveSafePath("/workspace", "");
-		expect(r.relativePath).toBe("");
-		expect(r.absolutePath).toBe("/workspace");
+	it("accepts the root itself, preserving the root separator on both filesystems", () => {
+		const posix = resolveSafePath("/workspace", "");
+		expect(posix.relativePath).toBe("");
+		expect(posix.absolutePath).toBe("/workspace");
+
+		// The filesystem root must not collapse to an empty path.
+		const posixRoot = resolveSafePath("/", "");
+		expect(posixRoot.relativePath).toBe("");
+		expect(posixRoot.absolutePath).toBe("/");
+
+		// A drive root must not degrade to the drive-relative "C:".
+		const winRoot = resolveSafePath("C:\\\\", "");
+		expect(winRoot.relativePath).toBe("");
+		expect(winRoot.absolutePath).toBe("C:\\\\");
 	});
 
 	it("normalizes inner . and .. that stay inside the root", () => {
@@ -24,12 +34,14 @@ describe("resolveSafePath", () => {
 		expect(r.relativePath).toBe("src/b.ts");
 	});
 
-	it("rejects traversal above the root", () => {
+	it("rejects multi-hop traversal above the root with the SECURITY_ACCESS_DENIED code", () => {
 		expect(() => resolveSafePath("/workspace", "../secret")).toThrow(LensPortError);
 		try {
 			resolveSafePath("/workspace", "a/../../b");
-		} catch (e) {
-			expect((e as LensPortError).code).toBe("SECURITY_ACCESS_DENIED");
+			expect.unreachable();
+		} catch (error) {
+			expect(error).toBeInstanceOf(LensPortError);
+			expect((error as LensPortError).code).toBe("SECURITY_ACCESS_DENIED");
 		}
 	});
 
