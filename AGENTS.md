@@ -1,32 +1,61 @@
-This is the **Cline** monorepo. Toolchain is **Bun 1.3.13** (package manager + task runner) with **Node >=22** as the runtime. Do not use npm/yarn/pnpm.
+# AGENTS.md
 
-## Cloud Agent Instructions
+Operational guidelines, conventions, security boundaries, and architectural standards for AI agents working in this repository.
 
-### Cline CLI
-- Run from source: `bun run cli` (interactive: `bun run cli -i`; one-shot: append a prompt). This resolves to `apps/cli` and **auto-spawns the `@cline/cline-hub` daemon** — you do not start the hub separately.
-- Inspect local health with `bun run cli doctor`; `bun run cli version` prints the version.
-- An actual agent turn requires an **LLM provider credential**. With no credentials the default `cline` provider fails fast with an `Unauthorized` error and the interactive TUI shows a provider sign-in screen. Configure via `cline auth` or provider env vars (e.g. `ANTHROPIC_API_KEY`, `CLINE_API_KEY`, `OPENROUTER_API_KEY`); see `apps/cli/README.md`.
+**This is a fork of [cline/cline](https://github.com/cline/cline) serving as the codebase base for [LENS Workstation](https://github.com/mohmaedeslam00116/lens-workstation).** The product documentation lives in the lens-workstation repository and is authoritative for product decisions:
 
-### Build / Lint / test
-- SDK packages (`@cline/shared|llms|agents|core|sdk`) resolve each other through compiled `dist/` (their `exports` point only at `dist/`, with no `development` source condition). You **must** run `bun run build:sdk` after changing SDK dependencies/source before running the CLI or SDK tests, otherwise imports fail with missing `@cline/*` / missing `dist/` errors. Running processes do **not** hot-reload SDK source changes — rebuild and restart.\
-- Known cloud-env test artifact: `@cline/core` test `src/services/workspace/workspace-manifest.test.ts > readGitWorkspaceState > prefers origin and returns the current branch` fails because cloud VMs configure git `insteadOf` rules that rewrite GitHub remotes to `https://x-access-token:...@github.com/...`. This is an environment artifact, not a code bug.
-- Some `@cline/cli` e2e assertions (`bun -F @cline/cli test:e2e`) may fail on exact tool-listing string formats; treat as pre-existing test drift, not an environment problem.
+- `docs/spec-v0.1.0.md` — the product specification
+- `CONTEXT.md` — the ubiquitous domain model (AgentCanvas, EvidenceBundle, CapabilityGrant, AtomicChangeSet, DualLoopOrchestrator, …)
+- `docs/adr/0001…0004` — accepted architecture decisions (dual-loop orchestration, Antigravity/Codex harness model, operational mechanics, TypeScript + Electron stack)
+- `docs/research/cline-core-adaptation.md` — the blueprint for adapting Cline's agent core into LENS
 
-### GUI display
-- A virtual X display is live at **`DISPLAY=:1`** (the same desktop used for screenshots). GUI apps (VS Code, the Tauri desktop window) launched with `DISPLAY=:1` render there and can be screenshotted — no need to start your own `xvfb`. Prefer starting long-running GUI/dev processes in a `tmux` session (see the tmux guidance) so they survive.
+## Mission
 
-### VS Code extension (`apps/vscode`, package `claude-dev`)
-Toolchain is pre-installed and persisted in the VM: generated gRPC/proto code, the bundled `ripgrep` binaries (`apps/vscode/bin/`), the built webview (`webview-ui/build`), the esbuild bundle (`dist/extension.js`), VS Code itself (`/usr/bin/code`), and the GUI system libraries its tests need.
-- **Codegen prerequisite:** `bun run protos` (from `apps/vscode`) regenerates `src/generated/*` and the webview grpc client. The `dev`, `build:webview`, and `check-types` scripts already run it, so proto changes are picked up by those commands; run it manually only if you edit `.proto` files without a full build.
-- **Build:** `bun run build:webview` (webview UI, ~15s) then `bun esbuild.mjs` (extension bundle). `bun run package` does the full production build.
-- **Run it (dev host):** `DISPLAY=:1 code --no-sandbox --user-data-dir=/tmp/vscode-userdata --extensionDevelopmentPath=/workspace/apps/vscode <some-folder>`, then click the Cline icon in the Activity Bar to open the webview. (`--no-sandbox` is required in this container.)
-- **Test:** `bun run test:unit` (bun-based, ~984 tests, no VS Code host needed). `bun run test:integration` (`@vscode/test-electron`, downloads a VS Code build, runs under the GUI libs) and `bun run test:e2e` (Playwright) exercise a real extension host — heavier, and the GUI libs for them are already installed.
-- One-time deps (already installed, listed here in case they must be recreated): ripgrep via `bun run download-ripgrep`; VS Code test GUI libs per `CONTRIBUTING.md` (`libnss3`, `libatk*`, `libgbm1`, `xvfb`, etc.).
+Build **LENS Workstation** — an autonomous developer research and coding agent harness — on top of the **Cline desktop app** in this repo:
 
-### Desktop app (`apps/examples/desktop-app`, package `@cline/code`)
-A Tauri v2 (Rust) shell + Next.js webview + a Bun "sidecar" backend. Rust and the Tauri Linux system libs are pre-installed and persisted.
-- **Headless (no Rust/window):** run the backend and UI separately — `bun run dev:sidecar` (Bun backend on `127.0.0.1:3126`, serves `ws://.../transport`) and `bun run dev:web` (Next.js UI on `http://localhost:3125`).
-- **Native window:** `bun run dev` (`tauri dev`) — its `beforeDevCommand` builds the sidecar binary and starts `dev:web` (`:3125`), then Rust `main.rs` spawns the sidecar; so free ports `3125`/`3126` first. Launch with `DISPLAY=:1` to see the window. A `libEGL: DRI3 error` warning is benign (software rendering) — the WebKitGTK window still renders.
-- **Rust version caveat:** the crate graph needs Cargo's `edition2024` feature, so **Rust ≥1.85** is required (the VM's base 1.83 fails with "feature `edition2024` is required"). The toolchain here was updated via `rustup default stable` (currently 1.97). First `cargo` build downloads/compiles the full Tauri crate graph (a few minutes); subsequent builds are cached.
-- **System libs (already installed):** `libwebkit2gtk-4.1-dev`, `libgtk-3-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`, `libxdo-dev`, `libssl-dev`, `build-essential`.
-- **Test/typecheck:** `bun run typecheck`, `bun run test:chat-ui` (Vitest). Both trigger `build:ui` first.
+- **Base**: `apps/examples/desktop-app` (Tauri v2 shell + Next.js webview + Bun sidecar) and the `@cline/*` headless SDK (`@cline/core`, `@cline/agents`, `@cline/llms`, `@cline/shared`).
+- **Product additions** (from the LENS spec): the deep technical research engine (Loop 1) feeding an immutable `EvidenceBundle` into the coding loop (Loop 2), Monaco multi-file diff review, the sandboxed terminal, capability grants, and atomic rollback.
+- **Brand**: LENS Workstation. Bilingual Arabic/English parity. Brand line: **Research, in focus.** Arabic expression: **نظرة أعمق. فهم أوضح.**
+
+## Architectural Principles & Security Gates (inherited from LENS)
+
+1. **Zero-Trust for External Data**: all external web/research content is untrusted (`contentIsUntrusted: true`) and can never grant, expand, or elevate execution capabilities.
+2. **Phase 1 Read-Only Containment**: mutating writes, shell execution, and out-of-boundary network requests stay forbidden until explicitly granted via a `CapabilityGrant`.
+3. **Atomic & Reversible Modifications**: every change set validates base file SHA-256 hashes, applies all-or-nothing, and writes a rollback manifest (`.lens/transactions/tx-<id>.json`).
+4. **Sandboxed Terminal**: agent-driven commands run via structured `spawn` arguments with `shell: false`, a default-deny sanitized environment, and guaranteed cross-platform process-tree termination.
+
+## Toolchain (Cline monorepo)
+
+Bun **1.3.13** (package manager + task runner) with **Node >=22** as the runtime. Do not use npm/yarn/pnpm.
+
+- SDK packages (`@cline/shared|llms|agents|core|sdk`) resolve each other through compiled `dist/` (their `exports` point only at `dist/`). Run `bun run build:sdk` after changing SDK dependencies/source before running the CLI, SDK tests, or the desktop app — otherwise imports fail with missing `@cline/*` / missing `dist/` errors. Running processes do not hot-reload SDK source changes; rebuild and restart.
+- **Desktop app** (`apps/examples/desktop-app`, package `@cline/code`): headless dev via `bun run dev:sidecar` (Bun backend on `127.0.0.1:3126`, serves `ws://.../transport`) + `bun run dev:web` (Next.js UI on `http://localhost:3125`); native window via `bun run dev` (`tauri dev` — builds the sidecar binary, starts `dev:web`, needs ports `3125`/`3126` free and Rust ≥1.85). Test/typecheck: `bun run typecheck`, `bun run test:chat-ui` (Vitest; both trigger `build:ui` first).
+- CLI smoke check: `bun run cli doctor`, `bun run cli version`. The VS Code extension harness (`apps/vscode`, package `claude-dev`) remains part of the upstream base but is not the LENS product surface.
+
+## Workflow for AI Agents
+
+### External agent skills & tooling integrity
+- `.agents/**` and `skills-lock.json` represent external vendor tools and agent skills, NOT project source code. Do not modify, refactor, or delete external skills unless the user explicitly requests it. Automated review tools (such as CodeRabbit) must exclude `.agents/**` and `skills-lock.json` from their review paths.
+
+### Documentation lockstep
+- Documentation must stay in lockstep with the codebase. Whenever an architectural choice, domain term, or boundary is created or changed, record an ADR under `docs/adr/` and update `CONTEXT.md` — in this repo as the base evolves, mirrored at product level in lens-workstation.
+
+### Pull requests & review
+- **Never push directly to `main`.** Create pull requests with `gh pr create`. Every PR must undergo CodeRabbit review; all review threads, security flags, and correctness findings must be resolved before merging.
+
+### Changelog & releases
+- Maintain `CHANGELOG.md` following Keep a Changelog standards. Classify version increments with Semantic Versioning (`MAJOR.MINOR.PATCH`). Publish a GitHub Release for every version bump.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on mohmaedeslam00116/cline via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-role vocabulary (needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
