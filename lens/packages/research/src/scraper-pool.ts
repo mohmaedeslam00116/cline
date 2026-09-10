@@ -95,6 +95,9 @@ export class ScraperPool {
 	}
 
 	private async fetchPage(url: string, signal?: AbortSignal): Promise<FetchedPage> {
+		if (isBlockedUrl(url)) {
+			throw new Error("Blocked internal or non-HTTP URL");
+		}
 		const controller = new AbortController();
 		const abortAll = () => controller.abort();
 		const timer = setTimeout(abortAll, this.fetchTimeoutMs);
@@ -130,6 +133,32 @@ function errorReason(reason: unknown): string {
 		return reason.message;
 	}
 	return String(reason);
+}
+
+function isBlockedUrl(urlString: string): boolean {
+	try {
+		const parsed = new URL(urlString);
+		if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+			return true;
+		}
+		const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+		if (
+			host === "localhost" ||
+			host === "127.0.0.1" ||
+			host === "::1" ||
+			host === "0.0.0.0" ||
+			host.startsWith("127.") ||
+			host.startsWith("169.254.") ||
+			host.startsWith("10.") ||
+			host.startsWith("192.168.") ||
+			/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host)
+		) {
+			return true;
+		}
+		return false;
+	} catch {
+		return true;
+	}
 }
 
 /**

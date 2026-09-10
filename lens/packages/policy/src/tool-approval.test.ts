@@ -40,6 +40,31 @@ describe("Phase-1 tool approval (fail closed)", () => {
 		expect(denied.approved).toBe(false);
 		expect(denied.reason).toContain("Phase 1 is read-only");
 	});
+
+	it("emits deterministic policy events through the telemetry port", () => {
+		const events: Array<Record<string, unknown>> = [];
+		const telemetry = {
+			emitEvent: (event: Record<string, unknown>) => events.push(event),
+			emitTokenDelta: () => {},
+		};
+		const approve = createPhase1ToolApproval(telemetry, "s1");
+
+		approve(request("read_file"));
+		approve(request("write_to_file"));
+
+		expect(events).toHaveLength(2);
+		const [approvalEvent, denialEvent] = events as Array<{
+			type: string;
+			sessionId: string;
+			data?: Record<string, unknown>;
+		}>;
+		expect(approvalEvent?.type).toBe("tool-call-started");
+		expect(approvalEvent?.sessionId).toBe("s1");
+		expect(approvalEvent?.data).toMatchObject({ toolName: "read_file", approved: true });
+		expect(denialEvent?.type).toBe("policy-denied");
+		expect(denialEvent?.sessionId).toBe("s1");
+		expect(denialEvent?.data).toMatchObject({ toolName: "write_to_file", approved: false });
+	});
 });
 
 describe("CapabilityGrantRegistry", () => {
@@ -48,6 +73,50 @@ describe("CapabilityGrantRegistry", () => {
 		const g = reg.issue("READ_ONLY_INSPECTION", {}, 60_000, "session start");
 		expect(reg.active().map((x) => x.grantId)).toContain(g.grantId);
 		expect(reg.require("READ_ONLY_INSPECTION").grantId).toBe(g.grantId);
+	});
+
+	it("refuses non-finite, zero, and negative TTLs (fail-closed; Infinity would never expire)", () => {
+		const reg = new CapabilityGrantRegistry("/ws");
+		for (const badTtl of [Number.POSITIVE_INFINITY, Number.NaN, 0, -1_000]) {
+			try {
+				reg.issue("READ_ONLY_INSPECTION", {}, badTtl, "bad ttl");
+				expect.unreachable();
+			} catch (error) {
+				expect(error).toBeInstanceOf(LensPortError);
+				expect((error as LensPortError).code).toBe("POLICY_DENIED");
+			}
+			expect(reg.active()).toHaveLength(0);
+		}
+	});
+
+	it("cannot be re-rooted through the scope argument", () => {
+		const reg = new CapabilityGrantRegistry("/ws");
+		const grant = reg.issue(
+			"READ_ONLY_INSPECTION",
+			{ workspaceRoot: "/elsewhere" } as never,
+			60_000,
+			"scope override attempt",
+		);
+		expect(grant.scope.workspaceRoot).toBe("/ws");
+	});
+
+	it("issues grants that are frozen at the capability boundary", () => {
+		const reg = new CapabilityGrantRegistry("/ws");
+		const grant = reg.issue("READ_ONLY_INSPECTION", { pathPrefixes: ["src"] }, 60_000, "frozen");
+		expect(Object.isFrozen(grant)).toBe(true);
+		expect(Object.isFrozen(grant.scope)).toBe(true);
+		expect(Object.isFrozen(grant.scope.pathPrefixes)).toBe(true);
+	});
+
+	it("getAuditTrail returns cloned records that cannot mutate the trail", () => {
+		const reg = new CapabilityGrantRegistry("/ws");
+		reg.issue("READ_ONLY_INSPECTION", {}, 60_000, "session start");
+		const trail = reg.getAuditTrail();
+		const record = trail[0] as { kind: string; detail: string };
+		expect(() => {
+			(record as { detail: string }).detail = "tampered";
+		}).not.toThrow();
+		expect(reg.getAuditTrail()[0]?.detail).not.toBe("tampered");
 	});
 
 	it("refuses to issue mutating or terminal grants in Phase 1", () => {

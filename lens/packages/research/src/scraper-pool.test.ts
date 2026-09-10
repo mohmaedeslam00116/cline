@@ -124,4 +124,24 @@ describe("ScraperPool", () => {
 		expect(result.pages).toHaveLength(0);
 		expect(result.skipped[0]?.reason).toBe("aborted by timeout");
 	});
+
+	it("blocks loopback and private network URLs (SSRF prevention)", async () => {
+		const pool = new ScraperPool({
+			fetchImpl: async () => okResponse(htmlPage("internal", "secret")),
+		});
+		const result = await pool.scrape(
+			[
+				"http://127.0.0.1:3126/secret",
+				"http://localhost:8080",
+				"http://169.254.169.254/latest/meta-data",
+				"ftp://example.com/file",
+			],
+			10,
+		);
+		expect(result.pages).toHaveLength(0);
+		expect(result.skipped).toHaveLength(4);
+		for (const skip of result.skipped) {
+			expect(skip.reason).toContain("Blocked internal");
+		}
+	});
 });

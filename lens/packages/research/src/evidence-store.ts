@@ -72,9 +72,16 @@ export class EvidenceStore {
 		const filePath = path.join(dir, `${digest}.json`);
 		const body = canonicalJson(bundle);
 		if (!this.fileExistsCache.has(filePath)) {
-			const tmpPath = `${filePath}.tmp`;
+			const tmpPath = `${filePath}.tmp.${Date.now()}.${Math.random().toString(36).slice(2)}`;
 			await writeFile(tmpPath, body, "utf8");
-			await rename(tmpPath, filePath);
+			try {
+				await rename(tmpPath, filePath);
+			} catch (err: any) {
+				// Content addressing: if the file already exists (e.g. concurrent write or Windows EEXIST/EPERM), keep existing
+				if (err?.code !== "EEXIST" && err?.code !== "EPERM") {
+					throw err;
+				}
+			}
 			this.fileExistsCache.add(filePath);
 		}
 		await this.appendToManifest(sessionId, bundle.metadata);
@@ -180,7 +187,10 @@ export class EvidenceStore {
 			return;
 		}
 		existing.push(metadata);
-		const tmpPath = path.join(this.evidenceDir(sessionId), "index.json.tmp");
+		const tmpPath = path.join(
+			this.evidenceDir(sessionId),
+			`index.json.tmp.${Date.now()}.${Math.random().toString(36).slice(2)}`,
+		);
 		await writeFile(tmpPath, canonicalJson(existing), "utf8");
 		await rename(tmpPath, path.join(this.evidenceDir(sessionId), "index.json"));
 	}
