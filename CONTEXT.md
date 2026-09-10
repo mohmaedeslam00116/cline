@@ -23,3 +23,15 @@ _Avoid_: origin (that's this fork's GitHub remote)
 **Mergeability**:
 The property that LENS Additions stay isolated enough that merging Upstream remains routine rather than a rewrite.
 _Avoid_: sync, drift
+
+**Evidence Store**:
+The content-addressed file layout under `<workspace>/.lens/sessions/<sessionId>/evidence/` holding immutable `EvidenceBundle` files plus a per-session index manifest; bundles are superseded, never edited.
+_Avoid_: evidence cache, bundle database
+
+**Claims Index**:
+The high-level, per-session list of verified research claims injected at session start; detailed excerpts are fetched on demand.
+_Avoid_: evidence summary, digest
+
+**On-Demand Claim Detail**:
+The read-only retrieval of a single claim's full excerpt (`get_evidence_detail(claimId)`) during a coding turn, keeping context stratified.
+_Avoid_: evidence dump, full-context injection
