@@ -882,8 +882,9 @@ async function handleStart(
 				: undefined;
 	// Resolved once start() returns; the mistake-limit prompt reads it lazily.
 	let startedSessionId = requestedSessionId;
+	const pendingLensKey = requestedSessionId || `pending-${Math.random().toString(36).slice(2)}`;
 	if (isLensModeEnabled()) {
-		attachLensSession(ctx, requestedSessionId || "pending");
+		attachLensSession(ctx, pendingLensKey);
 	}
 	const coreConfig: JsonRecord = {
 		...buildCoreSessionConfig(
@@ -905,19 +906,27 @@ async function handleStart(
 		providerId: String(coreConfig.providerId ?? ""),
 		modelId: String(coreConfig.modelId ?? ""),
 	});
-	const startResult = await manager.start({
-		...splitCoreSessionConfig(coreConfig as unknown as ClineCoreStartConfig),
-		source: SessionSource.DESKTOP,
-		interactive: true,
-		...(initialMessages ? { initialMessages } : {}),
-		toolPolicies: resolveToolPolicies(request.config),
-	});
+	let startResult;
+	try {
+		startResult = await manager.start({
+			...splitCoreSessionConfig(coreConfig as unknown as ClineCoreStartConfig),
+			source: SessionSource.DESKTOP,
+			interactive: true,
+			...(initialMessages ? { initialMessages } : {}),
+			toolPolicies: resolveToolPolicies(request.config),
+		});
+	} catch (error) {
+		if (isLensModeEnabled()) {
+			detachLensSession(ctx, pendingLensKey);
+		}
+		throw error;
+	}
 	const sessionId = startResult.sessionId;
 	startedSessionId = sessionId;
-	if (isLensModeEnabled() && sessionId !== requestedSessionId) {
+	if (isLensModeEnabled() && sessionId !== pendingLensKey) {
 		// The SDK generated the real id (none was requested): move the LENS
 		// runtime state from the placeholder key onto the live session.
-		detachLensSession(ctx, "pending");
+		detachLensSession(ctx, pendingLensKey);
 		attachLensSession(ctx, sessionId);
 	}
 	const workspaceRoot = startResult.manifest.workspace_root;

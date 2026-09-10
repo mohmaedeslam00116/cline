@@ -256,10 +256,15 @@ const defaultCandidateUrlProvider: CandidateUrlProvider = async (
 	budget,
 ) => {
 	const query = encodeURIComponent(topic.slice(0, 300));
+	const controller = new AbortController();
+	const timeout = setTimeout(() => controller.abort(), 10_000);
 	try {
 		const response = await fetch(
 			`https://html.duckduckgo.com/html/?q=${query}`,
-			{ headers: { "user-agent": "LENS-Research/0.1 (Phase 1)" } },
+			{
+				headers: { "user-agent": "LENS-Research/0.1 (Phase 1)" },
+				signal: controller.signal,
+			},
 		);
 		if (!response.ok) {
 			return [];
@@ -281,5 +286,7 @@ const defaultCandidateUrlProvider: CandidateUrlProvider = async (
 		return [...urls].slice(0, Math.max(1, budget));
 	} catch {
 		return [];
+	} finally {
+		clearTimeout(timeout);
 	}
 };
