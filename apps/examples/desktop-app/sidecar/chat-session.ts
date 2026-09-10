@@ -42,6 +42,12 @@ import {
 	requestSidecarAskQuestion,
 	sendEvent,
 } from "./context";
+import {
+	attachLensSession,
+	createLensEvidenceTool,
+	detachLensSession,
+	isLensModeEnabled,
+} from "./lens-sidecar";
 import { readSessionManifest, sharedSessionDataDir } from "./paths";
 import { persistSessionMessages } from "./session-data/messages";
 import type {
@@ -631,6 +637,22 @@ function buildCoreSessionConfig(
 	};
 }
 
+/**
+ * LENS Phase 1 (ticket #11): register the read-only `get_evidence_detail`
+ * tool for this session when LENS mode is enabled. Returns extra tools to
+ * merge into the session's `localRuntime` config; the SDK's config split
+ * routes them into `localRuntime.extraTools`.
+ */
+function lensExtraTools(
+	ctx: SidecarContext,
+	getSessionId: () => string,
+): JsonRecord[] {
+	if (!isLensModeEnabled()) {
+		return [];
+	}
+	return [createLensEvidenceTool(ctx, getSessionId) as unknown as JsonRecord];
+}
+
 /** Auto-approval is a tool policy, not a request to change the tool preset. */
 export function resolveDesktopSessionMode(
 	config: JsonRecord,
@@ -860,6 +882,9 @@ async function handleStart(
 				: undefined;
 	// Resolved once start() returns; the mistake-limit prompt reads it lazily.
 	let startedSessionId = requestedSessionId;
+	if (isLensModeEnabled()) {
+		attachLensSession(ctx, requestedSessionId || "pending");
+	}
 	const coreConfig: JsonRecord = {
 		...buildCoreSessionConfig(
 			request.config,
@@ -868,6 +893,7 @@ async function handleStart(
 		),
 		systemPrompt,
 		...(initialMessages ? { initialMessages } : {}),
+		...lensExtraTools(ctx, () => startedSessionId),
 	};
 	// Note: do NOT pass `prompt` to manager.start() here. When a prompt is
 	// provided to start(), the local runtime host runs the full agent turn
@@ -888,6 +914,12 @@ async function handleStart(
 	});
 	const sessionId = startResult.sessionId;
 	startedSessionId = sessionId;
+	if (isLensModeEnabled() && sessionId !== requestedSessionId) {
+		// The SDK generated the real id (none was requested): move the LENS
+		// runtime state from the placeholder key onto the live session.
+		detachLensSession(ctx, "pending");
+		attachLensSession(ctx, sessionId);
+	}
 	const workspaceRoot = startResult.manifest.workspace_root;
 	const cwd = startResult.manifest.cwd;
 	ctx.logger?.log("Desktop chat session started", { sessionId });

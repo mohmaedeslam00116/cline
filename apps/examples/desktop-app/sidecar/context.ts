@@ -26,6 +26,8 @@ import {
 	markQueuedAttachmentsSubmitted,
 	reconcileQueuedAttachments,
 } from "./attachments";
+import { attachLensRuntimeCapabilities, detachLensSession } from "./lens-sidecar";
+import { isLensModeEnabled } from "./lens-sidecar";
 import {
 	disposeDesktopFeatureFlagsService,
 	getDesktopFeatureFlagsService,
@@ -542,6 +544,9 @@ export function handleCoreSessionEvent(
 				session.endedAt = nowMs();
 				session.status = reason || "ended";
 			}
+			if (isLensModeEnabled()) {
+				detachLensSession(ctx, sessionId);
+			}
 			discardAllTrackedAttachments(sessionId, session);
 			sendEvent(ctx, "chat_session_ended", { sessionId, reason });
 			break;
@@ -768,13 +773,19 @@ export function cancelSidecarMistakeQuestions(
 export function createSidecarRuntimeCapabilities(
 	ctx: SidecarContext,
 ): RuntimeCapabilities {
-	return {
+	const base: RuntimeCapabilities = {
 		toolExecutors: {
 			askQuestion: (question, options, context) =>
 				requestSidecarAskQuestion(ctx, question, options, context),
 		},
 		requestToolApproval: (request) => requestSidecarToolApproval(ctx, request),
 	};
+	// LENS Phase 1 (ticket #11): compose the fail-closed policy into the
+	// approval flow. Upstream behavior is unchanged when LENS mode is off.
+	if (isLensModeEnabled()) {
+		return attachLensRuntimeCapabilities(base, ctx);
+	}
+	return base;
 }
 
 function requestSidecarToolApproval(
@@ -1001,6 +1012,9 @@ export function handleHubLiveEvent(
 			session.status = reason;
 			session.busy = false;
 			session.endedAt = nowMs();
+			if (isLensModeEnabled()) {
+				detachLensSession(ctx, sessionId);
+			}
 			sendEvent(ctx, "chat_session_ended", { sessionId, reason });
 			return;
 		}
