@@ -145,6 +145,14 @@ const DiffView = dynamic(
 	{ loading: viewLoading, ssr: false },
 );
 
+const EvidencePanel = dynamic(
+	() =>
+		import("@/components/views/evidence/evidence-panel").then(
+			(module) => module.EvidencePanel,
+		),
+	{ loading: viewLoading, ssr: false },
+);
+
 function makeThreadId(): string {
 	return `thread_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }
@@ -481,9 +489,17 @@ export default function Home() {
 									/>
 								) : activeThread ? (
 									<div
-										aria-hidden={view === "settings" ? true : undefined}
+										aria-hidden={
+											view === "settings" || view === "evidence"
+												? true
+												: undefined
+										}
 										className="flex min-h-0 flex-1 flex-col"
-										inert={view === "settings" ? true : undefined}
+										inert={
+											view === "settings" || view === "evidence"
+												? true
+												: undefined
+										}
 									>
 										<ChatThreadPane
 											key={activeThread.id}
@@ -517,6 +533,17 @@ export default function Home() {
 											onNavigateSection={handleSettingsSectionChange}
 											onOpenSession={handleOpenSessionById}
 											section={settingsSection}
+										/>
+									</div>
+								) : null}
+								{view === "evidence" ? (
+									<div className="absolute inset-0 z-30 bg-background text-foreground">
+										<EvidencePanel
+											sessionId={
+												activeHistorySessionId ??
+												activeThread?.historySession?.sessionId
+											}
+											onBackToChat={() => handleViewChange("chat")}
 										/>
 									</div>
 								) : null}

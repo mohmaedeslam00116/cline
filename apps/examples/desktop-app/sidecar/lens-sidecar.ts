@@ -17,17 +17,18 @@
  *   (ADR-0002).
  */
 import type { AgentTool, RuntimeCapabilities } from "@cline/core";
-import type { EvidenceBundle, TelemetryPort } from "@lens/ports";
 import {
 	CapabilityGrantRegistry,
 	decideToolCall,
 	type PolicyDecision,
 } from "@lens/policy";
+import type { TelemetryPort } from "@lens/ports";
 import {
+	type CandidateUrlProvider,
 	createGetEvidenceDetailExecutor,
 	EvidenceStore,
 	LensResearchEngine,
-	type CandidateUrlProvider,
+	type ScraperPool,
 } from "@lens/research";
 import type { SidecarContext } from "./types";
 
@@ -90,7 +91,9 @@ export function attachLensRuntimeCapabilities(
 
 function decideAndRecord(
 	ctx: SidecarContext,
-	request: Parameters<NonNullable<RuntimeCapabilities["requestToolApproval"]>>[0],
+	request: Parameters<
+		NonNullable<RuntimeCapabilities["requestToolApproval"]>
+	>[0],
 ): PolicyDecision {
 	const sessionId = request.sessionId;
 	const state = sessionMap(ctx).get(sessionId);
@@ -169,8 +172,14 @@ export function createLensEvidenceTool(
 		inputSchema: {
 			type: "object",
 			properties: {
-				bundleDigest: { type: "string", description: "SHA-256 hex digest of the evidence bundle" },
-				claimId: { type: "string", description: "Claim id within the bundle, e.g. claim-0001" },
+				bundleDigest: {
+					type: "string",
+					description: "SHA-256 hex digest of the evidence bundle",
+				},
+				claimId: {
+					type: "string",
+					description: "Claim id within the bundle, e.g. claim-0001",
+				},
 			},
 			required: ["bundleDigest", "claimId"],
 		},
@@ -179,7 +188,10 @@ export function createLensEvidenceTool(
 			if (!state) {
 				return JSON.stringify({
 					ok: false,
-					error: { code: "ADAPTER_FAILURE", message: "LENS research runtime is not attached to this session" },
+					error: {
+						code: "ADAPTER_FAILURE",
+						message: "LENS research runtime is not attached to this session",
+					},
 				});
 			}
 			return state.evidenceDetail(input);
@@ -191,7 +203,10 @@ export function createLensEvidenceTool(
 export function attachLensSession(
 	ctx: SidecarContext,
 	sessionId: string,
-	options?: { candidateUrlProvider?: CandidateUrlProvider },
+	options?: {
+		candidateUrlProvider?: CandidateUrlProvider;
+		scraper?: ScraperPool;
+	},
 ): LensSessionState {
 	const existing = sessionMap(ctx).get(sessionId);
 	if (existing) {
@@ -204,6 +219,7 @@ export function attachLensSession(
 		store,
 		candidateUrlProvider:
 			options?.candidateUrlProvider ?? defaultCandidateUrlProvider,
+		scraper: options?.scraper,
 	});
 	const evidenceDetail = createGetEvidenceDetailExecutor({
 		getCitationExcerpt: (bundleDigest, claimId) =>
@@ -231,7 +247,10 @@ export function attachLensSession(
 }
 
 /** Drop a session's LENS state (session ended/aborted). */
-export function detachLensSession(ctx: SidecarContext, sessionId: string): void {
+export function detachLensSession(
+	ctx: SidecarContext,
+	sessionId: string,
+): void {
 	sessionMap(ctx).delete(sessionId);
 }
 

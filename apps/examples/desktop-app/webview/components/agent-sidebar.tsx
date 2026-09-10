@@ -8,6 +8,7 @@ import {
 	ChevronDown,
 	CircleUserRound,
 	Clock3,
+	FileSearch,
 	Filter,
 	FolderTree,
 	GitFork,
@@ -109,7 +110,7 @@ import {
 import { cn } from "@/lib/utils";
 
 type Thread = SessionThread;
-type AppView = "chat" | "sessions" | "settings";
+type AppView = "chat" | "sessions" | "settings" | "evidence";
 
 const filterOptions = ["All", "Running"] as const;
 type FilterOption = (typeof filterOptions)[number];
@@ -976,12 +977,46 @@ export function AgentSidebar({
 									</Button>
 								))
 							: null}
+						<Button
+							aria-label="Evidence & Claims"
+							className={cn(
+								view === "evidence" &&
+									"bg-surface-hover text-sidebar-foreground",
+							)}
+							onClick={() => {
+								setView("evidence");
+								closeMobileSidebar();
+							}}
+							title="View research evidence bundles and policy checkpoints"
+							type="button"
+							variant="sidebarItem"
+						>
+							<FileSearch className="size-4 shrink-0" />
+							<span className="truncate">Evidence & Claims</span>
+						</Button>
 					</nav>
 				) : null}
 
 				{isCollapsed ? (
 					<div className="mt-2 flex min-h-0 flex-1 flex-col items-start gap-1 px-1.5">
 						<AppUpdateIndicator className="mx-auto size-9" />
+						<Button
+							aria-label="Evidence & Claims"
+							className={cn(
+								"size-9 justify-center px-0",
+								view === "evidence" &&
+									"bg-surface-hover text-sidebar-foreground",
+							)}
+							onClick={() => {
+								setView("evidence");
+								closeMobileSidebar();
+							}}
+							title="Evidence & Claims"
+							type="button"
+							variant="sidebarItem"
+						>
+							<FileSearch className="size-4" />
+						</Button>
 						{view === "settings" ? (
 							<SettingsSectionNavigation
 								activeSection={settingsSection}

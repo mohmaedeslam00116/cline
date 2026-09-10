@@ -1,9 +1,11 @@
-import { afterAll, describe, expect, it } from "vitest";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type { RuntimeCapabilities } from "@cline/core";
 import { bundleDigestOf, EvidenceStore } from "@lens/research";
+import { afterAll, describe, expect, it } from "vitest";
+import { handleCommand } from "./commands";
+import { createSidecarContext } from "./context";
 import {
 	attachLensRuntimeCapabilities,
 	attachLensSession,
@@ -12,13 +14,13 @@ import {
 	getLensSessionState,
 	isLensModeEnabled,
 } from "./lens-sidecar";
-import { createSidecarContext } from "./context";
-import { handleCommand } from "./commands";
 import type { SidecarContext, SidecarWebSocketClient } from "./types";
 
 const tempDirs: string[] = [];
 afterAll(async () => {
-	await Promise.all(tempDirs.map((dir) => rm(dir, { recursive: true, force: true })));
+	await Promise.all(
+		tempDirs.map((dir) => rm(dir, { recursive: true, force: true })),
+	);
 });
 
 /** Records every broadcast event so denials can be asserted on the transport. */
@@ -82,7 +84,10 @@ describe("lens-sidecar wiring", () => {
 		attachLensSession(ctx, "sess-lens");
 		const base: RuntimeCapabilities = {
 			requestToolApproval: () =>
-				Promise.resolve({ approved: true, reason: "user approved (should never happen)" }),
+				Promise.resolve({
+					approved: true,
+					reason: "user approved (should never happen)",
+				}),
 		};
 		const wrapped = attachLensRuntimeCapabilities(base, ctx);
 
@@ -127,12 +132,12 @@ describe("lens-sidecar wiring", () => {
 
 	it("the evidence tool returns verified excerpts through the total error boundary", async () => {
 		process.env.LENS_MODE = "1";
-	const root = await mkdtemp(path.join(tmpdir(), "lens-sidecar-"));
-	tempDirs.push(root);
-	// Bind the whole context (and therefore the LENS store/engine/executor
-	// graph) to the temp workspace — no patching required.
-	const { ctx } = makeRecordedContext(root);
-	const store = new EvidenceStore({ workspaceRoot: root });
+		const root = await mkdtemp(path.join(tmpdir(), "lens-sidecar-"));
+		tempDirs.push(root);
+		// Bind the whole context (and therefore the LENS store/engine/executor
+		// graph) to the temp workspace — no patching required.
+		const { ctx } = makeRecordedContext(root);
+		const store = new EvidenceStore({ workspaceRoot: root });
 		const createdAt = "2026-09-10T00:00:00.000Z";
 		const claims = [
 			{
@@ -141,6 +146,7 @@ describe("lens-sidecar wiring", () => {
 				quotations: ["Rust prevents data races at compile time — quoted."],
 				sourceUrls: ["https://example.com/rust"],
 				confidence: 0.8,
+				contentIsUntrusted: true as const,
 			},
 		];
 		const digest = bundleDigestOf({ createdAt, topic: "rust", claims });
