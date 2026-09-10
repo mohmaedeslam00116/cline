@@ -1418,6 +1418,22 @@ export async function handleCommand(
 		};
 	}
 
+	// ── LENS (Phase 1) ────────────────────────────────────────
+	if (command === "lens_evidence_index") {
+		const { lensEvidenceIndex } = await import("./commands-lens");
+		return await lensEvidenceIndex(
+			ctx,
+			String(args?.sessionId ?? ""),
+		);
+	}
+	if (command === "lens_policy_audit") {
+		const { lensPolicyAudit } = await import("./commands-lens");
+		return await lensPolicyAudit(
+			ctx,
+			String(args?.sessionId ?? ""),
+		);
+	}
+
 	// ── Session data reading ──────────────────────────────────────────
 	if (command === "read_session_messages") {
 		return await readSessionMessages(
