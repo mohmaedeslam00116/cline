@@ -22,11 +22,13 @@ export type {
 	EvidenceBundleMetadata,
 	ResearchRetrievalPort,
 	ResearchRetrievalError,
+	UntrustedContent,
 } from "./research-retrieval-port.js";
 
 export type {
 	AgentLifecycleEvent,
 	AgentLifecycleEventType,
+	TokenDeltaEvent,
 	TelemetryPort,
 } from "./telemetry-port.js";
 

@@ -42,4 +42,9 @@ describe("LensPortError", () => {
 		expect(e.code).toBe("SECURITY_ACCESS_DENIED");
 		expect(e.name).toBe("LensPortError");
 	});
+	it("preserves the optional cause", () => {
+		const sentinel = new Error("upstream failure");
+		const e = new LensPortError("ADAPTER_FAILURE", "wrapped", { cause: sentinel });
+		expect(e.cause).toBe(sentinel);
+	});
 });

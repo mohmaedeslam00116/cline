@@ -45,7 +45,8 @@ export interface RepoInspectionPort {
 	/**
 	 * Cryptographic digest of the workspace's clean state, used to detect
 	 * out-of-band developer edits (LENS `RepoSnapshotHash`). Two calls with
-	 * no intervening workspace mutation return the same value.
+	 * no intervening workspace mutation return the same value. Honours the
+	 * optional `signal`; adapters must stop hashing when aborted.
 	 */
-	getRepoSnapshotHash(): Promise<string>;
+	getRepoSnapshotHash(signal?: AbortSignal): Promise<string>;
 }

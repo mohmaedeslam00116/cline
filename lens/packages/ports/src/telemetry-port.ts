@@ -26,7 +26,17 @@ export interface AgentLifecycleEvent {
 	data?: Record<string, unknown>;
 }
 
+/** Typed token-delta event data: per-session correlation and stream ordering. */
+export interface TokenDeltaEvent {
+	/** Session the delta belongs to (adapters without a fixed session filter correlate on this). */
+	sessionId: string;
+	/** Monotonic sequence within the session's token stream. */
+	seq: number;
+	/** The raw model delta. */
+	delta: string;
+}
+
 export interface TelemetryPort {
 	emitEvent(event: AgentLifecycleEvent): void;
-	emitTokenDelta(delta: string): void;
+	emitTokenDelta(event: TokenDeltaEvent): void;
 }

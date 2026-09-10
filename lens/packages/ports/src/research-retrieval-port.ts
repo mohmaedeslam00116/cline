@@ -6,49 +6,55 @@
  * - Every `VerifiedExcerpt` originates from an `EvidenceBundle` that was
  *   written once, content-addressed by its SHA-256 digest, under
  *   `<workspace>/.lens/sessions/<sessionId>/evidence/`.
- * - Bundles are immutable: callers never mutate retrieved data; a new
- *   research pass supersedes the session's index manifest instead.
- * - Everything returned here is UNTRUSTED content (`contentIsUntrusted:
- *   true` at the consumer boundary): it can inform, never authorize.
+ * - Bundles are structurally immutable: every field and array is readonly,
+ *   and each returned artifact carries the `contentIsUntrusted: true`
+ *   marker — untrusted content can inform, never authorize.
+ * - A new research pass supersedes the session's index manifest instead of
+ *   editing existing bundles.
  */
 import type { LensErrorCode } from "./errors.js";
 
+/** Literal brand carried by every artifact crossing the Loop 1 → Loop 2 boundary. */
+export interface UntrustedContent {
+	readonly contentIsUntrusted: true;
+}
+
 export interface VerifiedClaim {
 	/** Stable claim id within the bundle (e.g. `claim-0007`). */
-	claimId: string;
+	readonly claimId: string;
 	/** The distilled, self-contained statement of the claim. */
-	statement: string;
+	readonly statement: string;
 	/** Exact quotation(s) supporting the claim. */
-	quotations: string[];
+	readonly quotations: readonly string[];
 	/** Source URLs backing the claim. */
-	sourceUrls: string[];
+	readonly sourceUrls: readonly string[];
 	/** Bundle-relative confidence in [0,1] from the synthesis step. */
-	confidence: number;
+	readonly confidence: number;
 }
 
 export interface EvidenceBundleMetadata {
 	/** SHA-256 hex digest of the canonical bundle serialization. */
-	digest: string;
+	readonly digest: string;
 	/** ISO-8601 creation timestamp. */
-	createdAt: string;
+	readonly createdAt: string;
 	/** Research topic / query that produced the bundle. */
-	topic: string;
+	readonly topic: string;
 	/** Number of verified claims. */
-	claimCount: number;
+	readonly claimCount: number;
 }
 
-export interface EvidenceBundle {
+export interface EvidenceBundle extends UntrustedContent {
 	readonly metadata: EvidenceBundleMetadata;
-	readonly claims: VerifiedClaim[];
+	readonly claims: readonly VerifiedClaim[];
 }
 
-export interface VerifiedExcerpt {
-	claimId: string;
+export interface VerifiedExcerpt extends UntrustedContent {
+	readonly claimId: string;
 	/** The exact quoted excerpt, traceable to its source. */
-	excerpt: string;
-	sourceUrl: string;
+	readonly excerpt: string;
+	readonly sourceUrl: string;
 	/** The bundle this excerpt belongs to (digest for verification). */
-	bundleDigest: string;
+	readonly bundleDigest: string;
 }
 
 export interface ResearchRetrievalPort {
@@ -60,7 +66,7 @@ export interface ResearchRetrievalPort {
 	/** Fetch one claim's full excerpt on demand (stratified on-demand claims). */
 	getCitationExcerpt(bundleDigest: string, claimId: string): Promise<VerifiedExcerpt>;
 	/** Load the current bundle index for a session (the Claims Index source). */
-	listBundles(sessionId: string): Promise<EvidenceBundleMetadata[]>;
+	listBundles(sessionId: string): Promise<readonly EvidenceBundleMetadata[]>;
 	/** Load one full bundle by digest (verification-friendly). */
 	getBundle(sessionId: string, digest: string): Promise<EvidenceBundle>;
 }

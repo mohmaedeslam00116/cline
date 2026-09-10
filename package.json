@@ -14,7 +14,7 @@
     ],
     "scripts": {
         "prepare": "husky",
-        "build": "bun run clean && bun install && bun run build:sdk && bun -F @cline/cli build",
+        "build": "bun run clean && bun install && bun run build:sdk && bun run build:lens && bun -F @cline/cli build",
         "build:sdk": "bun --production -F './sdk/packages/*' build",
 		"build:lens": "bun -F './lens/packages/*' build",
         "build:apps": "bun -F './apps/**' --production build",
