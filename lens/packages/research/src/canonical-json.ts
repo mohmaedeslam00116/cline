@@ -14,9 +14,16 @@ function serialize(value: unknown): string {
 	if (
 		value === null ||
 		typeof value === "string" ||
-		typeof value === "number" ||
 		typeof value === "boolean"
 	) {
+		return JSON.stringify(value);
+	}
+	if (typeof value === "number") {
+		if (!Number.isFinite(value)) {
+			throw new TypeError(
+				`canonicalJson: unsupported non-finite number ${value}`,
+			);
+		}
 		return JSON.stringify(value);
 	}
 	if (typeof value !== "object") {

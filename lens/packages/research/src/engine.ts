@@ -12,7 +12,7 @@
  * Every returned artifact carries `contentIsUntrusted: true`: fetched page
  * content is data for the coding loop, never instructions.
  */
-import { LensPortError } from "@lens/ports";
+
 import type {
 	EvidenceBundle,
 	EvidenceBundleMetadata,
@@ -20,9 +20,10 @@ import type {
 	VerifiedClaim,
 	VerifiedExcerpt,
 } from "@lens/ports";
-import { bundleDigestOf, EvidenceStore } from "./evidence-store.js";
+import { LensPortError } from "@lens/ports";
 import { Bm25Index } from "./bm25.js";
-import { ScraperPool } from "./scraper-pool.js";
+import { bundleDigestOf, type EvidenceStore } from "./evidence-store.js";
+import { type ScrapeResult, ScraperPool } from "./scraper-pool.js";
 
 /** Provides the candidate URLs for a research pass (the discovery strategy). */
 export type CandidateUrlProvider = (
@@ -69,30 +70,48 @@ export class LensResearchEngine implements ResearchRetrievalPort {
 		signal?: AbortSignal,
 	): Promise<EvidenceBundle> {
 		if (typeof topic !== "string" || topic.trim().length === 0) {
-			throw new LensPortError("ADAPTER_FAILURE", "Research topic must be a non-empty string");
+			throw new LensPortError(
+				"ADAPTER_FAILURE",
+				"Research topic must be a non-empty string",
+			);
 		}
 		if (!Number.isFinite(budget) || budget < 1) {
-			throw new LensPortError("ADAPTER_FAILURE", "Research budget must be a number >= 1");
+			throw new LensPortError(
+				"ADAPTER_FAILURE",
+				"Research budget must be a number >= 1",
+			);
 		}
 		if (signal?.aborted) {
-			throw new LensPortError("CANCELLED", "Research pass cancelled before it started");
+			throw new LensPortError(
+				"CANCELLED",
+				"Research pass cancelled before it started",
+			);
 		}
 
 		let urls: readonly string[];
 		try {
 			urls = await this.candidateUrlProvider(topic, budget);
 		} catch (error) {
-			throw new LensPortError("ADAPTER_FAILURE", "Candidate URL discovery failed", { cause: error });
+			throw new LensPortError(
+				"ADAPTER_FAILURE",
+				"Candidate URL discovery failed",
+				{ cause: error },
+			);
 		}
 
-		let pages;
+		let pages: ScrapeResult;
 		try {
 			pages = await this.scraper.scrape(urls, budget, signal);
 		} catch (error) {
 			if (error instanceof Error && error.name === "AbortError") {
-				throw new LensPortError("CANCELLED", "Research pass cancelled mid-scrape");
+				throw new LensPortError(
+					"CANCELLED",
+					"Research pass cancelled mid-scrape",
+				);
 			}
-			throw new LensPortError("ADAPTER_FAILURE", "Scrape phase failed", { cause: error });
+			throw new LensPortError("ADAPTER_FAILURE", "Scrape phase failed", {
+				cause: error,
+			});
 		}
 
 		const claims = this.synthesizeClaims(topic, pages.pages);
@@ -133,7 +152,9 @@ export class LensResearchEngine implements ResearchRetrievalPort {
 		};
 	}
 
-	async listBundles(sessionId: string): Promise<readonly EvidenceBundleMetadata[]> {
+	async listBundles(
+		sessionId: string,
+	): Promise<readonly EvidenceBundleMetadata[]> {
 		return this.store.loadIndex(sessionId);
 	}
 
@@ -152,7 +173,10 @@ export class LensResearchEngine implements ResearchRetrievalPort {
 	): readonly VerifiedClaim[] {
 		const passages: { id: string; text: string; url: string }[] = [];
 		for (const [pageIndex, page] of pages.entries()) {
-			for (const [chunkIndex, chunk] of chunkText(page.text, PASSAGE_CHARS).entries()) {
+			for (const [chunkIndex, chunk] of chunkText(
+				page.text,
+				PASSAGE_CHARS,
+			).entries()) {
 				passages.push({
 					id: `p${pageIndex}:${chunkIndex}`,
 					text: `${page.title}. ${chunk}`,
@@ -169,7 +193,10 @@ export class LensResearchEngine implements ResearchRetrievalPort {
 		return hits.map((hit, i) => {
 			const passage = passages.find((p) => p.id === hit.id);
 			if (!passage) {
-				throw new LensPortError("ADAPTER_FAILURE", "BM25 returned an unknown passage id");
+				throw new LensPortError(
+					"ADAPTER_FAILURE",
+					"BM25 returned an unknown passage id",
+				);
 			}
 			return {
 				// Untrusted-content marker: research output informs the loop,

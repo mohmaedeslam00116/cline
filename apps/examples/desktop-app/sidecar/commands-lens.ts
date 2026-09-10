@@ -7,8 +7,8 @@
  * and are deliberately NOT returned here; the model fetches a single claim's
  * excerpt on demand via the `get_evidence_detail` tool.
  */
-import type { SidecarContext } from "./types";
 import { getLensSessionState, isLensModeEnabled } from "./lens-sidecar";
+import type { SidecarContext } from "./types";
 
 /** The session's evidence index (bundle metadata only) — the Claims Index source. */
 export function lensEvidenceIndex(ctx: SidecarContext, sessionId: string) {

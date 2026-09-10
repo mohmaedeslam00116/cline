@@ -10,14 +10,11 @@
  * rewritten. Loads re-verify the digest, so corruption or tampering is
  * detected at read time.
  */
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
+import type { EvidenceBundle, EvidenceBundleMetadata } from "@lens/ports";
 import { LensPortError } from "@lens/ports";
-import type {
-	EvidenceBundle,
-	EvidenceBundleMetadata,
-} from "@lens/ports";
 import { canonicalJson } from "./canonical-json.js";
 
 /** Session ids are path components: restrict to a safe charset. */
@@ -55,6 +52,8 @@ export function bundleDigestOf(input: {
 
 export class EvidenceStore {
 	private readonly workspaceRoot: string;
+	private fileExistsCache = new Set<string>();
+	private sessionLocks = new Map<string, Promise<void>>();
 
 	constructor(options: EvidenceStoreOptions) {
 		this.workspaceRoot = path.resolve(options.workspaceRoot);
@@ -68,17 +67,31 @@ export class EvidenceStore {
 	async saveBundle(sessionId: string, bundle: EvidenceBundle): Promise<void> {
 		const dir = this.evidenceDir(sessionId);
 		const digest = this.validatedDigest(bundle.metadata.digest);
+
+		const recomputed = bundleDigestOf({
+			createdAt: bundle.metadata.createdAt,
+			topic: bundle.metadata.topic,
+			claims: bundle.claims,
+		});
+		if (recomputed !== bundle.metadata.digest) {
+			throw new LensPortError(
+				"ADAPTER_FAILURE",
+				`Evidence bundle metadata digest does not match recomputed digest: metadata has ${bundle.metadata.digest.slice(0, 12)}…, recomputed ${recomputed.slice(0, 12)}…`,
+			);
+		}
+
 		await mkdir(dir, { recursive: true });
 		const filePath = path.join(dir, `${digest}.json`);
 		const body = canonicalJson(bundle);
 		if (!this.fileExistsCache.has(filePath)) {
-			const tmpPath = `${filePath}.tmp.${Date.now()}.${Math.random().toString(36).slice(2)}`;
+			const tmpPath = `${filePath}.tmp.${Date.now()}.${randomUUID()}`;
 			await writeFile(tmpPath, body, "utf8");
 			try {
 				await rename(tmpPath, filePath);
-			} catch (err: any) {
+			} catch (err: unknown) {
 				// Content addressing: if the file already exists (e.g. concurrent write or Windows EEXIST/EPERM), keep existing
-				if (err?.code !== "EEXIST" && err?.code !== "EPERM") {
+				const code = (err as NodeJS.ErrnoException)?.code;
+				if (code !== "EEXIST" && code !== "EPERM") {
 					throw err;
 				}
 			}
@@ -89,8 +102,9 @@ export class EvidenceStore {
 
 	/** Load and verify one bundle; rejects with `EVIDENCE_NOT_FOUND` when absent. */
 	async loadBundle(sessionId: string, digest: string): Promise<EvidenceBundle> {
+		const validDigest = this.validatedDigest(digest);
 		const dir = this.evidenceDir(sessionId);
-		const filePath = path.join(dir, `${this.validatedDigest(digest)}.json`);
+		const filePath = path.join(dir, `${validDigest}.json`);
 		let raw: string;
 		try {
 			raw = await readFile(filePath, "utf8");
@@ -106,30 +120,49 @@ export class EvidenceStore {
 			topic: bundle.metadata.topic,
 			claims: bundle.claims,
 		});
-		if (recomputed !== bundle.metadata.digest) {
+		if (
+			recomputed !== bundle.metadata.digest ||
+			bundle.metadata.digest !== validDigest
+		) {
 			throw new LensPortError(
 				"ADAPTER_FAILURE",
-				`Evidence bundle digest mismatch: stored ${bundle.metadata.digest.slice(0, 12)}…, content hashes to ${recomputed.slice(0, 12)}…`,
+				`Evidence bundle digest mismatch: stored ${bundle.metadata.digest.slice(0, 12)}…, requested ${validDigest.slice(0, 12)}…, content hashes to ${recomputed.slice(0, 12)}…`,
 			);
 		}
 		return bundle;
 	}
 
 	/** The session's manifest (insertion order); empty when no pass has run. */
-	async loadIndex(sessionId: string): Promise<readonly EvidenceBundleMetadata[]> {
+	async loadIndex(
+		sessionId: string,
+	): Promise<readonly EvidenceBundleMetadata[]> {
 		try {
 			const raw = await readFile(
 				path.join(this.evidenceDir(sessionId), "index.json"),
 				"utf8",
 			);
 			const parsed: unknown = JSON.parse(raw);
-			return Array.isArray(parsed) ? (parsed as EvidenceBundleMetadata[]) : [];
-		} catch {
-			return [];
+			if (!Array.isArray(parsed)) {
+				throw new LensPortError(
+					"ADAPTER_FAILURE",
+					`Manifest at index.json is corrupted: expected array`,
+				);
+			}
+			return parsed as EvidenceBundleMetadata[];
+		} catch (error: unknown) {
+			if ((error as NodeJS.ErrnoException)?.code === "ENOENT") {
+				return [];
+			}
+			if (error instanceof LensPortError) {
+				throw error;
+			}
+			throw new LensPortError(
+				"ADAPTER_FAILURE",
+				`Failed to read evidence index for session ${sessionId}: ${(error as Error)?.message ?? String(error)}`,
+				{ cause: error },
+			);
 		}
 	}
-
-	private fileExistsCache = new Set<string>();
 
 	private evidenceDir(sessionId: string): string {
 		if (!SESSION_ID_PATTERN.test(sessionId)) {
@@ -169,29 +202,89 @@ export class EvidenceStore {
 			);
 		}
 		const bundle = parsed as EvidenceBundle;
-		if (bundle?.contentIsUntrusted !== true || !bundle.metadata || !bundle.claims) {
+		if (
+			bundle?.contentIsUntrusted !== true ||
+			!bundle.metadata ||
+			typeof bundle.metadata !== "object" ||
+			typeof bundle.metadata.digest !== "string" ||
+			!DIGEST_PATTERN.test(bundle.metadata.digest) ||
+			typeof bundle.metadata.topic !== "string" ||
+			typeof bundle.metadata.createdAt !== "string" ||
+			typeof bundle.metadata.claimCount !== "number" ||
+			!Array.isArray(bundle.claims) ||
+			bundle.claims.length !== bundle.metadata.claimCount
+		) {
 			throw new LensPortError(
 				"ADAPTER_FAILURE",
-				"Evidence bundle failed the untrusted-content contract validation",
+				"Evidence bundle failed schema validation",
 			);
 		}
+
+		for (const claim of bundle.claims) {
+			if (
+				claim?.contentIsUntrusted !== true ||
+				typeof claim.claimId !== "string" ||
+				claim.claimId.length === 0 ||
+				typeof claim.statement !== "string" ||
+				!Array.isArray(claim.quotations) ||
+				!claim.quotations.every((q: unknown) => typeof q === "string") ||
+				!Array.isArray(claim.sourceUrls) ||
+				!claim.sourceUrls.every((u: unknown) => typeof u === "string") ||
+				typeof claim.confidence !== "number" ||
+				!Number.isFinite(claim.confidence) ||
+				claim.confidence < 0 ||
+				claim.confidence > 1
+			) {
+				throw new LensPortError(
+					"ADAPTER_FAILURE",
+					"Evidence bundle claim failed schema validation",
+				);
+			}
+		}
+
 		return bundle;
+	}
+
+	private async withSessionLock<T>(
+		sessionId: string,
+		fn: () => Promise<T>,
+	): Promise<T> {
+		const prev = this.sessionLocks.get(sessionId) ?? Promise.resolve();
+		let resolveLock!: () => void;
+		const next = new Promise<void>((res) => {
+			resolveLock = res;
+		});
+		this.sessionLocks.set(sessionId, next);
+		try {
+			await prev;
+			return await fn();
+		} finally {
+			resolveLock();
+			if (this.sessionLocks.get(sessionId) === next) {
+				this.sessionLocks.delete(sessionId);
+			}
+		}
 	}
 
 	private async appendToManifest(
 		sessionId: string,
 		metadata: EvidenceBundleMetadata,
 	): Promise<void> {
-		const existing = [...(await this.loadIndex(sessionId))];
-		if (existing.some((entry) => entry.digest === metadata.digest)) {
-			return;
-		}
-		existing.push(metadata);
-		const tmpPath = path.join(
-			this.evidenceDir(sessionId),
-			`index.json.tmp.${Date.now()}.${Math.random().toString(36).slice(2)}`,
-		);
-		await writeFile(tmpPath, canonicalJson(existing), "utf8");
-		await rename(tmpPath, path.join(this.evidenceDir(sessionId), "index.json"));
+		return this.withSessionLock(sessionId, async () => {
+			const existing = [...(await this.loadIndex(sessionId))];
+			if (existing.some((entry) => entry.digest === metadata.digest)) {
+				return;
+			}
+			existing.push(metadata);
+			const tmpPath = path.join(
+				this.evidenceDir(sessionId),
+				`index.json.tmp.${Date.now()}.${randomUUID()}`,
+			);
+			await writeFile(tmpPath, canonicalJson(existing), "utf8");
+			await rename(
+				tmpPath,
+				path.join(this.evidenceDir(sessionId), "index.json"),
+			);
+		});
 	}
 }

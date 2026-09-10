@@ -40,9 +40,15 @@ function hasEscapedRoot(rel: string[]): boolean {
  * Resolve and validate `relativePath` against `workspaceRoot`.
  * Throws `LensPortError("SECURITY_ACCESS_DENIED")` on any boundary escape.
  */
-export function resolveSafePath(workspaceRoot: string, relativePath: string): ResolvedWorkspacePath {
+export function resolveSafePath(
+	workspaceRoot: string,
+	relativePath: string,
+): ResolvedWorkspacePath {
 	if (workspaceRoot.length === 0) {
-		throw new LensPortError("SECURITY_ACCESS_DENIED", "workspace root is empty");
+		throw new LensPortError(
+			"SECURITY_ACCESS_DENIED",
+			"workspace root is empty",
+		);
 	}
 	if (relativePath.includes("\0")) {
 		throw new LensPortError("SECURITY_ACCESS_DENIED", "null byte in path");
@@ -52,18 +58,29 @@ export function resolveSafePath(workspaceRoot: string, relativePath: string): Re
 		// POSIX "/" must stay "/", and "C:\" must not degrade to the
 		// drive-relative "C:".
 		const stripped = workspaceRoot.replace(/[\\/]+$/, "");
-		const root = stripped.length === 0 || /^[a-zA-Z]:$/.test(stripped)
-			? workspaceRoot
-			: stripped;
+		const root =
+			stripped.length === 0 || /^[a-zA-Z]:$/.test(stripped)
+				? workspaceRoot
+				: stripped;
 		return { workspaceRoot: root, relativePath: "", absolutePath: root };
 	}
-	if (relativePath.startsWith("/") || relativePath.startsWith("\\") || isDriveAbsolute(relativePath)) {
-		throw new LensPortError("SECURITY_ACCESS_DENIED", `absolute path rejected: ${JSON.stringify(relativePath.slice(0, 64))}`);
+	if (
+		relativePath.startsWith("/") ||
+		relativePath.startsWith("\\") ||
+		isDriveAbsolute(relativePath)
+	) {
+		throw new LensPortError(
+			"SECURITY_ACCESS_DENIED",
+			`absolute path rejected: ${JSON.stringify(relativePath.slice(0, 64))}`,
+		);
 	}
 
 	const parts = relativePath.split(/[\\/]/).filter((p) => p.length > 0);
 	if (hasEscapedRoot(parts)) {
-		throw new LensPortError("SECURITY_ACCESS_DENIED", "path traversal above workspace root rejected");
+		throw new LensPortError(
+			"SECURITY_ACCESS_DENIED",
+			"path traversal above workspace root rejected",
+		);
 	}
 
 	// Escape-check passed: resolve `.` / `..` canonically.
@@ -77,7 +94,8 @@ export function resolveSafePath(workspaceRoot: string, relativePath: string): Re
 	const root = workspaceRoot.replace(/[\\/]+$/, "");
 	const normalized = resolved.join("/");
 	const sep = root.includes("\\") ? "\\" : "/";
-	const absolutePath = resolved.length > 0 ? root + sep + resolved.join(sep) : root;
+	const absolutePath =
+		resolved.length > 0 ? root + sep + resolved.join(sep) : root;
 
 	return { workspaceRoot: root, relativePath: normalized, absolutePath };
 }
@@ -91,7 +109,8 @@ export function scopeCoversPath(
 	if (grantRoot !== resolved.workspaceRoot) return false;
 	const prefixes = grant.scope.pathPrefixes;
 	if (!prefixes || prefixes.length === 0) return true;
-	const segments = resolved.relativePath.length === 0 ? [] : resolved.relativePath.split("/");
+	const segments =
+		resolved.relativePath.length === 0 ? [] : resolved.relativePath.split("/");
 	return prefixes.some((prefix) => {
 		const clean = prefix.replace(/^[\\/]+|[\\/]+$/g, "");
 		if (clean.length === 0) return true;

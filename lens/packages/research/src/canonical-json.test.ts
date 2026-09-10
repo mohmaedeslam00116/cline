@@ -13,9 +13,9 @@ describe("canonicalJson", () => {
 	});
 
 	it("drops undefined values", () => {
-		expect(canonicalJson({ a: 1, b: undefined, c: { d: undefined, e: null } })).toBe(
-			'{"a":1,"c":{"e":null}}',
-		);
+		expect(
+			canonicalJson({ a: 1, b: undefined, c: { d: undefined, e: null } }),
+		).toBe('{"a":1,"c":{"e":null}}');
 	});
 
 	it("is byte-reproducible across key insertion orders", () => {
@@ -33,7 +33,10 @@ describe("canonicalJson", () => {
 		expect(canonicalJson([])).toBe("[]");
 	});
 
-	it("rejects non-JSON values like functions", () => {
+	it("rejects non-JSON values like functions and non-finite numbers", () => {
 		expect(() => canonicalJson(() => 1)).toThrow(TypeError);
+		expect(() => canonicalJson(NaN)).toThrow(TypeError);
+		expect(() => canonicalJson(Infinity)).toThrow(TypeError);
+		expect(() => canonicalJson(-Infinity)).toThrow(TypeError);
 	});
 });

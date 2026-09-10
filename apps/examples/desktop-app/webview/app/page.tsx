@@ -182,6 +182,9 @@ export default function Home() {
 	// the effect below reads the persisted state right after mount.
 	const [showOnboarding, setShowOnboarding] = useState(false);
 	const [commandBarOpen, setCommandBarOpen] = useState(false);
+	const [activeLiveSessionId, setActiveLiveSessionId] = useState<string | null>(
+		null,
+	);
 	// Shared by the sidebar search icon and the Cmd/Ctrl+P shortcut.
 	const handleOpenCommandBar = useCallback(() => setCommandBarOpen(true), []);
 	// "welcome" for the full first-run flow; "connect" when re-entered from
@@ -524,6 +527,7 @@ export default function Home() {
 												handleSettingsSectionChange("Voice")
 											}
 											onThreadStarted={handleThreadStarted}
+											onActiveSessionChange={setActiveLiveSessionId}
 										/>
 									</div>
 								) : null}
@@ -540,6 +544,7 @@ export default function Home() {
 									<div className="absolute inset-0 z-30 bg-background text-foreground">
 										<EvidencePanel
 											sessionId={
+												activeLiveSessionId ??
 												activeHistorySessionId ??
 												activeThread?.historySession?.sessionId
 											}
@@ -599,6 +604,7 @@ function ChatThreadPane({
 	parentSession,
 	onOpenVoiceInputSettings,
 	onThreadStarted,
+	onActiveSessionChange,
 }: {
 	threadId: string;
 	historySession?: SessionHistoryItem;
@@ -621,6 +627,7 @@ function ChatThreadPane({
 	parentSession?: { sessionId: string; title?: string };
 	onOpenVoiceInputSettings?: () => void;
 	onThreadStarted?: (threadId: string) => void;
+	onActiveSessionChange?: (sessionId: string | null) => void;
 }) {
 	const {
 		sessionId,
@@ -654,6 +661,11 @@ function ChatThreadPane({
 		abort,
 		hydrateSession,
 	} = useChatSession();
+
+	useEffect(() => {
+		onActiveSessionChange?.(sessionId || null);
+	}, [sessionId, onActiveSessionChange]);
+
 	// The live composer text lives inside ChatInputBar so typing does not
 	// re-render this whole pane. The pane mirrors it in a ref (for reads) and
 	// pushes external updates (quick actions, undo, resets) via promptDraft.

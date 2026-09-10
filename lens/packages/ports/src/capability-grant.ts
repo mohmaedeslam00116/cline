@@ -39,7 +39,10 @@ export interface CapabilityGrant {
 }
 
 export function isCapabilityType(value: unknown): value is CapabilityType {
-	return typeof value === "string" && (CAPABILITY_TYPES as readonly string[]).includes(value);
+	return (
+		typeof value === "string" &&
+		(CAPABILITY_TYPES as readonly string[]).includes(value)
+	);
 }
 
 /**
@@ -60,7 +63,7 @@ export function freezeGrant(grant: CapabilityGrant): CapabilityGrant {
 							grant.scope.argumentTemplates.map((template) =>
 								Object.freeze([...template]),
 							),
-						)
+						),
 					}
 				: {}),
 		}),
@@ -68,6 +71,10 @@ export function freezeGrant(grant: CapabilityGrant): CapabilityGrant {
 }
 
 /** True when the grant covers `capability` and has not expired. Time-bound checks are the caller's clock. */
-export function isActiveGrant(grant: CapabilityGrant, capability: CapabilityType, nowMs: number): boolean {
+export function isActiveGrant(
+	grant: CapabilityGrant,
+	capability: CapabilityType,
+	nowMs: number,
+): boolean {
 	return grant.capability === capability && grant.expiresAt > nowMs;
 }

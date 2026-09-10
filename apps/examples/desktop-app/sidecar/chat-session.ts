@@ -882,10 +882,12 @@ async function handleStart(
 				: undefined;
 	// Resolved once start() returns; the mistake-limit prompt reads it lazily.
 	let startedSessionId = requestedSessionId;
-	const pendingLensKey = requestedSessionId || `pending-${Math.random().toString(36).slice(2)}`;
+	const pendingLensKey =
+		requestedSessionId || `pending-${Math.random().toString(36).slice(2)}`;
 	if (isLensModeEnabled()) {
 		attachLensSession(ctx, pendingLensKey);
 	}
+	const extraTools = lensExtraTools(ctx, () => startedSessionId);
 	const coreConfig: JsonRecord = {
 		...buildCoreSessionConfig(
 			request.config,
@@ -894,7 +896,7 @@ async function handleStart(
 		),
 		systemPrompt,
 		...(initialMessages ? { initialMessages } : {}),
-		...lensExtraTools(ctx, () => startedSessionId),
+		...(extraTools.length > 0 ? { extraTools } : {}),
 	};
 	// Note: do NOT pass `prompt` to manager.start() here. When a prompt is
 	// provided to start(), the local runtime host runs the full agent turn
@@ -906,7 +908,7 @@ async function handleStart(
 		providerId: String(coreConfig.providerId ?? ""),
 		modelId: String(coreConfig.modelId ?? ""),
 	});
-	let startResult;
+	let startResult: Awaited<ReturnType<typeof manager.start>>;
 	try {
 		startResult = await manager.start({
 			...splitCoreSessionConfig(coreConfig as unknown as ClineCoreStartConfig),
@@ -1036,9 +1038,10 @@ async function startRebuiltSession(
 	const projectedMessages = compactionState
 		? projectSessionCompactionState(compactionState, messages)
 		: undefined;
+	const extraTools = lensExtraTools(ctx, () => sessionId);
 	const restarted = await manager.start({
-		...splitCoreSessionConfig(
-			buildCoreSessionConfig(
+		...splitCoreSessionConfig({
+			...buildCoreSessionConfig(
 				{
 					...config,
 					sessionId,
@@ -1046,8 +1049,9 @@ async function startRebuiltSession(
 				},
 				ctx.telemetryUser,
 				createDesktopMistakeRecovery(ctx, () => sessionId),
-			) as unknown as ClineCoreStartConfig,
-		),
+			),
+			...(extraTools.length > 0 ? { extraTools } : {}),
+		} as unknown as ClineCoreStartConfig),
 		source: SessionSource.DESKTOP,
 		interactive: true,
 		initialMessages: messages,
@@ -1533,17 +1537,19 @@ async function handleForkUnlocked(
 	const systemPrompt = await resolveSystemPrompt(forkConfig);
 	// Assigned below once the forked session exists; read lazily by the prompt.
 	let newSessionId = "";
+	const extraTools = lensExtraTools(ctx, () => newSessionId);
 	const startInput = {
-		...splitCoreSessionConfig(
-			buildCoreSessionConfig(
+		...splitCoreSessionConfig({
+			...buildCoreSessionConfig(
 				{
 					...forkConfig,
 					systemPrompt,
 				},
 				ctx.telemetryUser,
 				createDesktopMistakeRecovery(ctx, () => newSessionId),
-			) as unknown as ClineCoreStartConfig,
-		),
+			),
+			...(extraTools.length > 0 ? { extraTools } : {}),
+		} as unknown as ClineCoreStartConfig),
 		source: SessionSource.DESKTOP,
 		interactive: true,
 		sessionMetadata: forkMetadata,
@@ -1671,22 +1677,24 @@ async function handleRestoreCheckpoint(
 	return withWorkspaceRestoreLock(ctx, cwd, async () => {
 		// Updated once restore() returns; read lazily by the mistake-limit prompt.
 		let restoredSessionId = sourceSessionId;
+		const extraTools = lensExtraTools(ctx, () => restoredSessionId);
 		const restored = await manager.restore({
 			sessionId: sourceSessionId,
 			checkpointRunCount: runCount,
 			cwd,
 			restore: { messages: true, workspace: true },
 			start: {
-				...splitCoreSessionConfig(
-					buildCoreSessionConfig(
+				...splitCoreSessionConfig({
+					...buildCoreSessionConfig(
 						{
 							...config,
 							systemPrompt: await resolveSystemPrompt(config),
 						},
 						ctx.telemetryUser,
 						createDesktopMistakeRecovery(ctx, () => restoredSessionId),
-					) as unknown as ClineCoreStartConfig,
-				),
+					),
+					...(extraTools.length > 0 ? { extraTools } : {}),
+				} as unknown as ClineCoreStartConfig),
 				source: SessionSource.DESKTOP,
 				interactive: true,
 				toolPolicies: resolveToolPolicies(config),

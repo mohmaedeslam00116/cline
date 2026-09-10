@@ -21,7 +21,12 @@ export interface GetEvidenceDetailDeps {
 	getCitationExcerpt: (
 		bundleDigest: string,
 		claimId: string,
-	) => Promise<{ excerpt: string; sourceUrl: string; claimId: string; bundleDigest: string }>;
+	) => Promise<{
+		excerpt: string;
+		sourceUrl: string;
+		claimId: string;
+		bundleDigest: string;
+	}>;
 }
 
 export function createGetEvidenceDetailExecutor(

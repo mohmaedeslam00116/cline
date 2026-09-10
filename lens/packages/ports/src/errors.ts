@@ -18,7 +18,11 @@ export type LensErrorCode =
 export class LensPortError extends Error {
 	readonly code: LensErrorCode;
 
-	constructor(code: LensErrorCode, message: string, options?: { cause?: unknown }) {
+	constructor(
+		code: LensErrorCode,
+		message: string,
+		options?: { cause?: unknown },
+	) {
 		super(message, options ? { cause: options.cause } : undefined);
 		this.name = "LensPortError";
 		this.code = code;

@@ -89,6 +89,23 @@ function makeRecordedContext(workspaceRoot: string): {
 	return { ctx, events };
 }
 
+async function waitForEvents(
+	events: { name: string; payload: unknown }[],
+	name: string,
+	minCount = 1,
+	timeoutMs = 2000,
+): Promise<{ name: string; payload: unknown }[]> {
+	const start = Date.now();
+	while (Date.now() - start < timeoutMs) {
+		const matching = events.filter((e) => e.name === name);
+		if (matching.length >= minCount) return matching;
+		await new Promise((resolve) => setTimeout(resolve, 10));
+	}
+	throw new Error(
+		`Timed out waiting for ${minCount} event(s) of type "${name}"`,
+	);
+}
+
 const makeApprovalRequest = (
 	sessionId: string,
 	toolName: string,
@@ -328,8 +345,7 @@ describe("LENS Phase 1 Acceptance Scenario", () => {
 		).toBe(true);
 
 		// Verify observable denial events were emitted to the WebSocket client
-		await new Promise((resolve) => setTimeout(resolve, 25));
-		const deniedEvents = events.filter((e) => e.name === "lens_policy_denied");
+		const deniedEvents = await waitForEvents(events, "lens_policy_denied", 2);
 		expect(deniedEvents.length).toBeGreaterThanOrEqual(2);
 		expect(deniedEvents).toContainEqual(
 			expect.objectContaining({

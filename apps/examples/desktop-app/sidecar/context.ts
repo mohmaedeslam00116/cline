@@ -26,12 +26,14 @@ import {
 	markQueuedAttachmentsSubmitted,
 	reconcileQueuedAttachments,
 } from "./attachments";
-import { attachLensRuntimeCapabilities, detachLensSession } from "./lens-sidecar";
-import { isLensModeEnabled } from "./lens-sidecar";
 import {
 	disposeDesktopFeatureFlagsService,
 	getDesktopFeatureFlagsService,
 } from "./feature-flags";
+import {
+	attachLensRuntimeCapabilities,
+	isLensModeEnabled,
+} from "./lens-sidecar";
 import { sessionLogPath } from "./paths";
 import type {
 	LiveSession,
@@ -544,9 +546,7 @@ export function handleCoreSessionEvent(
 				session.endedAt = nowMs();
 				session.status = reason || "ended";
 			}
-			if (isLensModeEnabled()) {
-				detachLensSession(ctx, sessionId);
-			}
+			// Preserve LENS session state on termination for post-run evidence & audit inspection
 			discardAllTrackedAttachments(sessionId, session);
 			sendEvent(ctx, "chat_session_ended", { sessionId, reason });
 			break;
@@ -814,6 +814,10 @@ function requestSidecarToolApproval(
 				iteration: request.iteration,
 				agentId: request.agentId,
 				conversationId: request.conversationId,
+				checkpoint:
+					(request as unknown as Record<string, unknown>).checkpoint ??
+					(request.policy as unknown as Record<string, unknown> | undefined)
+						?.checkpoint,
 			},
 			owner,
 			resolve,
@@ -1012,9 +1016,7 @@ export function handleHubLiveEvent(
 			session.status = reason;
 			session.busy = false;
 			session.endedAt = nowMs();
-			if (isLensModeEnabled()) {
-				detachLensSession(ctx, sessionId);
-			}
+			// Preserve LENS session state on termination for post-run evidence & audit inspection
 			sendEvent(ctx, "chat_session_ended", { sessionId, reason });
 			return;
 		}
@@ -1074,7 +1076,8 @@ async function handleHubApprovalRequest(
 			!Array.isArray(event.payload.policy)
 				? (event.payload.policy as ToolApprovalRequest["policy"])
 				: { autoApprove: false },
-	});
+		checkpoint: event.payload?.checkpoint,
+	} as ToolApprovalRequest);
 	const client = ctx.hubClient;
 	if (!client)
 		throw new Error("Hub client disconnected before approval response");

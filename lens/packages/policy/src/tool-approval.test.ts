@@ -1,8 +1,12 @@
 import { describe, expect, it } from "bun:test";
 import type { ToolApprovalRequest } from "@cline/shared";
-import { CapabilityGrantRegistry } from "./grant-registry.js";
-import { createPhase1ToolApproval, decideToolCall, PHASE1_READ_ONLY_TOOLS } from "./tool-approval.js";
 import { LensPortError } from "@lens/ports";
+import { CapabilityGrantRegistry } from "./grant-registry.js";
+import {
+	createPhase1ToolApproval,
+	decideToolCall,
+	PHASE1_READ_ONLY_TOOLS,
+} from "./tool-approval.js";
 
 const request = (toolName: string): ToolApprovalRequest => ({
 	sessionId: "s1",
@@ -25,7 +29,14 @@ describe("Phase-1 tool approval (fail closed)", () => {
 	});
 
 	it("denies mutating and unknown tools with a policy reason", () => {
-		for (const tool of ["write_to_file", "apply_diff", "execute_command", "browser_action", "mcp_tool", "totally_new_tool"]) {
+		for (const tool of [
+			"write_to_file",
+			"apply_diff",
+			"execute_command",
+			"browser_action",
+			"mcp_tool",
+			"totally_new_tool",
+		]) {
 			const d = decideToolCall(request(tool));
 			expect(d.approved).toBe(false);
 			expect(d.policyDenied).toBe(true);
@@ -60,10 +71,16 @@ describe("Phase-1 tool approval (fail closed)", () => {
 		}>;
 		expect(approvalEvent?.type).toBe("tool-call-started");
 		expect(approvalEvent?.sessionId).toBe("s1");
-		expect(approvalEvent?.data).toMatchObject({ toolName: "read_file", approved: true });
+		expect(approvalEvent?.data).toMatchObject({
+			toolName: "read_file",
+			approved: true,
+		});
 		expect(denialEvent?.type).toBe("policy-denied");
 		expect(denialEvent?.sessionId).toBe("s1");
-		expect(denialEvent?.data).toMatchObject({ toolName: "write_to_file", approved: false });
+		expect(denialEvent?.data).toMatchObject({
+			toolName: "write_to_file",
+			approved: false,
+		});
 	});
 });
 
@@ -102,7 +119,12 @@ describe("CapabilityGrantRegistry", () => {
 
 	it("issues grants that are frozen at the capability boundary", () => {
 		const reg = new CapabilityGrantRegistry("/ws");
-		const grant = reg.issue("READ_ONLY_INSPECTION", { pathPrefixes: ["src"] }, 60_000, "frozen");
+		const grant = reg.issue(
+			"READ_ONLY_INSPECTION",
+			{ pathPrefixes: ["src"] },
+			60_000,
+			"frozen",
+		);
 		expect(Object.isFrozen(grant)).toBe(true);
 		expect(Object.isFrozen(grant.scope)).toBe(true);
 		expect(Object.isFrozen(grant.scope.pathPrefixes)).toBe(true);
@@ -121,8 +143,12 @@ describe("CapabilityGrantRegistry", () => {
 
 	it("refuses to issue mutating or terminal grants in Phase 1", () => {
 		const reg = new CapabilityGrantRegistry("/ws");
-		expect(() => reg.issue("MUTATING_FILE_WRITE", {}, 60_000, "nope")).toThrow(LensPortError);
-		expect(() => reg.issue("RESTRICTED_TERMINAL_COMMAND", {}, 60_000, "nope")).toThrow(LensPortError);
+		expect(() => reg.issue("MUTATING_FILE_WRITE", {}, 60_000, "nope")).toThrow(
+			LensPortError,
+		);
+		expect(() =>
+			reg.issue("RESTRICTED_TERMINAL_COMMAND", {}, 60_000, "nope"),
+		).toThrow(LensPortError);
 		try {
 			reg.issue("MUTATING_FILE_WRITE", {}, 60_000, "nope");
 		} catch (e) {
@@ -137,7 +163,9 @@ describe("CapabilityGrantRegistry", () => {
 		const future = Date.now() + 60_000;
 		reg.issue("READ_ONLY_INSPECTION", {}, 10, "short-lived");
 		// Simulate expiry: require with a clock past the grant's expiry.
-		expect(() => reg.require("READ_ONLY_INSPECTION", future)).toThrow(LensPortError);
+		expect(() => reg.require("READ_ONLY_INSPECTION", future)).toThrow(
+			LensPortError,
+		);
 		// The audit trail should show both a denial and an expiry record.
 		const kinds = reg.getAuditTrail().map((r) => r.kind);
 		expect(kinds).toContain("grant-denied");

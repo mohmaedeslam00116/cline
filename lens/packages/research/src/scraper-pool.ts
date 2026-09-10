@@ -28,7 +28,10 @@ export interface ScrapeResult {
 	readonly skipped: readonly SkippedPage[];
 }
 
-export type FetchLike = (url: string, signal?: AbortSignal) => Promise<Response>;
+export type FetchLike = (
+	url: string,
+	signal?: AbortSignal,
+) => Promise<Response>;
 
 export interface ScraperPoolOptions {
 	/** Max fetches in flight per batch. Default 3. */
@@ -51,7 +54,8 @@ export class ScraperPool {
 		this.concurrency = Math.max(1, options.concurrency ?? 3);
 		this.maxPageChars = Math.max(1, options.maxPageChars ?? 20_000);
 		this.fetchTimeoutMs = Math.max(1, options.fetchTimeoutMs ?? 10_000);
-		this.fetchImpl = options.fetchImpl ?? ((url, signal) => fetch(url, { signal }));
+		this.fetchImpl =
+			options.fetchImpl ?? ((url, signal) => fetch(url, { signal }));
 	}
 
 	/**
@@ -79,6 +83,9 @@ export class ScraperPool {
 			const settled = await Promise.allSettled(
 				batch.map((url) => this.fetchPage(url, signal)),
 			);
+			if (signal?.aborted) {
+				throw abortError();
+			}
 			for (let j = 0; j < batch.length; j++) {
 				const outcome = settled[j];
 				if (outcome?.status === "fulfilled") {
@@ -94,7 +101,10 @@ export class ScraperPool {
 		return { pages, skipped };
 	}
 
-	private async fetchPage(url: string, signal?: AbortSignal): Promise<FetchedPage> {
+	private async fetchPage(
+		url: string,
+		signal?: AbortSignal,
+	): Promise<FetchedPage> {
 		if (isBlockedUrl(url)) {
 			throw new Error("Blocked internal or non-HTTP URL");
 		}
@@ -107,7 +117,10 @@ export class ScraperPool {
 			if (!response.ok) {
 				throw new Error(`HTTP ${response.status}`);
 			}
-			const html = await response.text();
+			if (response.url && isBlockedUrl(response.url)) {
+				throw new Error("Redirected to blocked internal or non-HTTP URL");
+			}
+			const html = await this.readBoundedText(response);
 			const { title, text } = extractText(html);
 			return {
 				url,
@@ -119,6 +132,41 @@ export class ScraperPool {
 			clearTimeout(timer);
 			signal?.removeEventListener("abort", abortAll);
 		}
+	}
+
+	private async readBoundedText(response: Response): Promise<string> {
+		const maxBytes = Math.max(1024 * 1024, this.maxPageChars * 4);
+		if (!response.body) {
+			const text = await response.text();
+			return text.slice(0, maxBytes);
+		}
+		const reader = response.body.getReader();
+		const decoder = new TextDecoder();
+		let result = "";
+		let totalBytes = 0;
+		try {
+			while (true) {
+				const { done, value } = await reader.read();
+				if (done) break;
+				if (value) {
+					totalBytes += value.byteLength;
+					result += decoder.decode(value, { stream: true });
+					if (totalBytes >= maxBytes) {
+						await reader.cancel();
+						break;
+					}
+				}
+			}
+			result += decoder.decode();
+		} catch (err) {
+			try {
+				await reader.cancel();
+			} catch {
+				// ignore
+			}
+			throw err;
+		}
+		return result;
 	}
 }
 
@@ -144,6 +192,9 @@ function isBlockedUrl(urlString: string): boolean {
 		const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, "");
 		if (
 			host === "localhost" ||
+			host.endsWith(".localhost") ||
+			host.endsWith(".local") ||
+			host.endsWith(".internal") ||
 			host === "127.0.0.1" ||
 			host === "::1" ||
 			host === "0.0.0.0" ||
@@ -151,7 +202,11 @@ function isBlockedUrl(urlString: string): boolean {
 			host.startsWith("169.254.") ||
 			host.startsWith("10.") ||
 			host.startsWith("192.168.") ||
-			/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host)
+			/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host) ||
+			host.startsWith("fe80:") ||
+			host.startsWith("fc") ||
+			host.startsWith("fd") ||
+			host === "::"
 		) {
 			return true;
 		}
@@ -176,7 +231,9 @@ export function extractText(html: string): { title: string; text: string } {
 		.replace(/<script[\s\S]*?<\/script>/gi, " ")
 		.replace(/<style[\s\S]*?<\/style>/gi, " ")
 		.replace(/<[^>]+>/g, " ");
-	const text = decodeEntities(withoutHeadAndScripts).replace(/\s+/g, " ").trim();
+	const text = decodeEntities(withoutHeadAndScripts)
+		.replace(/\s+/g, " ")
+		.trim();
 	return { title, text };
 }
 

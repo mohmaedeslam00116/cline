@@ -84,6 +84,7 @@ export type ToolApprovalRequestItem = {
 	iteration?: number;
 	agentId?: string;
 	conversationId?: string;
+	checkpoint?: unknown;
 };
 
 export type PendingToolApproval = {

@@ -2,13 +2,14 @@ import { afterAll, describe, expect, it } from "bun:test";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { LensPortError } from "@lens/ports";
 import type { EvidenceBundle } from "@lens/ports";
 import { bundleDigestOf, EvidenceStore } from "./evidence-store.js";
 
 const tempDirs: string[] = [];
 afterAll(async () => {
-	await Promise.all(tempDirs.map((dir) => rm(dir, { recursive: true, force: true })));
+	await Promise.all(
+		tempDirs.map((dir) => rm(dir, { recursive: true, force: true })),
+	);
 });
 
 async function makeStore(): Promise<{ store: EvidenceStore; root: string }> {
@@ -20,6 +21,7 @@ async function makeStore(): Promise<{ store: EvidenceStore; root: string }> {
 const makeBundle = (topic: string, claims: string[]): EvidenceBundle => {
 	const createdAt = "2026-09-10T00:00:00.000Z";
 	const claimList = claims.map((statement, i) => ({
+		contentIsUntrusted: true as const,
 		claimId: `claim-${String(i + 1).padStart(4, "0")}`,
 		statement,
 		quotations: [`${statement} — quoted verbatim`],
@@ -75,6 +77,21 @@ describe("EvidenceStore", () => {
 		});
 	});
 
+	it("saveBundle rejects ADAPTER_FAILURE if metadata digest does not match recomputed digest", async () => {
+		const { store } = await makeStore();
+		const bundle = makeBundle("topic", ["claim one"]);
+		const corruptedBundle = {
+			...bundle,
+			metadata: {
+				...bundle.metadata,
+				digest: "0".repeat(64),
+			},
+		};
+		expect(store.saveBundle("sess", corruptedBundle)).rejects.toMatchObject({
+			code: "ADAPTER_FAILURE",
+		});
+	});
+
 	it("detects tampered bundle content via digest mismatch", async () => {
 		const { store, root } = await makeStore();
 		const bundle = makeBundle("topic", ["untampered claim"]);
@@ -90,9 +107,54 @@ describe("EvidenceStore", () => {
 		const parsed = JSON.parse(await readFile(filePath, "utf8")) as {
 			claims: { statement: string }[];
 		};
-		parsed.claims[0]!.statement = "TAMPERED";
+		const firstClaim = parsed.claims[0];
+		if (!firstClaim) {
+			throw new Error("Expected at least one claim in parsed bundle");
+		}
+		firstClaim.statement = "TAMPERED";
 		await writeFile(filePath, JSON.stringify(parsed));
-		expect(store.loadBundle("sess", bundle.metadata.digest)).rejects.toMatchObject({
+		expect(
+			store.loadBundle("sess", bundle.metadata.digest),
+		).rejects.toMatchObject({
+			code: "ADAPTER_FAILURE",
+		});
+	});
+
+	it("rejects malformed bundle schema on load", async () => {
+		const { store, root } = await makeStore();
+		const bundle = makeBundle("topic", ["claim"]);
+		await store.saveBundle("sess", bundle);
+		const filePath = path.join(
+			root,
+			".lens",
+			"sessions",
+			"sess",
+			"evidence",
+			`${bundle.metadata.digest}.json`,
+		);
+		// Overwrite with invalid schema (missing contentIsUntrusted)
+		await writeFile(filePath, JSON.stringify({ invalid: true }));
+		expect(
+			store.loadBundle("sess", bundle.metadata.digest),
+		).rejects.toMatchObject({
+			code: "ADAPTER_FAILURE",
+		});
+	});
+
+	it("throws ADAPTER_FAILURE on corrupted index.json manifest", async () => {
+		const { store, root } = await makeStore();
+		const bundle = makeBundle("topic", ["claim"]);
+		await store.saveBundle("sess", bundle);
+		const manifestPath = path.join(
+			root,
+			".lens",
+			"sessions",
+			"sess",
+			"evidence",
+			"index.json",
+		);
+		await writeFile(manifestPath, "not-valid-json");
+		expect(store.loadIndex("sess")).rejects.toMatchObject({
 			code: "ADAPTER_FAILURE",
 		});
 	});
@@ -115,6 +177,18 @@ describe("EvidenceStore", () => {
 		await store.saveBundle("sess", second);
 		const index = await store.loadIndex("sess");
 		expect(index.map((m) => m.topic)).toEqual(["first topic", "second topic"]);
+	});
+
+	it("handles concurrent bundle saves safely via session mutex", async () => {
+		const { store } = await makeStore();
+		const bundles = Array.from({ length: 5 }, (_, i) =>
+			makeBundle(`topic ${i}`, [`claim ${i}`]),
+		);
+		await Promise.all(
+			bundles.map((b) => store.saveBundle("sess-concurrent", b)),
+		);
+		const index = await store.loadIndex("sess-concurrent");
+		expect(index).toHaveLength(5);
 	});
 
 	it("returns an empty manifest for unknown sessions", async () => {

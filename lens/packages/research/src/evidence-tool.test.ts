@@ -27,7 +27,14 @@ describe("createGetEvidenceDetailExecutor", () => {
 
 	it("never throws: malformed input becomes an error payload", async () => {
 		const executor = createGetEvidenceDetailExecutor(deps);
-		for (const bad of [undefined, null, "text", {}, { bundleDigest: "a".repeat(64) }, 42]) {
+		for (const bad of [
+			undefined,
+			null,
+			"text",
+			{},
+			{ bundleDigest: "a".repeat(64) },
+			42,
+		]) {
 			const output = await executor(bad);
 			const parsed = JSON.parse(output) as { ok: boolean };
 			expect(parsed.ok).toBe(false);
@@ -40,7 +47,10 @@ describe("createGetEvidenceDetailExecutor", () => {
 				throw new LensPortError("EVIDENCE_NOT_FOUND", "no such claim");
 			},
 		});
-		const output = await executor({ bundleDigest: "a".repeat(64), claimId: "claim-0001" });
+		const output = await executor({
+			bundleDigest: "a".repeat(64),
+			claimId: "claim-0001",
+		});
 		const parsed = JSON.parse(output) as {
 			ok: boolean;
 			error: { code: string; message: string };
@@ -56,7 +66,10 @@ describe("createGetEvidenceDetailExecutor", () => {
 				throw new Error("disk exploded");
 			},
 		});
-		const output = await executor({ bundleDigest: "a".repeat(64), claimId: "claim-0001" });
+		const output = await executor({
+			bundleDigest: "a".repeat(64),
+			claimId: "claim-0001",
+		});
 		const parsed = JSON.parse(output) as {
 			ok: boolean;
 			error: { code: string };

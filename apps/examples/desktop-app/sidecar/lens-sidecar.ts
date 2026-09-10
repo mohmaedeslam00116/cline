@@ -16,6 +16,8 @@
  *   bundles under `<workspace>/.lens/sessions/<sessionId>/evidence/`
  *   (ADR-0002).
  */
+import { existsSync } from "node:fs";
+import path from "node:path";
 import type { AgentTool, RuntimeCapabilities } from "@cline/core";
 import {
 	CapabilityGrantRegistry,
@@ -116,7 +118,7 @@ function decideAndRecord(
 			sessionId,
 			toolCallId: request.toolCallId ?? "",
 			toolName: request.toolName,
-			reason: decision.reason,
+			reason: `[LENS policy] ${decision.reason}`,
 		});
 	}
 	return decision;
@@ -254,7 +256,7 @@ export function detachLensSession(
 	sessionMap(ctx).delete(sessionId);
 }
 
-/** Resolve a session's LENS state, or null when LENS is disabled or not attached. */
+/** Resolve a session's LENS state, or null when LENS is disabled. Auto-reconstructs state for completed/historical sessions if persisted on disk. */
 export function getLensSessionState(
 	ctx: SidecarContext,
 	sessionId: string,
@@ -262,7 +264,23 @@ export function getLensSessionState(
 	if (!isLensModeEnabled()) {
 		return null;
 	}
-	return sessionMap(ctx).get(sessionId) ?? null;
+	let state = sessionMap(ctx).get(sessionId);
+	if (!state && sessionId && sessionId.trim().length > 0) {
+		const sessionDir = path.join(
+			ctx.workspaceRoot,
+			".lens",
+			"sessions",
+			sessionId.trim(),
+		);
+		if (existsSync(sessionDir)) {
+			try {
+				state = attachLensSession(ctx, sessionId.trim());
+			} catch {
+				return null;
+			}
+		}
+	}
+	return state ?? null;
 }
 
 /**
@@ -291,8 +309,8 @@ const defaultCandidateUrlProvider: CandidateUrlProvider = async (
 		const html = await response.text();
 		const urls = new Set<string>();
 		const pattern = /uddg=([^"&]+)/g;
-		let match: RegExpExecArray | null;
-		while ((match = pattern.exec(html)) !== null && urls.size < budget * 3) {
+		let match = pattern.exec(html);
+		while (match !== null && urls.size < budget * 3) {
 			try {
 				const url = decodeURIComponent(match[1] as string);
 				if (url.startsWith("http")) {
@@ -301,6 +319,7 @@ const defaultCandidateUrlProvider: CandidateUrlProvider = async (
 			} catch {
 				// malformed redirect target — skip
 			}
+			match = pattern.exec(html);
 		}
 		return [...urls].slice(0, Math.max(1, budget));
 	} catch {

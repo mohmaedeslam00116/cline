@@ -47,6 +47,20 @@ function makeRecordedContext(workspaceRoot = "/"): {
 	return { ctx, events };
 }
 
+async function waitForEvent(
+	events: { name: string; payload: unknown }[],
+	name: string,
+	timeoutMs = 2000,
+): Promise<{ name: string; payload: unknown }> {
+	const start = Date.now();
+	while (Date.now() - start < timeoutMs) {
+		const found = events.find((e) => e.name === name);
+		if (found) return found;
+		await new Promise((resolve) => setTimeout(resolve, 10));
+	}
+	throw new Error(`Timed out waiting for event "${name}"`);
+}
+
 const approvalRequest = (toolName: string, toolCallId = "call-1") =>
 	({
 		sessionId: "sess-lens",
@@ -98,8 +112,8 @@ describe("lens-sidecar wiring", () => {
 		expect(denial?.reason).toContain("[LENS policy]");
 
 		// The DoD: the denial is observable on the transport.
-		await new Promise((resolve) => setTimeout(resolve, 20));
-		expect(events).toContainEqual(
+		const deniedEvent = await waitForEvent(events, "lens_policy_denied");
+		expect(deniedEvent).toEqual(
 			expect.objectContaining({
 				name: "lens_policy_denied",
 				payload: expect.objectContaining({

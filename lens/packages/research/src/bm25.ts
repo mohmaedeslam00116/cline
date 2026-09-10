@@ -87,5 +87,9 @@ export class Bm25Index {
 
 /** Lowercase alphanumeric word tokens (length >= 2, Unicode-aware for Arabic/English parity). */
 export function tokenize(text: string): string[] {
-	return text.toLowerCase().match(/[\p{Letter}\p{Number}]{2,}/gu) ?? [];
+	const stripped = text
+		.normalize("NFC")
+		.replace(/[\u064B-\u065F\u0670]/gu, "")
+		.replace(/[\u0300-\u036F]/gu, "");
+	return stripped.toLowerCase().match(/[\p{Letter}\p{Number}]{2,}/gu) ?? [];
 }

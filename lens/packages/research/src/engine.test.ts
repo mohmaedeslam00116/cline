@@ -22,7 +22,11 @@ type FetchStub = (url: string, signal?: AbortSignal) => Promise<Response>;
 async function makeEngine(options?: {
 	fetchImpl?: FetchStub;
 	urls?: string[];
-}): Promise<{ engine: LensResearchEngine; store: EvidenceStore; sessionId: string }> {
+}): Promise<{
+	engine: LensResearchEngine;
+	store: EvidenceStore;
+	sessionId: string;
+}> {
 	const root = await mkdtemp(path.join(tmpdir(), "lens-engine-"));
 	tempDirs.push(root);
 	const store = new EvidenceStore({ workspaceRoot: root });
@@ -32,7 +36,9 @@ async function makeEngine(options?: {
 		store,
 		scraper: options?.fetchImpl
 			? new ScraperPool({ fetchImpl: options.fetchImpl })
-			: new ScraperPool({ fetchImpl: async () => new Response("", { status: 200 }) }),
+			: new ScraperPool({
+					fetchImpl: async () => new Response("", { status: 200 }),
+				}),
 		candidateUrlProvider: () => options?.urls ?? ["https://example.com/one"],
 		now: () => new Date("2026-09-10T12:00:00.000Z"),
 	});
@@ -49,7 +55,10 @@ describe("LensResearchEngine.queryResearch", () => {
 	it("produces a verified, content-addressed bundle with untrusted marker", async () => {
 		const { engine, store, sessionId } = await makeEngine({
 			fetchImpl: async () =>
-				html("Rust Guide", "Rust ownership prevents data races at compile time."),
+				html(
+					"Rust Guide",
+					"Rust ownership prevents data races at compile time.",
+				),
 		});
 		const bundle = await engine.queryResearch("rust ownership", 3);
 		expect(bundle.contentIsUntrusted).toBe(true);
@@ -62,9 +71,14 @@ describe("LensResearchEngine.queryResearch", () => {
 	});
 
 	it("is reproducible: same content in, same digest out", async () => {
-		const page = html("Stable Doc", "Consistent body text for hashing. Deterministic pipelines matter.");
+		const page = html(
+			"Stable Doc",
+			"Consistent body text for hashing. Deterministic pipelines matter.",
+		);
 		const run = async () => {
-			const { engine } = await makeEngine({ fetchImpl: async () => page.clone() });
+			const { engine } = await makeEngine({
+				fetchImpl: async () => page.clone(),
+			});
 			return (await engine.queryResearch("deterministic", 1)).metadata.digest;
 		};
 		expect(await run()).toBe(await run());
@@ -120,7 +134,10 @@ describe("LensResearchEngine citation surface", () => {
 			fetchImpl: async () => html("Doc", "Facts live here for citation."),
 		});
 		const bundle = await engine.queryResearch("facts", 1);
-		const claim = bundle.claims[0]!;
+		const claim = bundle.claims[0];
+		if (!claim) {
+			throw new Error("Expected at least one claim");
+		}
 		const excerpt = await engine.getCitationExcerpt(
 			bundle.metadata.digest,
 			claim.claimId,

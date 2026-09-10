@@ -31,7 +31,10 @@ describe("Bm25Index", () => {
 		index.add(
 			{ id: "d1", text: "Rust borrow checker prevents data races" },
 			{ id: "d2", text: "Python list comprehensions are concise" },
-			{ id: "d3", text: "The borrow checker in Rust also prevents use after free" },
+			{
+				id: "d3",
+				text: "The borrow checker in Rust also prevents use after free",
+			},
 		);
 		const hits = index.search("rust borrow checker", 3);
 		expect(hits.length).toBeGreaterThan(0);
@@ -89,5 +92,18 @@ describe("Bm25Index", () => {
 		expect(hits.length).toBeGreaterThan(0);
 		expect(hits[0]?.id).toBe("ar1");
 		expect(hits.map((h) => h.id)).not.toContain("ar2");
+	});
+
+	it("matches vocalized Arabic document against unvocalized query by stripping diacritics", () => {
+		const index = new Bm25Index();
+		// Document with full vocalization (tashkeel / diacritics)
+		index.add(
+			{ id: "vocalized", text: "نَظْرَةٌ أَعْمَقُ. فَهْمٌ أَوْضَحُ." },
+			{ id: "other", text: "تَطْوِيرُ الْبَرْمَجِيَّاتِ" },
+		);
+		// Unvocalized search query
+		const hits = index.search("نظرة أعمق", 5);
+		expect(hits.length).toBe(1);
+		expect(hits[0]?.id).toBe("vocalized");
 	});
 });

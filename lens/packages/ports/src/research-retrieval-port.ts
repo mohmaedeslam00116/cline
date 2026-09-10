@@ -62,9 +62,16 @@ export interface ResearchRetrievalPort {
 	 * Run a research pass and persist its bundle to the Evidence Store.
 	 * `budget` bounds the pass (adapters map it to fetch count / time).
 	 */
-	queryResearch(topic: string, budget: number, signal?: AbortSignal): Promise<EvidenceBundle>;
+	queryResearch(
+		topic: string,
+		budget: number,
+		signal?: AbortSignal,
+	): Promise<EvidenceBundle>;
 	/** Fetch one claim's full excerpt on demand (stratified on-demand claims). */
-	getCitationExcerpt(bundleDigest: string, claimId: string): Promise<VerifiedExcerpt>;
+	getCitationExcerpt(
+		bundleDigest: string,
+		claimId: string,
+	): Promise<VerifiedExcerpt>;
 	/** Load the current bundle index for a session (the Claims Index source). */
 	listBundles(sessionId: string): Promise<readonly EvidenceBundleMetadata[]>;
 	/** Load one full bundle by digest (verification-friendly). */
@@ -72,4 +79,7 @@ export interface ResearchRetrievalPort {
 }
 
 /** Error codes this port rejects with (subset contract for adapters). */
-export type ResearchRetrievalError = Extract<LensErrorCode, "EVIDENCE_NOT_FOUND" | "POLICY_DENIED" | "CANCELLED" | "ADAPTER_FAILURE">;
+export type ResearchRetrievalError = Extract<
+	LensErrorCode,
+	"EVIDENCE_NOT_FOUND" | "POLICY_DENIED" | "CANCELLED" | "ADAPTER_FAILURE"
+>;

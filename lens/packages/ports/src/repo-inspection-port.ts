@@ -41,7 +41,11 @@ export interface SearchResult {
 export interface RepoInspectionPort {
 	listFiles(relativeDir: string, signal?: AbortSignal): Promise<FileInfo[]>;
 	readFile(relativePath: string, signal?: AbortSignal): Promise<string>;
-	searchFiles(query: string, options?: SearchOptions, signal?: AbortSignal): Promise<SearchResult[]>;
+	searchFiles(
+		query: string,
+		options?: SearchOptions,
+		signal?: AbortSignal,
+	): Promise<SearchResult[]>;
 	/**
 	 * Cryptographic digest of the workspace's clean state, used to detect
 	 * out-of-band developer edits (LENS `RepoSnapshotHash`). Two calls with
