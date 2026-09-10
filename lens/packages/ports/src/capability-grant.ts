@@ -18,28 +18,53 @@ export type CapabilityType = (typeof CAPABILITY_TYPES)[number];
 
 export interface CapabilityGrant {
 	/** Unique grant id (opaque). */
-	grantId: string;
+	readonly grantId: string;
 	/** Which capability this grant authorizes. */
-	capability: CapabilityType;
+	readonly capability: CapabilityType;
 	/** Exact scope of the authorization, interpreted by the policy layer. */
-	scope: {
+	readonly scope: {
 		/** Absolute canonical workspace root the grant is bound to. */
-		workspaceRoot: string;
+		readonly workspaceRoot: string;
 		/** Optional narrower path prefixes (relative, POSIX-style) the grant covers. */
-		pathPrefixes?: string[];
+		readonly pathPrefixes?: readonly string[];
 		/** For RESTRICTED_TERMINAL_COMMAND: the single allowed executable. */
-		executable?: string;
+		readonly executable?: string;
 		/** For RESTRICTED_TERMINAL_COMMAND: allowed structured argument templates. */
-		argumentTemplates?: string[][];
+		readonly argumentTemplates?: readonly (readonly string[])[];
 	};
 	/** Epoch milliseconds — the grant is invalid past this instant. */
-	expiresAt: number;
+	readonly expiresAt: number;
 	/** Human-readable justification recorded in the audit trail. */
-	reason: string;
+	readonly reason: string;
 }
 
 export function isCapabilityType(value: unknown): value is CapabilityType {
 	return typeof value === "string" && (CAPABILITY_TYPES as readonly string[]).includes(value);
+}
+
+/**
+ * Deep-frozen copy made at the capability boundary (ADR-0003): once issued,
+ * no caller can reassign capability, expiry, or nested scope data.
+ */
+export function freezeGrant(grant: CapabilityGrant): CapabilityGrant {
+	return Object.freeze({
+		...grant,
+		scope: Object.freeze({
+			...grant.scope,
+			...(grant.scope.pathPrefixes
+				? { pathPrefixes: Object.freeze([...grant.scope.pathPrefixes]) }
+				: {}),
+			...(grant.scope.argumentTemplates
+				? {
+						argumentTemplates: Object.freeze(
+							grant.scope.argumentTemplates.map((template) =>
+								Object.freeze([...template]),
+							),
+						)
+					}
+				: {}),
+		}),
+	}) as CapabilityGrant;
 }
 
 /** True when the grant covers `capability` and has not expired. Time-bound checks are the caller's clock. */
