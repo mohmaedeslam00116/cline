@@ -85,7 +85,7 @@ export class Bm25Index {
 	}
 }
 
-/** Lowercase alphanumeric word tokens (length >= 2). */
+/** Lowercase alphanumeric word tokens (length >= 2, Unicode-aware for Arabic/English parity). */
 export function tokenize(text: string): string[] {
-	return text.toLowerCase().match(/[a-z0-9]{2,}/g) ?? [];
+	return text.toLowerCase().match(/[\p{Letter}\p{Number}]{2,}/gu) ?? [];
 }

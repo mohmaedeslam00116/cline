@@ -11,6 +11,15 @@ describe("tokenize", () => {
 		]);
 	});
 
+	it("handles Arabic words properly for Arabic/English parity", () => {
+		expect(tokenize("نظرة أعمق. فهم أوضح.")).toEqual([
+			"نظرة",
+			"أعمق",
+			"فهم",
+			"أوضح",
+		]);
+	});
+
 	it("returns no tokens for punctuation-only input", () => {
 		expect(tokenize("!? ... ---")).toEqual([]);
 	});
@@ -67,5 +76,18 @@ describe("Bm25Index", () => {
 		index.add({ id: "d1", text: "hello world" });
 		index.add({ id: "d1", text: "hello world hello world" });
 		expect(index.size).toBe(1);
+	});
+
+	it("indexes and ranks Arabic documents correctly", () => {
+		const index = new Bm25Index();
+		index.add(
+			{ id: "ar1", text: "نظرة أعمق في هيكلية الأمان والتحقق من الصلاحيات" },
+			{ id: "ar2", text: "تصميم واجهة المستخدم وتجربة الاستخدام العامة" },
+			{ id: "ar3", text: "نظرة عامة على محرك البحث والأدلة البرمجية" },
+		);
+		const hits = index.search("نظرة أعمق", 3);
+		expect(hits.length).toBeGreaterThan(0);
+		expect(hits[0]?.id).toBe("ar1");
+		expect(hits.map((h) => h.id)).not.toContain("ar2");
 	});
 });
