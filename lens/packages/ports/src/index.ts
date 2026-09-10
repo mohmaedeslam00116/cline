@@ -5,6 +5,7 @@ export {
 	CAPABILITY_TYPES,
 	isCapabilityType,
 	isActiveGrant,
+	freezeGrant,
 } from "./capability-grant.js";
 export type { CapabilityType, CapabilityGrant } from "./capability-grant.js";
 
