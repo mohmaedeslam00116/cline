@@ -19,7 +19,7 @@ export interface UntrustedContent {
 	readonly contentIsUntrusted: true;
 }
 
-export interface VerifiedClaim {
+export interface VerifiedClaim extends UntrustedContent {
 	/** Stable claim id within the bundle (e.g. `claim-0007`). */
 	readonly claimId: string;
 	/** The distilled, self-contained statement of the claim. */
