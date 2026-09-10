@@ -172,6 +172,9 @@ export class LensResearchEngine implements ResearchRetrievalPort {
 				throw new LensPortError("ADAPTER_FAILURE", "BM25 returned an unknown passage id");
 			}
 			return {
+				// Untrusted-content marker: research output informs the loop,
+				// never authorizes it (ports contract).
+				contentIsUntrusted: true,
 				claimId: `claim-${String(i + 1).padStart(4, "0")}`,
 				statement: distillStatement(passage.text),
 				quotations: [passage.text.slice(0, QUOTATION_CHARS)],
