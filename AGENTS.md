@@ -42,6 +42,7 @@ Bun **1.3.13** (package manager + task runner) with **Node >=22** as the runtime
 
 ### Pull requests & review
 - **Never push directly to `main`.** Create pull requests with `gh pr create`. Every PR must undergo CodeRabbit review; all review threads, security flags, and correctness findings must be resolved before merging.
+- **Manual merge only — the user merges every PR themselves.** AI agents must NEVER merge PRs (no `gh pr merge`, no admin-merge, no auto-merge, no merge buttons of any kind), and must never ask to have a merge performed on their behalf. Agents may open PRs, push branches, and comment; the merge action is exclusively the user's.
 
 ### Changelog & releases
 - Maintain `CHANGELOG.md` following Keep a Changelog standards. Classify version increments with Semantic Versioning (`MAJOR.MINOR.PATCH`). Publish a GitHub Release for every version bump.
