@@ -4,7 +4,7 @@
  * the audit trail is append-only so every grant decision is traceable.
  */
 import type { CapabilityGrant, CapabilityType, TelemetryPort } from "@lens/ports";
-import { isActiveGrant, LensPortError } from "@lens/ports";
+import { freezeGrant, isActiveGrant, LensPortError } from "@lens/ports";
 
 export interface AuditRecord {
 	readonly seq: number;
@@ -36,13 +36,21 @@ export class CapabilityGrantRegistry {
 		if (capability !== "READ_ONLY_INSPECTION") {
 			throw new LensPortError("POLICY_DENIED", `Phase 1 forbids issuing ${capability} grants (read-only containment)`);
 		}
-		const grant: CapabilityGrant = {
+		// Fail-closed TTL validation: non-finite, zero, and negative lifetimes
+		// would otherwise mint non-expiring grants (Infinity passes any
+		// isActiveGrant clock comparison).
+		if (!Number.isFinite(ttlMs) || ttlMs <= 0) {
+			throw new LensPortError("POLICY_DENIED", `grant ttl must be a finite, positive number of ms (got ${String(ttlMs)})`);
+		}
+		// Spread caller scope FIRST so a hostile caller cannot override the
+		// registry-bound workspaceRoot; the fixed root wins.
+		const grant: CapabilityGrant = freezeGrant({
 			grantId: `grant-${++this.seq}`,
 			capability,
-			scope: { workspaceRoot: this.workspaceRoot, ...scope },
+			scope: { ...scope, workspaceRoot: this.workspaceRoot },
 			expiresAt: Date.now() + ttlMs,
 			reason,
-		};
+		});
 		this.grants.set(grant.grantId, grant);
 		this.audit("grant-issued", capability, `issued ${grant.grantId} ttl=${ttlMs}ms: ${reason}`);
 		return grant;
@@ -66,9 +74,9 @@ export class CapabilityGrantRegistry {
 		return [...this.grants.values()].filter((g) => isActiveGrant(g, g.capability, nowMs));
 	}
 
-	/** Append-only audit trail. */
+	/** Append-only audit trail, cloned per call: callers cannot mutate records or observe later appends. */
 	getAuditTrail(): readonly AuditRecord[] {
-		return this.auditTrail;
+		return this.auditTrail.map((record) => ({ ...record }));
 	}
 
 	private audit(kind: AuditRecord["kind"], capability: CapabilityType, detail: string): void {

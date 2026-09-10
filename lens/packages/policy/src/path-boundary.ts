@@ -48,8 +48,13 @@ export function resolveSafePath(workspaceRoot: string, relativePath: string): Re
 		throw new LensPortError("SECURITY_ACCESS_DENIED", "null byte in path");
 	}
 	if (relativePath.length === 0) {
-		// The root itself is a valid read target (directory listing root).
-		const root = workspaceRoot.replace(/[\\/]+$/, "");
+		// The root itself is a valid read target. Preserve the root separator:
+		// POSIX "/" must stay "/", and "C:\" must not degrade to the
+		// drive-relative "C:".
+		const stripped = workspaceRoot.replace(/[\\/]+$/, "");
+		const root = stripped.length === 0 || /^[a-zA-Z]:$/.test(stripped)
+			? workspaceRoot
+			: stripped;
 		return { workspaceRoot: root, relativePath: "", absolutePath: root };
 	}
 	if (relativePath.startsWith("/") || relativePath.startsWith("\\") || isDriveAbsolute(relativePath)) {
