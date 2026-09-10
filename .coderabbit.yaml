@@ -5,9 +5,9 @@
 language: "en-US"
 early_access: true
 tone_instructions: >
-  Exacting security-focused architect review: enforce least-privilege
-  boundaries, prompt-injection defense, atomic reversible changes,
-  zero-leak process sandboxing, bilingual EN/AR parity.
+  Full-stack review: backend correctness (logic, async error paths, resource
+  cleanup), UI defects (state, rendering, a11y, RTL), security boundaries,
+  type safety. Precise, actionable findings.
 
 reviews:
   profile: "chill"
@@ -91,16 +91,31 @@ reviews:
         3. Keep changes additive where possible so upstream merges of the Cline desktop app
            remain routine.
 
-    - path: "apps/examples/desktop-app/src/**"
+    - path: "apps/examples/desktop-app/webview/**"
       instructions: >
-        Desktop Workstation UI (Next.js webview):
-        1. Adhere to monochrome neutral palette (#111111 / #161616 / #1E1E1E) and clean typography.
+        Desktop Workstation UI (Next.js webview) — hunt UI defects:
+        1. Runtime correctness: unhandled promise rejections, missing loading/empty/error
+           states, broken state transitions, race conditions in effects and subscriptions,
+           memory leaks from uncleared listeners/timers.
         2. Visual Provenance: ensure all external research claims are visibly badged as
-           '[External Evidence - Untrusted]'.
-        3. Traceability: verify click-through links from proposed code diffs directly to the
-           supporting evidence excerpt.
-        4. Support bilingual parity (Arabic & English) with seamless LTR/RTL layout support
-           (Inter & Cairo fonts).
+           '[External Evidence - Untrusted]'; verify click-through from diffs to evidence.
+        3. Adhere to monochrome neutral palette (#111111 / #161616 / #1E1E1E) and clean typography.
+        4. Bilingual parity (Arabic & English): seamless LTR/RTL layout, no hardcoded
+           direction or untranslated strings (Inter & Cairo fonts).
+        5. Accessibility: keyboard navigation, focus management, contrast, ARIA correctness.
+
+    - path: "apps/examples/desktop-app/sidecar/**"
+      instructions: >
+        Sidecar backend (Bun) — hunt backend defects:
+        1. Correctness: unhandled promise rejections, swallowed errors, missing error
+           propagation to the transport, incorrect async sequencing, off-by-one/boundary bugs.
+        2. Resource safety: unclosed sockets/streams/files, missing cleanup on disconnect,
+           process/thread leaks, unbounded buffers or caches.
+        3. Boundary validation: validate every transport message and IPC input (types, size,
+           shape) before use — the sidecar is the privileged boundary; reject malformed input
+           explicitly.
+        4. Session handling: approval-token checks, session-state transitions, and reconnect
+           recovery must be race-free.
 
     - path: "docs/adr/**"
       instructions: >
