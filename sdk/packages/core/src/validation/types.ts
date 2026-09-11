@@ -17,6 +17,8 @@ export interface ValidatorDefinition {
 	args?: string[];
 	/** Optional per-validator timeout override in milliseconds */
 	timeoutMs?: number;
+	/** If true, this validator operates on the whole project (e.g. tsc, cargo) and should not receive a file argument. Default: false (file-scoped). */
+	wholeProject?: boolean;
 }
 
 export interface ValidationDiagnostic {
@@ -77,4 +79,6 @@ export interface PostEditValidationOptions
 	cwd?: string;
 	logger?: BasicLogger;
 	telemetry?: ITelemetryService;
+	/** Maximum total time in milliseconds for all validators across all files in a single hook invocation (default: 60000). */
+	aggregateTimeoutMs?: number;
 }

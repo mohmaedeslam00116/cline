@@ -8,6 +8,9 @@ import { existsSync } from "node:fs";
 import { extname, join } from "node:path";
 import type { ValidatorDefinition } from "./types";
 
+/** Longer timeout for project-wide validators (tsc, cargo) — 30 seconds. */
+const PROJECT_WIDE_TIMEOUT_MS = 30_000;
+
 export function detectWorkspaceValidators(
 	workspaceRoot: string,
 ): ValidatorDefinition[] {
@@ -36,7 +39,7 @@ export function detectWorkspaceValidators(
 		});
 	}
 
-	// 2. TypeScript compiler detection
+	// 2. TypeScript compiler detection (project-wide)
 	const hasTsConfig = existsSync(join(workspaceRoot, "tsconfig.json"));
 	if (hasTsConfig) {
 		validators.push({
@@ -44,6 +47,8 @@ export function detectWorkspaceValidators(
 			fileExtensions: [".ts", ".tsx"],
 			command: "tsc",
 			args: ["--noEmit", "--pretty", "false"],
+			wholeProject: true,
+			timeoutMs: PROJECT_WIDE_TIMEOUT_MS,
 		});
 	}
 
@@ -97,7 +102,7 @@ export function detectWorkspaceValidators(
 		}
 	}
 
-	// 5. Rust detection
+	// 5. Rust detection (project-wide)
 	const hasCargo = existsSync(join(workspaceRoot, "Cargo.toml"));
 	if (hasCargo) {
 		validators.push({
@@ -105,17 +110,21 @@ export function detectWorkspaceValidators(
 			fileExtensions: [".rs"],
 			command: "cargo",
 			args: ["check"],
+			wholeProject: true,
+			timeoutMs: PROJECT_WIDE_TIMEOUT_MS,
 		});
 	}
 
-	// 6. Go detection
+	// 6. Go detection (project-wide via ./...)
 	const hasGoMod = existsSync(join(workspaceRoot, "go.mod"));
 	if (hasGoMod) {
 		validators.push({
 			name: "go",
 			fileExtensions: [".go"],
 			command: "go",
-			args: ["vet", "{file}"],
+			args: ["vet", "./..."],
+			wholeProject: true,
+			timeoutMs: PROJECT_WIDE_TIMEOUT_MS,
 		});
 	}
 

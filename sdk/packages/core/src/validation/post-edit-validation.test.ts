@@ -220,10 +220,23 @@ describe("detectWorkspaceValidators and findValidatorsForFile", () => {
 		expect(matching.length).toBeGreaterThan(0);
 	});
 
-	it("detects Cargo when Cargo.toml exists", () => {
+	it("detects Cargo when Cargo.toml exists as wholeProject", () => {
 		writeFileSync(join(testDir, "Cargo.toml"), "");
 		const validators = detectWorkspaceValidators(testDir);
-		expect(validators.some((v) => v.name === "cargo")).toBe(true);
+		const cargo = validators.find((v) => v.name === "cargo");
+		expect(cargo).toBeDefined();
+		expect(cargo?.wholeProject).toBe(true);
+		expect(cargo?.timeoutMs).toBe(30_000);
+	});
+
+	it("detects Go when go.mod exists as wholeProject with vet ./...", () => {
+		writeFileSync(join(testDir, "go.mod"), "module test\n\ngo 1.22\n");
+		const validators = detectWorkspaceValidators(testDir);
+		const goValidator = validators.find((v) => v.name === "go");
+		expect(goValidator).toBeDefined();
+		expect(goValidator?.wholeProject).toBe(true);
+		expect(goValidator?.args).toEqual(["vet", "./..."]);
+		expect(goValidator?.timeoutMs).toBe(30_000);
 	});
 
 	it("returns empty array for files with unknown extensions", () => {
@@ -481,6 +494,135 @@ describe("createPostEditValidationHooks", () => {
 		);
 
 		expect(result).toBeUndefined();
+	});
+
+	it("skips files that escape the workspace (path traversal protection)", async () => {
+		const mockRunner = vi.fn();
+		const hooks = createPostEditValidationHooks({
+			cwd: testDir,
+			validators: [
+				{
+					name: "test-linter",
+					fileExtensions: [".ts"],
+					command: "test-linter",
+				},
+			],
+			autoDetect: false,
+			runner: mockRunner,
+		});
+
+		// 1. Path with ../ escaping cwd
+		const resultTraversal = await hooks.afterTool?.(
+			makeAfterToolContext({
+				toolName: "editor",
+				input: { path: "../outside.ts" },
+			}),
+		);
+		expect(resultTraversal).toBeUndefined();
+		expect(mockRunner).not.toHaveBeenCalled();
+
+		// 2. Absolute path outside cwd
+		const resultAbsolute = await hooks.afterTool?.(
+			makeAfterToolContext({
+				toolName: "editor",
+				input: { path: "/etc/passwd" },
+			}),
+		);
+		expect(resultAbsolute).toBeUndefined();
+		expect(mockRunner).not.toHaveBeenCalled();
+	});
+
+	it("runs wholeProject validators only once across multiple modified files", async () => {
+		const fileA = join(testDir, "fileA.ts");
+		const fileB = join(testDir, "fileB.ts");
+		writeFileSync(fileA, "export const a = 1;");
+		writeFileSync(fileB, "export const b = 2;");
+
+		const mockRunner: PostEditValidationRunner = vi.fn(async () => ({
+			exitCode: 0,
+			stdout: "",
+			stderr: "",
+		}));
+
+		const hooks = createPostEditValidationHooks({
+			cwd: testDir,
+			validators: [
+				{
+					name: "tsc",
+					fileExtensions: [".ts"],
+					command: "tsc",
+					wholeProject: true,
+				},
+			],
+			autoDetect: false,
+			runner: mockRunner,
+		});
+
+		const patch = `*** Begin Patch
+*** Update File: fileA.ts
+@@ -1 +1 @@
+-export const a = 1;
++export const a = 2;
+*** Update File: fileB.ts
+@@ -1 +1 @@
+-export const b = 2;
++export const b = 3;
+*** End Patch`;
+
+		await hooks.afterTool?.(
+			makeAfterToolContext({
+				toolName: "apply_patch",
+				input: patch,
+			}),
+		);
+
+		// tsc has wholeProject: true, so it must run only ONCE, not twice
+		expect(mockRunner).toHaveBeenCalledTimes(1);
+		expect(mockRunner).toHaveBeenCalledWith(
+			"tsc",
+			[],
+			expect.objectContaining({ cwd: testDir }),
+		);
+	});
+
+	it("enforces MAX_FILES_PER_INVOCATION cap of 10 files", async () => {
+		const mockRunner: PostEditValidationRunner = vi.fn(async () => ({
+			exitCode: 0,
+			stdout: "",
+			stderr: "",
+		}));
+
+		const hooks = createPostEditValidationHooks({
+			cwd: testDir,
+			validators: [
+				{
+					name: "linter",
+					fileExtensions: [".ts"],
+					command: "linter",
+				},
+			],
+			autoDetect: false,
+			runner: mockRunner,
+		});
+
+		// Create 12 test files
+		let patch = "*** Begin Patch\n";
+		for (let i = 0; i < 12; i++) {
+			const f = join(testDir, `file${i}.ts`);
+			writeFileSync(f, `export const x${i} = ${i};`);
+			patch += `*** Update File: file${i}.ts\n@@ -1 +1 @@\n-1\n+2\n`;
+		}
+		patch += "*** End Patch";
+
+		await hooks.afterTool?.(
+			makeAfterToolContext({
+				toolName: "apply_patch",
+				input: patch,
+			}),
+		);
+
+		// Cap is 10 files
+		expect(mockRunner).toHaveBeenCalledTimes(10);
 	});
 
 	it("creates AgentExtension with manifest and afterTool hook", () => {

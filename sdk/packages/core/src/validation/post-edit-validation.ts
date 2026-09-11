@@ -29,6 +29,12 @@ import type {
 
 export const POST_EDIT_VALIDATION_EXTENSION_NAME = "core.post-edit-validation";
 
+/** Maximum number of files to validate per hook invocation. */
+const MAX_FILES_PER_INVOCATION = 10;
+
+/** Default aggregate time budget for the entire validation loop (60 seconds). */
+const DEFAULT_AGGREGATE_TIMEOUT_MS = 60_000;
+
 /**
  * Extract modified file paths from an `editor` tool call input.
  */
@@ -113,6 +119,25 @@ export function formatValidationDiagnostics(
 }
 
 /**
+ * Verify that a file path is contained within the workspace (cwd).
+ * Returns the normalized relative path or null if the path escapes the workspace.
+ */
+function validatePathWithinWorkspace(
+	rawFile: string,
+	cwd: string,
+): { fullPath: string; relPath: string } | null {
+	const fullPath = isAbsolute(rawFile) ? rawFile : resolve(cwd, rawFile);
+	const relPath = relative(cwd, fullPath).replace(/\\/g, "/");
+
+	// Reject paths that escape the workspace
+	if (relPath.startsWith("..") || isAbsolute(relPath)) {
+		return null;
+	}
+
+	return { fullPath, relPath };
+}
+
+/**
  * Create runtime hooks for post-edit validation.
  */
 export function createPostEditValidationHooks(
@@ -177,10 +202,35 @@ export function createPostEditValidationHooks(
 			}
 
 			const diagnostics: ValidationDiagnostic[] = [];
+			const aggregateDeadline =
+				Date.now() +
+				(options.aggregateTimeoutMs ?? DEFAULT_AGGREGATE_TIMEOUT_MS);
 
-			for (const rawFile of rawFiles) {
-				const fullPath = isAbsolute(rawFile) ? rawFile : resolve(cwd, rawFile);
-				const relPath = relative(cwd, fullPath).replace(/\\/g, "/");
+			// Track which project-wide validators have already been run (once per invocation)
+			const projectWideRan = new Set<string>();
+
+			// Enforce max files cap
+			const filesToValidate = rawFiles.slice(0, MAX_FILES_PER_INVOCATION);
+
+			for (const rawFile of filesToValidate) {
+				// Aggregate time budget check
+				if (Date.now() >= aggregateDeadline) {
+					logger?.log?.(
+						"[post-edit-validation] Aggregate time budget exceeded; stopping further validation.",
+					);
+					break;
+				}
+
+				// Path traversal protection
+				const validated = validatePathWithinWorkspace(rawFile, cwd);
+				if (!validated) {
+					logger?.log?.(
+						`[post-edit-validation] Skipping file outside workspace: ${rawFile}`,
+					);
+					continue;
+				}
+
+				const { fullPath, relPath } = validated;
 
 				// Only validate files that exist on disk
 				if (!existsSync(fullPath)) {
@@ -193,6 +243,22 @@ export function createPostEditValidationHooks(
 				);
 
 				for (const validator of matchingValidators) {
+					// Aggregate time budget check before each validator
+					if (Date.now() >= aggregateDeadline) {
+						logger?.log?.(
+							"[post-edit-validation] Aggregate time budget exceeded; stopping further validation.",
+						);
+						break;
+					}
+
+					// Project-wide validators run only once per invocation, not per file
+					if (validator.wholeProject) {
+						if (projectWideRan.has(validator.name)) {
+							continue;
+						}
+						projectWideRan.add(validator.name);
+					}
+
 					// Prepare args: replace {file} with relPath, or append relPath if placeholder not present
 					let finalArgs: string[] = [];
 					if (validator.args && validator.args.length > 0) {
@@ -205,14 +271,10 @@ export function createPostEditValidationHooks(
 							return arg;
 						});
 						// If command is file-targeted and no placeholder was present, append file
-						if (
-							!hasPlaceholder &&
-							validator.name !== "tsc" &&
-							validator.name !== "cargo"
-						) {
+						if (!hasPlaceholder && !validator.wholeProject) {
 							finalArgs.push(relPath);
 						}
-					} else {
+					} else if (!validator.wholeProject) {
 						finalArgs = [relPath];
 					}
 
@@ -224,7 +286,7 @@ export function createPostEditValidationHooks(
 
 						if (result.timedOut) {
 							diagnostics.push({
-								file: relPath,
+								file: validator.wholeProject ? "(project)" : relPath,
 								validator: validator.name,
 								output: `Validation timed out after ${validator.timeoutMs ?? timeoutMs}ms`,
 								exitCode: null,
@@ -244,7 +306,7 @@ export function createPostEditValidationHooks(
 								continue;
 							}
 							diagnostics.push({
-								file: relPath,
+								file: validator.wholeProject ? "(project)" : relPath,
 								validator: validator.name,
 								output: result.error.message,
 								exitCode: null,
@@ -262,7 +324,7 @@ export function createPostEditValidationHooks(
 
 							if (rawOutput) {
 								diagnostics.push({
-									file: relPath,
+									file: validator.wholeProject ? "(project)" : relPath,
 									validator: validator.name,
 									output: rawOutput,
 									exitCode: result.exitCode,
