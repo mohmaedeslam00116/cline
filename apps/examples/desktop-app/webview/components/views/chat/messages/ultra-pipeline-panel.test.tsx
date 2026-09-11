@@ -135,7 +135,7 @@ describe("UltraPipelinePanel component", () => {
 		expect(onProceed).toHaveBeenCalledTimes(1);
 	});
 
-	it("keeps approve button enabled when rendered without onProceedCheckpoint", async () => {
+	it("disables approve button when rendered without onProceedCheckpoint", async () => {
 		await act(async () => {
 			root.render(<UltraPipelinePanel pipeline={mockPipeline} />);
 		});
@@ -144,13 +144,7 @@ describe("UltraPipelinePanel component", () => {
 			(b) => b.textContent?.includes("Approve & Proceed"),
 		);
 		expect(approveBtn).toBeDefined();
-
-		await act(async () => {
-			approveBtn?.click();
-		});
-
-		expect(approveBtn?.textContent).toContain("Approve & Proceed");
-		expect(approveBtn?.hasAttribute("disabled")).toBe(false);
+		expect(approveBtn?.hasAttribute("disabled")).toBe(true);
 	});
 
 	it("switches tabs when clicked", async () => {

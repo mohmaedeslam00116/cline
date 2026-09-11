@@ -47,7 +47,16 @@ type PipelineTab =
 	| "vector"
 	| "echo";
 
-const PERSONA_INDICATOR_COLOR = "#161616";
+const PERSONA_DOT_CLASSES: Record<string, string> = {
+	orion: "bg-blue-500",
+	lyra: "bg-cyan-500",
+	athena: "bg-purple-500",
+	atlas: "bg-emerald-500",
+	vector: "bg-amber-500",
+	cipher: "bg-orange-500",
+	sentinel: "bg-rose-500",
+	echo: "bg-violet-500",
+};
 
 export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 	pipeline,
@@ -69,7 +78,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 			key: PipelineTab;
 			label: string;
 			personaName: string;
-			personaColor: string;
+			personaDotClass: string;
 			icon: React.ComponentType<{ className?: string }>;
 		}> = [];
 
@@ -78,7 +87,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 				key: "lyra",
 				label: tAgency.tabLyraLabel,
 				personaName: "Lyra",
-				personaColor: PERSONA_INDICATOR_COLOR,
+				personaDotClass: PERSONA_DOT_CLASSES.lyra,
 				icon: Compass,
 			});
 		}
@@ -88,14 +97,14 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 				key: "prd",
 				label: tAgency.tabPrdLabel,
 				personaName: "Athena",
-				personaColor: PERSONA_INDICATOR_COLOR,
+				personaDotClass: PERSONA_DOT_CLASSES.athena,
 				icon: ListChecks,
 			},
 			{
 				key: "architect",
 				label: tAgency.tabArchLabel,
 				personaName: "Atlas",
-				personaColor: PERSONA_INDICATOR_COLOR,
+				personaDotClass: PERSONA_DOT_CLASSES.atlas,
 				icon: Layers,
 			},
 		);
@@ -105,7 +114,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 				key: "vector",
 				label: tAgency.tabVectorLabel,
 				personaName: "Vector",
-				personaColor: PERSONA_INDICATOR_COLOR,
+				personaDotClass: PERSONA_DOT_CLASSES.vector,
 				icon: Database,
 			});
 		}
@@ -115,21 +124,21 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 				key: "tasks",
 				label: tAgency.tabTasksLabel,
 				personaName: "Orion",
-				personaColor: PERSONA_INDICATOR_COLOR,
+				personaDotClass: PERSONA_DOT_CLASSES.orion,
 				icon: GitBranch,
 			},
 			{
 				key: "code",
 				label: tAgency.tabCodeLabel,
 				personaName: "Cipher",
-				personaColor: PERSONA_INDICATOR_COLOR,
+				personaDotClass: PERSONA_DOT_CLASSES.cipher,
 				icon: Code2,
 			},
 			{
 				key: "qa",
 				label: tAgency.tabQaLabel,
 				personaName: "Sentinel",
-				personaColor: PERSONA_INDICATOR_COLOR,
+				personaDotClass: PERSONA_DOT_CLASSES.sentinel,
 				icon: TestTube2,
 			},
 		);
@@ -139,7 +148,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 				key: "echo",
 				label: tAgency.tabDocsLabel,
 				personaName: "Echo",
-				personaColor: PERSONA_INDICATOR_COLOR,
+				personaDotClass: PERSONA_DOT_CLASSES.echo,
 				icon: FileText,
 			});
 		}
@@ -279,7 +288,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 				id: "orion",
 				name: "Orion",
 				role: tAgency.roleOrchestrator,
-				color: PERSONA_INDICATOR_COLOR,
+				dotClass: PERSONA_DOT_CLASSES.orion,
 				done: Boolean(pipeline.tasks),
 			},
 			...(pipeline.lyra
@@ -288,7 +297,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 							id: "lyra",
 							name: "Lyra",
 							role: tAgency.roleResearcher,
-							color: PERSONA_INDICATOR_COLOR,
+							dotClass: PERSONA_DOT_CLASSES.lyra,
 							done: true,
 						},
 					]
@@ -297,14 +306,14 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 				id: "athena",
 				name: "Athena",
 				role: tAgency.roleProductLead,
-				color: PERSONA_INDICATOR_COLOR,
+				dotClass: PERSONA_DOT_CLASSES.athena,
 				done: Boolean(pipeline.prd),
 			},
 			{
 				id: "atlas",
 				name: "Atlas",
 				role: tAgency.roleArchitect,
-				color: PERSONA_INDICATOR_COLOR,
+				dotClass: PERSONA_DOT_CLASSES.atlas,
 				done: Boolean(pipeline.architect),
 			},
 			...(pipeline.vector
@@ -313,7 +322,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 							id: "vector",
 							name: "Vector",
 							role: tAgency.roleDataArchitect,
-							color: PERSONA_INDICATOR_COLOR,
+							dotClass: PERSONA_DOT_CLASSES.vector,
 							done: true,
 						},
 					]
@@ -322,14 +331,14 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 				id: "cipher",
 				name: "Cipher",
 				role: tAgency.roleEngineer,
-				color: PERSONA_INDICATOR_COLOR,
+				dotClass: PERSONA_DOT_CLASSES.cipher,
 				done: Boolean(pipeline.engineer),
 			},
 			{
 				id: "sentinel",
 				name: "Sentinel",
 				role: tAgency.roleQaLead,
-				color: PERSONA_INDICATOR_COLOR,
+				dotClass: PERSONA_DOT_CLASSES.sentinel,
 				done: pipeline.qa?.status === "passed",
 			},
 			...(pipeline.echo
@@ -338,7 +347,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 							id: "echo",
 							name: "Echo",
 							role: tAgency.roleDocs,
-							color: PERSONA_INDICATOR_COLOR,
+							dotClass: PERSONA_DOT_CLASSES.echo,
 							done: true,
 						},
 					]
@@ -422,8 +431,10 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 								)}
 							>
 								<div
-									className="size-2 rounded-full shrink-0"
-									style={{ backgroundColor: member.color }}
+									className={cn(
+										"size-2 rounded-full shrink-0",
+										member.dotClass,
+									)}
 								/>
 								<span className="font-semibold">{member.name}</span>
 								<span className="text-[9px] opacity-70">({member.role})</span>
@@ -509,8 +520,10 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 									type="button"
 								>
 									<div
-										className="size-2 rounded-full shrink-0"
-										style={{ backgroundColor: tab.personaColor }}
+										className={cn(
+											"size-2 rounded-full shrink-0",
+											tab.personaDotClass,
+										)}
 									/>
 									<Icon className="size-3.5" />
 									<span>
@@ -900,6 +913,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 
 							<div className="flex items-center gap-2 pt-1">
 								<Input
+									aria-label={tAgency.addFeedback}
 									placeholder={tAgency.feedbackPlaceholder}
 									value={feedbackText}
 									onChange={(e) => setFeedbackText(e.target.value)}
@@ -909,7 +923,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 									size="sm"
 									className="h-8 gap-1.5 px-3 font-medium shrink-0"
 									onClick={handleProceed}
-									disabled={isProceeding}
+									disabled={isProceeding || !onProceedCheckpoint}
 								>
 									{isProceeding ? (
 										<span>{tAgency.proceedingButton}</span>
