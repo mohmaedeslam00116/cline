@@ -17,6 +17,7 @@ import {
 import { memo, useCallback, useMemo, useState } from "react";
 import { getLensDirection, getLensTranslations } from "@/lib/lens-i18n";
 import { cn } from "@/lib/utils";
+import { MemoizedMarkdown } from "../../../ui/markdown";
 import type { UltraPipeline } from "./ultra-pipeline-parser";
 
 export type UltraPipelinePanelProps = {
@@ -35,6 +36,46 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 	const [isExpanded, setIsExpanded] = useState(true);
 	const [activeTab, setActiveTab] = useState<PipelineTab>("prd");
 	const [copiedTab, setCopiedTab] = useState<string | null>(null);
+
+	const tabs: Array<{
+		key: PipelineTab;
+		label: string;
+		icon: typeof ListChecks;
+	}> = useMemo(
+		() => [
+			{ key: "prd", label: t.tabPrd, icon: ListChecks },
+			{ key: "architect", label: t.tabArchitect, icon: Compass },
+			{ key: "tasks", label: t.tabTasks, icon: GitBranch },
+			{ key: "code", label: t.tabCode, icon: Code2 },
+			{ key: "qa", label: t.tabQa, icon: TestTube2 },
+		],
+		[t],
+	);
+
+	const handleTabKeyDown = useCallback(
+		(event: React.KeyboardEvent<HTMLDivElement>) => {
+			if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+				return;
+			}
+			event.preventDefault();
+			const tabKeys: PipelineTab[] = [
+				"prd",
+				"architect",
+				"tasks",
+				"code",
+				"qa",
+			];
+			const currentIndex = tabKeys.indexOf(activeTab);
+			const delta = event.key === "ArrowRight" ? 1 : -1;
+			const nextIndex =
+				(currentIndex + delta + tabKeys.length) % tabKeys.length;
+			const nextTab = tabKeys[nextIndex];
+			setActiveTab(nextTab);
+			const nextButton = document.getElementById(`ultra-tab-${nextTab}`);
+			nextButton?.focus();
+		},
+		[activeTab],
+	);
 
 	const handleCopy = useCallback(
 		async (text?: string) => {
@@ -126,94 +167,46 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 					<div
 						aria-label="MetaGPT Assembly Line Roles"
 						className="flex overflow-x-auto border-b border-border/40 bg-muted/20 px-2 py-1 text-xs"
+						onKeyDown={handleTabKeyDown}
 						role="tablist"
 					>
-						<button
-							aria-selected={activeTab === "prd"}
-							className={cn(
-								"inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none",
-								activeTab === "prd"
-									? "bg-background text-indigo-500 shadow-2xs font-semibold"
-									: "text-muted-foreground hover:text-foreground",
-							)}
-							onClick={() => setActiveTab("prd")}
-							role="tab"
-							type="button"
-						>
-							<ListChecks className="size-3.5" />
-							<span>{t.tabPrd}</span>
-						</button>
-
-						<button
-							aria-selected={activeTab === "architect"}
-							className={cn(
-								"inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none",
-								activeTab === "architect"
-									? "bg-background text-indigo-500 shadow-2xs font-semibold"
-									: "text-muted-foreground hover:text-foreground",
-							)}
-							onClick={() => setActiveTab("architect")}
-							role="tab"
-							type="button"
-						>
-							<Compass className="size-3.5" />
-							<span>{t.tabArchitect}</span>
-						</button>
-
-						<button
-							aria-selected={activeTab === "tasks"}
-							className={cn(
-								"inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none",
-								activeTab === "tasks"
-									? "bg-background text-indigo-500 shadow-2xs font-semibold"
-									: "text-muted-foreground hover:text-foreground",
-							)}
-							onClick={() => setActiveTab("tasks")}
-							role="tab"
-							type="button"
-						>
-							<GitBranch className="size-3.5" />
-							<span>{t.tabTasks}</span>
-						</button>
-
-						<button
-							aria-selected={activeTab === "code"}
-							className={cn(
-								"inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none",
-								activeTab === "code"
-									? "bg-background text-indigo-500 shadow-2xs font-semibold"
-									: "text-muted-foreground hover:text-foreground",
-							)}
-							onClick={() => setActiveTab("code")}
-							role="tab"
-							type="button"
-						>
-							<Code2 className="size-3.5" />
-							<span>{t.tabCode}</span>
-						</button>
-
-						<button
-							aria-selected={activeTab === "qa"}
-							className={cn(
-								"inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none",
-								activeTab === "qa"
-									? "bg-background text-indigo-500 shadow-2xs font-semibold"
-									: "text-muted-foreground hover:text-foreground",
-							)}
-							onClick={() => setActiveTab("qa")}
-							role="tab"
-							type="button"
-						>
-							<TestTube2 className="size-3.5" />
-							<span>{t.tabQa}</span>
-						</button>
+						{tabs.map((tab) => {
+							const Icon = tab.icon;
+							const isSelected = activeTab === tab.key;
+							return (
+								<button
+									key={tab.key}
+									aria-controls={`ultra-tabpanel-${tab.key}`}
+									aria-selected={isSelected}
+									className={cn(
+										"inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+										isSelected
+											? "bg-background text-indigo-500 shadow-2xs font-semibold"
+											: "text-muted-foreground hover:text-foreground",
+									)}
+									id={`ultra-tab-${tab.key}`}
+									onClick={() => setActiveTab(tab.key)}
+									role="tab"
+									tabIndex={isSelected ? 0 : -1}
+									type="button"
+								>
+									<Icon className="size-3.5" />
+									<span>{tab.label}</span>
+								</button>
+							);
+						})}
 					</div>
 
 					{/* Tab Panels */}
 					<div className="p-3 text-xs">
 						{/* Tab 1: PRD */}
 						{activeTab === "prd" && (
-							<div className="space-y-3">
+							<div
+								aria-labelledby="ultra-tab-prd"
+								className="space-y-3"
+								id="ultra-tabpanel-prd"
+								role="tabpanel"
+							>
 								{pipeline.prd?.goals && pipeline.prd.goals.length > 0 && (
 									<div>
 										<h4 className="font-semibold text-foreground flex items-center gap-1.5 mb-1">
@@ -257,8 +250,12 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 												<table className="w-full text-left text-xs">
 													<thead className="bg-muted/60 text-muted-foreground">
 														<tr>
-															<th className="px-2 py-1 w-16">Priority</th>
-															<th className="px-2 py-1">Requirement</th>
+															<th className="px-2 py-1 w-16">
+																{t.priorityLabel}
+															</th>
+															<th className="px-2 py-1">
+																{t.requirementLabel}
+															</th>
 														</tr>
 													</thead>
 													<tbody className="divide-y divide-border/20">
@@ -295,7 +292,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 								{pipeline.prd?.uiDesignDraft && (
 									<div>
 										<h4 className="font-semibold text-foreground mb-1">
-											UI Design Draft
+											{t.uiDraftTitle}
 										</h4>
 										<p className="text-muted-foreground bg-muted/40 rounded p-2 border border-border/30">
 											{pipeline.prd.uiDesignDraft}
@@ -307,7 +304,12 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 
 						{/* Tab 2: Architect */}
 						{activeTab === "architect" && (
-							<div className="space-y-3">
+							<div
+								aria-labelledby="ultra-tab-architect"
+								className="space-y-3"
+								id="ultra-tabpanel-architect"
+								role="tabpanel"
+							>
 								{pipeline.architect?.implementationApproach && (
 									<div>
 										<h4 className="font-semibold text-foreground mb-1">
@@ -344,9 +346,11 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 										<h4 className="font-semibold text-foreground mb-1">
 											{t.classDiagramTitle}
 										</h4>
-										<pre className="rounded bg-muted/60 p-2 font-mono text-[11px] text-foreground overflow-x-auto border border-border/30">
-											<code>{pipeline.architect.classDiagram}</code>
-										</pre>
+										<div className="rounded border border-border/40 bg-muted/20 p-2 overflow-x-auto">
+											<MemoizedMarkdown
+												content={`\`\`\`mermaid\n${pipeline.architect.classDiagram}\n\`\`\``}
+											/>
+										</div>
 									</div>
 								)}
 
@@ -355,9 +359,11 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 										<h4 className="font-semibold text-foreground mb-1">
 											{t.sequenceDiagramTitle}
 										</h4>
-										<pre className="rounded bg-muted/60 p-2 font-mono text-[11px] text-foreground overflow-x-auto border border-border/30">
-											<code>{pipeline.architect.sequenceDiagram}</code>
-										</pre>
+										<div className="rounded border border-border/40 bg-muted/20 p-2 overflow-x-auto">
+											<MemoizedMarkdown
+												content={`\`\`\`mermaid\n${pipeline.architect.sequenceDiagram}\n\`\`\``}
+											/>
+										</div>
 									</div>
 								)}
 							</div>
@@ -365,7 +371,12 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 
 						{/* Tab 3: Tasks */}
 						{activeTab === "tasks" && (
-							<div className="space-y-3">
+							<div
+								aria-labelledby="ultra-tab-tasks"
+								className="space-y-3"
+								id="ultra-tabpanel-tasks"
+								role="tabpanel"
+							>
 								{pipeline.tasks?.packages &&
 									pipeline.tasks.packages.length > 0 && (
 										<div>
@@ -429,15 +440,33 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 
 						{/* Tab 4: Code */}
 						{activeTab === "code" && (
-							<div className="space-y-2">
+							<div
+								aria-labelledby="ultra-tab-code"
+								className="space-y-3"
+								id="ultra-tabpanel-code"
+								role="tabpanel"
+							>
 								<h4 className="font-semibold text-foreground">
-									Engineer Implementation
+									{t.engineerTitle}
 								</h4>
-								<p className="text-muted-foreground">
-									Files generated and modified according to the Architect
-									interface contracts.
+								<p className="text-muted-foreground text-xs">
+									{t.engineerDesc}
 								</p>
-								{pipeline.architect?.fileList && (
+								{pipeline.engineer?.filesImplemented &&
+								pipeline.engineer.filesImplemented.length > 0 ? (
+									<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2">
+										{pipeline.engineer.filesImplemented.map((file) => (
+											<div
+												key={`code-${file}`}
+												className="flex items-center gap-2 rounded bg-muted/50 p-2 border border-border/40 font-mono text-xs text-foreground"
+											>
+												<FileCode2 className="size-3.5 text-indigo-500" />
+												<span>{file}</span>
+											</div>
+										))}
+									</div>
+								) : pipeline.architect?.fileList &&
+									pipeline.architect.fileList.length > 0 ? (
 									<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2">
 										{pipeline.architect.fileList.map((file) => (
 											<div
@@ -449,13 +478,24 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 											</div>
 										))}
 									</div>
+								) : null}
+
+								{pipeline.engineer?.summary && (
+									<div className="rounded bg-muted/40 p-2.5 text-xs text-muted-foreground overflow-x-auto border border-border/30">
+										<MemoizedMarkdown content={pipeline.engineer.summary} />
+									</div>
 								)}
 							</div>
 						)}
 
 						{/* Tab 5: QA & Verification */}
 						{activeTab === "qa" && (
-							<div className="space-y-3">
+							<div
+								aria-labelledby="ultra-tab-qa"
+								className="space-y-3"
+								id="ultra-tabpanel-qa"
+								role="tabpanel"
+							>
 								<div>
 									<h4 className="font-semibold text-foreground mb-1 flex items-center gap-1.5">
 										<TestTube2 className="size-3.5 text-indigo-500" />
@@ -487,7 +527,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 								{pipeline.qa?.errors && pipeline.qa.errors.length > 0 && (
 									<div>
 										<h4 className="font-semibold text-rose-500 mb-1">
-											Captured Error Tracebacks
+											{t.errorTracebacksTitle}
 										</h4>
 										<div className="space-y-1">
 											{pipeline.qa.errors.map((err) => (
@@ -508,7 +548,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 					{/* Footer with copy deliverable button */}
 					<div className="flex items-center justify-between border-t border-border/40 bg-muted/20 px-3 py-1.5 text-[11px]">
 						<span className="text-muted-foreground">
-							Ultra Mode • SOP Phase: {activeTab.toUpperCase()}
+							{t.footerPhase} {activeTab.toUpperCase()}
 						</span>
 
 						<button

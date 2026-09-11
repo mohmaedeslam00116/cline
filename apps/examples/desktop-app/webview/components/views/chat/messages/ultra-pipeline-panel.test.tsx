@@ -143,4 +143,84 @@ describe("UltraPipelinePanel component", () => {
 
 		expect(container.textContent).toContain("Self-Correcting (2/3)");
 	});
+
+	it("has complete ARIA tab and tabpanel associations", async () => {
+		await act(async () => {
+			root.render(<UltraPipelinePanel pipeline={mockPipeline} />);
+		});
+
+		const prdTab = container.querySelector<HTMLButtonElement>("#ultra-tab-prd");
+		const prdPanel = container.querySelector<HTMLDivElement>(
+			"#ultra-tabpanel-prd",
+		);
+
+		expect(prdTab).not.toBeNull();
+		expect(prdPanel).not.toBeNull();
+		expect(prdTab?.getAttribute("role")).toBe("tab");
+		expect(prdTab?.getAttribute("aria-selected")).toBe("true");
+		expect(prdTab?.getAttribute("aria-controls")).toBe("ultra-tabpanel-prd");
+		expect(prdPanel?.getAttribute("role")).toBe("tabpanel");
+		expect(prdPanel?.getAttribute("aria-labelledby")).toBe("ultra-tab-prd");
+	});
+
+	it("navigates tabs using ArrowRight and ArrowLeft keyboard keys", async () => {
+		await act(async () => {
+			root.render(<UltraPipelinePanel pipeline={mockPipeline} />);
+		});
+
+		const tablist = container.querySelector<HTMLDivElement>('[role="tablist"]');
+		expect(tablist).not.toBeNull();
+
+		// Press ArrowRight to move from prd to architect
+		await act(async () => {
+			tablist?.dispatchEvent(
+				new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+			);
+		});
+
+		const architectTab = container.querySelector<HTMLButtonElement>(
+			"#ultra-tab-architect",
+		);
+		expect(architectTab?.getAttribute("aria-selected")).toBe("true");
+		expect(container.querySelector("#ultra-tabpanel-architect")).not.toBeNull();
+
+		// Press ArrowLeft to move back to prd
+		await act(async () => {
+			tablist?.dispatchEvent(
+				new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }),
+			);
+		});
+
+		const prdTabAgain =
+			container.querySelector<HTMLButtonElement>("#ultra-tab-prd");
+		expect(prdTabAgain?.getAttribute("aria-selected")).toBe("true");
+		expect(container.querySelector("#ultra-tabpanel-prd")).not.toBeNull();
+	});
+
+	it("renders engineer deliverables in the code tab", async () => {
+		const pipelineWithEngineer: UltraPipeline = {
+			...mockPipeline,
+			engineer: {
+				filesImplemented: ["picker.py", "main.py"],
+				summary: "Implemented color picker module with Pillow bindings.",
+			},
+		};
+
+		await act(async () => {
+			root.render(<UltraPipelinePanel pipeline={pipelineWithEngineer} />);
+		});
+
+		const codeTab =
+			container.querySelector<HTMLButtonElement>("#ultra-tab-code");
+		await act(async () => {
+			codeTab?.click();
+		});
+
+		expect(container.textContent).toContain("Engineer Implementation");
+		expect(container.textContent).toContain("picker.py");
+		expect(container.textContent).toContain("main.py");
+		expect(container.textContent).toContain(
+			"Implemented color picker module with Pillow bindings.",
+		);
+	});
 });

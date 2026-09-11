@@ -91,7 +91,7 @@ function extractSection(
 ): string | undefined {
 	for (const keyword of headerKeywords) {
 		const pattern = new RegExp(
-			`(?:\n|^)#{1,4}\\s+(?:(?:\\d+\\.\\s*)?${keyword}[^\n]*)\n([\\s\\S]*?)(?=(?:\n#{1,4}\\s+)|$)`,
+			`(?:\n|^)#{1,4}\\s+(?:(?:\\d+\\.\\s*)?${keyword}[^\n]*)\n([\\s\\S]*?)(?=(?:\n#{1,4}\\s+)|\n---|\n___|\n\\*{3,}|$)`,
 			"i",
 		);
 		const match = pattern.exec(content);
@@ -351,13 +351,51 @@ export function parseQAFeedback(content: string): QAFeedback | undefined {
 		}
 	}
 
+	// Trim trailing conversational remarks if assistant writes concluding prose after QA deliverables
+	let cleanedQaSec = qaSec;
+	if (cleanedQaSec) {
+		const tailMatch = cleanedQaSec.match(
+			/\n\n+\s*(?:let me know|please|feel free|hope this helps|i have|you can|in summary|all changes|if you)[\s\S]*$/i,
+		);
+		if (tailMatch?.index !== undefined) {
+			cleanedQaSec = cleanedQaSec.slice(0, tailMatch.index).trim();
+		}
+	}
+
 	return {
-		testExecutionSummary: qaSec,
+		testExecutionSummary: cleanedQaSec,
 		retries,
 		maxRetries: 3,
 		status,
 		errors: errors.length > 0 ? errors : undefined,
-		rawMarkdown: qaSec,
+		rawMarkdown: cleanedQaSec,
+	};
+}
+
+/**
+ * Parses Engineer implementation summary from content.
+ */
+export function parseEngineerCode(content: string): EngineerCode | undefined {
+	const codeSec = extractSection(content, [
+		"Engineer",
+		"Code Implementation",
+		"Implementation",
+		"Source Code",
+	]);
+	if (!codeSec) {
+		return undefined;
+	}
+	const filesSec =
+		extractSection(codeSec, [
+			"Files Implemented",
+			"Implemented Files",
+			"Modified Files",
+			"Files",
+		]) ?? codeSec;
+	return {
+		filesImplemented: extractListItems(filesSec),
+		summary: codeSec,
+		rawMarkdown: codeSec,
 	};
 }
 
@@ -386,6 +424,7 @@ export function parseUltraPipeline(content: string): UltraPipeline | null {
 	const prd = parsePRD(content);
 	const architect = parseArchitectDesign(content);
 	const tasks = parseProjectManagerTasks(content);
+	const engineer = parseEngineerCode(content);
 	const qa = parseQAFeedback(content);
 
 	// Need at least 2 distinct SOP sections to qualify as a structured Ultra Pipeline
@@ -393,6 +432,7 @@ export function parseUltraPipeline(content: string): UltraPipeline | null {
 		Boolean(prd),
 		Boolean(architect),
 		Boolean(tasks),
+		Boolean(engineer),
 		Boolean(qa),
 	].filter(Boolean).length;
 
@@ -400,11 +440,76 @@ export function parseUltraPipeline(content: string): UltraPipeline | null {
 		return null;
 	}
 
+	// Compute rawMarkdown starting from the first matched MetaGPT section header
+	// and ending at the last matched stage's content, so conversational framing
+	// before and after the pipeline deliverables is preserved.
+	const METAGPT_SECTION_KEYWORDS = [
+		"Product Manager",
+		"PRD",
+		"Product Requirements Document",
+		"Architect",
+		"System Design",
+		"Project Manager",
+		"Tasks Breakdown",
+		"Tasks DAG",
+		"Engineer",
+		"Code Implementation",
+		"QA Engineer",
+		"QA & Verification",
+		"QA and Test",
+		"QA Feedback",
+		"Executable Feedback",
+	];
+
+	let firstHeaderIndex = -1;
+	for (const keyword of METAGPT_SECTION_KEYWORDS) {
+		const regex = new RegExp(
+			`(?:\n|^)#{1,4}\\s+(?:(?:\\d+\\.\\s*)?${keyword}[^\n]*)`,
+			"i",
+		);
+		const match = regex.exec(content);
+		if (match) {
+			const matchStart = match.index + (match[0].startsWith("\n") ? 1 : 0);
+			if (firstHeaderIndex === -1 || matchStart < firstHeaderIndex) {
+				firstHeaderIndex = matchStart;
+			}
+		}
+	}
+
+	const stagesRaw = [
+		prd?.rawMarkdown,
+		architect?.rawMarkdown,
+		tasks?.rawMarkdown,
+		engineer?.rawMarkdown,
+		qa?.rawMarkdown,
+	].filter((s): s is string => typeof s === "string" && s.length > 0);
+
+	let lastEndIndex = content.length;
+	if (firstHeaderIndex !== -1 && stagesRaw.length > 0) {
+		let maxEnd = firstHeaderIndex;
+		for (const raw of stagesRaw) {
+			const idx = content.lastIndexOf(raw);
+			if (idx !== -1) {
+				const end = idx + raw.length;
+				if (end > maxEnd) {
+					maxEnd = end;
+				}
+			}
+		}
+		lastEndIndex = maxEnd;
+	}
+
+	const rawMarkdown =
+		firstHeaderIndex !== -1 && firstHeaderIndex < lastEndIndex
+			? content.slice(firstHeaderIndex, lastEndIndex).trim()
+			: content;
+
 	return {
 		prd,
 		architect,
 		tasks,
+		engineer,
 		qa,
-		rawMarkdown: content,
+		rawMarkdown,
 	};
 }

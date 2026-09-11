@@ -271,6 +271,14 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			copied: "Copied!",
 			expand: "Expand",
 			collapse: "Collapse",
+			priorityLabel: "Priority",
+			requirementLabel: "Requirement",
+			uiDraftTitle: "UI Design Draft",
+			engineerTitle: "Engineer Implementation",
+			engineerDesc:
+				"Implementation files adhering to Architect interfaces and task list:",
+			errorTracebacksTitle: "Captured Error Tracebacks",
+			footerPhase: "Ultra Mode • SOP Phase:",
 		},
 	},
 	ar: {
@@ -408,6 +416,14 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			copied: "تم النسخ!",
 			expand: "توسيع",
 			collapse: "طي",
+			priorityLabel: "الأولوية",
+			requirementLabel: "المتطلب",
+			uiDraftTitle: "مسودة واجهة المستخدم",
+			engineerTitle: "تنفيذ المهندس البرمجي",
+			engineerDesc:
+				"ملفات التنفيذ البرمجي الملتزمة بواجهات المعمار وقائمة المهام:",
+			errorTracebacksTitle: "سجلات أخطاء التنفيذ الملتقطة",
+			footerPhase: "الوضع المتطور • مرحلة إجراءات التشغيل القياسية:",
 		},
 	},
 };

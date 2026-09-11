@@ -128,6 +128,27 @@ describe("ultra-pipeline-parser", () => {
 		expect(pipeline?.qa).toBeDefined();
 	});
 
+	it("parses Engineer code implementation", () => {
+		const sampleWithEngineer = `${SAMPLE_METAGPT_OUTPUT}\n## Engineer: Code Implementation\n### Files Implemented\n- "picker.py"\n- "main.py"\n`;
+		const pipeline = parseUltraPipeline(sampleWithEngineer);
+		expect(pipeline).not.toBeNull();
+		expect(pipeline?.engineer).toBeDefined();
+		expect(pipeline?.engineer?.filesImplemented).toContain("picker.py");
+		expect(pipeline?.engineer?.filesImplemented).toContain("main.py");
+	});
+
+	it("scopes rawMarkdown to MetaGPT sections preserving surrounding commentary", () => {
+		const textWithSurroundings = `Here is my initial analysis before Ultra Mode.\n\n${SAMPLE_METAGPT_OUTPUT}\n\nLet me know if you want any modifications!`;
+		const pipeline = parseUltraPipeline(textWithSurroundings);
+		expect(pipeline).not.toBeNull();
+		expect(pipeline?.rawMarkdown).not.toContain("Here is my initial analysis");
+		expect(pipeline?.rawMarkdown).not.toContain(
+			"Let me know if you want any modifications!",
+		);
+		expect(pipeline?.rawMarkdown).toContain("## Product Manager: PRD");
+		expect(pipeline?.rawMarkdown).toContain("All tests passed in 0.42s");
+	});
+
 	it("returns null for non-MetaGPT ordinary chat text", () => {
 		expect(parseUltraPipeline("Hello, how can I help you today?")).toBeNull();
 		expect(parseUltraPipeline("")).toBeNull();
