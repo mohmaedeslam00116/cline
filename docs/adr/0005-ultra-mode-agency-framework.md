@@ -22,8 +22,8 @@ Engine #7 evolves Ultra Mode from a fixed procedural MetaGPT pipeline into a dyn
 3. **Dynamic Collaboration Feed**: Specialists consult and hand off work through explicit message protocols (`[AgentA -> AgentB]: <context / deliverable handoff>`), displayed in an interactive collaboration timeline in the webview.
 4. **The 2 Golden Checkpoints**:
    - **Checkpoint 1 (Strategy & Blueprint Gate)**: Lyra and Vector complete research and data schemas, Atlas reconciles them with Athena's PRD, and Orion pauses execution (`### CHECKPOINT 1: STRATEGY & BLUEPRINT AWAITING APPROVAL`) for human approval before source code edits begin.
-   - **Checkpoint 2 (Pre-Ship Verification Gate)**: Cipher implements code and Sentinel executes test verification. If all checks pass (Passed / Verified), Orion pauses (`### CHECKPOINT 2: PRE-SHIP VERIFICATION AWAITING APPROVAL`) for human ship authorization. If tests fail after 3 retries, Sentinel records the status as Failed / Blocked with full diagnostic tracebacks for user intervention.
-5. **Configurable Squad Presets**: Users can configure the active squad lineup (`SquadConfig`) choosing from presets (`core`, `full`, `rapid`, `custom`) and toggling interactive checkpoint gates.
+   - **Checkpoint 2 (Pre-Ship Verification Gate)**: Cipher implements code and Sentinel executes test and compiler verification. If all checks pass (Passed / Verified), Orion pauses (`### CHECKPOINT 2: PRE-SHIP VERIFICATION AWAITING APPROVAL`) for human ship authorization. If test or compiler failures persist after 3 autonomous repair cycles, Sentinel records the status as Failed / Blocked with full diagnostic tracebacks, and Orion does not advance to ship approval, pausing for human intervention.
+5. **Configurable Squad Presets**: Users can configure the active squad lineup (`SquadConfig`) choosing from presets (`core`, `full`, `rapid`, `custom`) and toggling interactive checkpoint gates. Disabling checkpoint gates requires an explicit, audited human configuration override; in fully autonomous mode with gates disabled, execution continues through Sentinel verification without pausing at the human review gates.
 
 ## Considered Options
 
@@ -34,5 +34,5 @@ Engine #7 evolves Ultra Mode from a fixed procedural MetaGPT pipeline into a dyn
 ## Consequences
 
 - Full traceability: Every architectural decision, data schema, task dependency, and test result is written to an immutable deliverable in `.lens/ultra/`.
-- Safety: Checkpoints 1 & 2 prevent unauthorized code changes and pre-mature shipping without explicit human approval.
+- Safety: When checkpoint gates remain enabled (the secure default), Checkpoints 1 & 2 prevent unauthorized code changes and premature shipping without explicit human approval; when explicitly disabled via audited configuration override, Sentinel's verification gate still blocks progression on failures.
 - Zero-trust compliance: Lyra's external evidence is tagged untrusted, preserving Phase 1 security invariants.
