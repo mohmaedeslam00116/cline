@@ -564,6 +564,7 @@ export async function prepareLocalRuntimeBootstrap(
 			toolExecutors: effectiveToolExecutors,
 			toolPolicies,
 			workspaceManager,
+			postEditValidation: config.postEditValidation,
 			logger: config.logger,
 			telemetry: config.telemetry,
 			requestToolApproval,

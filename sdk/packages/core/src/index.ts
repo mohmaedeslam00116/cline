@@ -1125,3 +1125,24 @@ export type {
 	SessionRef,
 } from "./types/sessions";
 export type { ArtifactStore, SessionStore, TeamStore } from "./types/storage";
+export type {
+	CorePostEditValidationConfig,
+	PostEditValidationOptions,
+	PostEditValidationRunner,
+	ValidationDiagnostic,
+	ValidationRunnerResult,
+	ValidatorDefinition,
+} from "./validation";
+export {
+	createPostEditValidationExtension,
+	createPostEditValidationHooks,
+	DEFAULT_MAX_OUTPUT_CHARS,
+	DEFAULT_VALIDATION_TIMEOUT_MS,
+	defaultValidationRunner,
+	detectWorkspaceValidators,
+	extractModifiedFilesFromEditor,
+	extractModifiedFilesFromPatch,
+	findValidatorsForFile,
+	formatValidationDiagnostics,
+	POST_EDIT_VALIDATION_EXTENSION_NAME,
+} from "./validation";

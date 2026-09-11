@@ -1,3 +1,17 @@
+export {
+	type CorePostEditValidationConfig,
+	createPostEditValidationExtension,
+	createPostEditValidationHooks,
+	extractModifiedFilesFromEditor,
+	extractModifiedFilesFromPatch,
+	formatValidationDiagnostics,
+	POST_EDIT_VALIDATION_EXTENSION_NAME,
+	type PostEditValidationOptions,
+	type PostEditValidationRunner,
+	type ValidationDiagnostic,
+	type ValidationRunnerResult,
+	type ValidatorDefinition,
+} from "../validation";
 export { createAgentHooksExtension } from "./hook-extension";
 export {
 	HOOK_CONFIG_FILE_EVENT_MAP,
