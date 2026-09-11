@@ -1,6 +1,110 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M55.8011 13.3813C55.8011 9.23878 52.3833 5.8374 47.9994 5.8374C43.6156 5.83782 40.1977 9.23924 40.1976 13.3813C40.1976 14.3967 40.3856 15.7348 40.7616 17.3599L41.5658 20.8374H23.4295C19.5124 20.8377 16.3368 24.0132 16.3368 27.9302V41.1299L6.71568 52.4985L16.3368 63.8672V77.0698C16.3368 80.9868 19.5124 84.1623 23.4295 84.1626H72.5707C76.4874 84.1624 79.662 80.9872 79.662 77.0698V63.8701L89.2831 52.4985L79.662 41.1284V27.9302C79.662 24.0128 76.4874 20.8376 72.5707 20.8374H54.4344L55.2386 17.3599C55.6141 15.7369 55.8011 14.398 55.8011 13.3813ZM61.4628 13.9995C61.447 14.3794 61.4166 14.7677 61.3749 15.1626H72.5707C79.6216 15.163 85.3368 20.8797 85.3368 27.9302V39.0498L94.4877 49.8662L94.7132 50.1592C95.6982 51.5621 95.6982 53.4379 94.7132 54.8408L94.4877 55.1338L85.3368 65.9473V77.0698C85.3368 84.1203 79.6216 89.837 72.5707 89.8374H23.4295C16.3789 89.8371 10.662 84.1208 10.662 77.0698V65.9443L1.51256 55.1338L1.51109 55.1323C0.22677 53.6124 0.226771 51.3876 1.51109 49.8677L1.51256 49.8662L10.662 39.0527V27.9302C10.662 20.8792 16.3789 15.1629 23.4295 15.1626H34.6254C34.5834 14.7678 34.5519 14.3795 34.536 13.9995L34.5228 13.3813C34.5229 5.95713 40.6322 0.163019 47.9994 0.162598C55.3671 0.162598 61.4759 5.95707 61.4759 13.3813L61.4628 13.9995Z" fill="#1C1C24"/>
-<path d="M56.2499 43.125C56.2499 40.8468 58.0967 39 60.3749 39C62.6531 39 64.4999 40.8468 64.4999 43.125V60.375C64.4999 62.6532 62.6531 64.5 60.3749 64.5C58.0967 64.5 56.2499 62.6532 56.2499 60.375V43.125Z" fill="#1C1C24"/>
-<path d="M31.4999 43.125C31.4999 40.8468 33.3467 39 35.6249 39C37.9031 39 39.7499 40.8468 39.7499 43.125V60.375C39.7499 62.6532 37.9031 64.5 35.6249 64.5C33.3467 64.5 31.4999 62.6532 31.4999 60.375V43.125Z" fill="#1C1C24"/>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="lens-bg" x1="64" y1="32" x2="448" y2="480" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0F131D"/>
+      <stop offset="50%" stop-color="#090B10"/>
+      <stop offset="100%" stop-color="#050608"/>
+    </linearGradient>
+
+    <!-- Border Gradient -->
+    <linearGradient id="lens-border" x1="64" y1="32" x2="448" y2="480" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.6"/>
+      <stop offset="40%" stop-color="#2563EB" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#6366F1" stop-opacity="0.4"/>
+    </linearGradient>
+
+    <!-- Brand Cyan-Blue-Violet Accent -->
+    <linearGradient id="lens-accent" x1="120" y1="120" x2="392" y2="392" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00F0FF"/>
+      <stop offset="45%" stop-color="#38BDF8"/>
+      <stop offset="80%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#6366F1"/>
+    </linearGradient>
+
+    <!-- Iris Blade Primary Gradient -->
+    <linearGradient id="lens-blade" x1="0" y1="-100" x2="80" y2="20" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="50%" stop-color="#0284C7"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+
+    <!-- Ambient Core Glow -->
+    <radialGradient id="lens-core-glow" cx="256" cy="256" r="160" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00F0FF" stop-opacity="0.45"/>
+      <stop offset="40%" stop-color="#3B82F6" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#090B10" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Central Optic Gradient -->
+    <radialGradient id="optic-center" cx="251" cy="251" r="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E0F2FE"/>
+      <stop offset="25%" stop-color="#38BDF8"/>
+      <stop offset="70%" stop-color="#0369A1"/>
+      <stop offset="100%" stop-color="#082F49"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Squircle App Icon Container (iOS / macOS / Windows rounded squircle) -->
+  <rect x="20" y="20" width="472" height="472" rx="108" fill="url(#lens-bg)"/>
+  <rect x="20" y="20" width="472" height="472" rx="108" stroke="url(#lens-border)" stroke-width="4"/>
+
+  <!-- Subtle Precision Matrix Grid -->
+  <path d="M256 40 V472 M40 256 H472" stroke="#38BDF8" stroke-opacity="0.08" stroke-width="1.5"/>
+  <path d="M148 40 V472 M364 40 V472 M40 148 H472 M40 364 H472" stroke="#38BDF8" stroke-opacity="0.04" stroke-width="1"/>
+
+  <!-- Radial Optical Distance Guide Rings -->
+  <circle cx="256" cy="256" r="190" stroke="#38BDF8" stroke-opacity="0.08" stroke-width="1.5" stroke-dasharray="4 8"/>
+  <circle cx="256" cy="256" r="148" stroke="#38BDF8" stroke-opacity="0.18" stroke-width="1.5"/>
+  <circle cx="256" cy="256" r="132" stroke="url(#lens-accent)" stroke-opacity="0.4" stroke-width="2" stroke-dasharray="3 5"/>
+
+  <!-- Ambient Luminous Glow -->
+  <circle cx="256" cy="256" r="150" fill="url(#lens-core-glow)"/>
+
+  <!-- Viewfinder Focus Brackets (Precision Corners) -->
+  <path d="M76 136 V96 C76 84.9543 84.9543 76 96 76 H136" stroke="url(#lens-accent)" stroke-width="10" stroke-linecap="round"/>
+  <path d="M436 136 V96 C436 84.9543 427.046 76 416 76 H376" stroke="url(#lens-accent)" stroke-width="10" stroke-linecap="round"/>
+  <path d="M436 376 V416 C436 427.046 427.046 436 416 436 H376" stroke="url(#lens-accent)" stroke-width="10" stroke-linecap="round"/>
+  <path d="M76 376 V416 C76 427.046 84.9543 436 96 436 H136" stroke="url(#lens-accent)" stroke-width="10" stroke-linecap="round"/>
+
+  <!-- Alignment Reticle Tick Marks -->
+  <line x1="256" y1="64" x2="256" y2="78" stroke="url(#lens-accent)" stroke-width="3" stroke-linecap="round"/>
+  <line x1="256" y1="434" x2="256" y2="448" stroke="url(#lens-accent)" stroke-width="3" stroke-linecap="round"/>
+  <line x1="64" y1="256" x2="78" y2="256" stroke="url(#lens-accent)" stroke-width="3" stroke-linecap="round"/>
+  <line x1="434" y1="256" x2="448" y2="256" stroke="url(#lens-accent)" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- 6 Rotational Aperture Iris Blades -->
+  <g transform="translate(256, 256)">
+    <!-- Blade 1 (0 deg) -->
+    <g>
+      <path d="M0 -116 C46 -116 102 -68 112 0 L66 22 C56 -28 24 -56 0 -64 Z" fill="url(#lens-blade)" stroke="#7DD3FC" stroke-width="1.5" stroke-opacity="0.6"/>
+    </g>
+    <!-- Blade 2 (60 deg) -->
+    <g transform="rotate(60)">
+      <path d="M0 -116 C46 -116 102 -68 112 0 L66 22 C56 -28 24 -56 0 -64 Z" fill="url(#lens-blade)" stroke="#7DD3FC" stroke-width="1.5" stroke-opacity="0.6"/>
+    </g>
+    <!-- Blade 3 (120 deg) -->
+    <g transform="rotate(120)">
+      <path d="M0 -116 C46 -116 102 -68 112 0 L66 22 C56 -28 24 -56 0 -64 Z" fill="url(#lens-blade)" stroke="#7DD3FC" stroke-width="1.5" stroke-opacity="0.6"/>
+    </g>
+    <!-- Blade 4 (180 deg) -->
+    <g transform="rotate(180)">
+      <path d="M0 -116 C46 -116 102 -68 112 0 L66 22 C56 -28 24 -56 0 -64 Z" fill="url(#lens-blade)" stroke="#7DD3FC" stroke-width="1.5" stroke-opacity="0.6"/>
+    </g>
+    <!-- Blade 5 (240 deg) -->
+    <g transform="rotate(240)">
+      <path d="M0 -116 C46 -116 102 -68 112 0 L66 22 C56 -28 24 -56 0 -64 Z" fill="url(#lens-blade)" stroke="#7DD3FC" stroke-width="1.5" stroke-opacity="0.6"/>
+    </g>
+    <!-- Blade 6 (300 deg) -->
+    <g transform="rotate(300)">
+      <path d="M0 -116 C46 -116 102 -68 112 0 L66 22 C56 -28 24 -56 0 -64 Z" fill="url(#lens-blade)" stroke="#7DD3FC" stroke-width="1.5" stroke-opacity="0.6"/>
+    </g>
+
+    <!-- Central Optic Core -->
+    <circle cx="0" cy="0" r="32" fill="#031122" stroke="#38BDF8" stroke-width="2.5"/>
+    <circle cx="0" cy="0" r="24" fill="url(#optic-center)"/>
+    <!-- Specular Highlight Glint -->
+    <circle cx="-7" cy="-7" r="5" fill="#FFFFFF" fill-opacity="0.8"/>
+    <circle cx="5" cy="5" r="2.5" fill="#38BDF8" fill-opacity="0.6"/>
+  </g>
 </svg>
