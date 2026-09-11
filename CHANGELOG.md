@@ -16,6 +16,7 @@
 - **Checkpoint Alignment & Gating Precision**: Pre-aligned Lyra research and Vector data schemas into Atlas architecture before Checkpoint 1, and enforced explicit Passed/Verified requirements with failure tracebacks for Checkpoint 2.
 - **ADR 0005 & Checkpoint Gate Safeguards**: Clarified compiler failure terminal behavior and audited checkpoint gate override semantics in ADR 0005.
 - **UI Styling & Navigation**: Refined roving tabindex keyboard navigation for RTL layouts and aligned specialist indicators to monochrome tokens.
+- **Auto-Updater Feed & Key Rotation**: Re-anchored Tauri auto-updater endpoints to `mohmaedeslam00116/cline` and rotated Minisign signing key to dedicated LENS Workstation credentials, establishing v0.0.26 as the manual migration release baseline.
 
 ## [4.1.17]
 

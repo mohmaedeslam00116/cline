@@ -134,6 +134,10 @@ lost: the `desktop-latest` release/tag (its feed URL is baked into shipped
 apps) and the updater private key (`TAURI_SIGNING_PRIVATE_KEY` — without it,
 shipped apps can't verify new updates).
 
+> [!NOTE]
+> **Key Rotation & Migration Release**:
+> The Minisign public key in `tauri.conf.json` is configured for LENS Workstation releases on `mohmaedeslam00116/cline`. Clients migrating from legacy/upstream builds must perform a one-time manual installation of LENS Workstation v0.0.26+ to enroll in the LENS auto-update feed. All subsequent updates verify against the LENS public key and install automatically in the background.
+
 There is also a beta channel ("Cline Beta", a separate app that installs
 side by side with stable) cut from the `desktop-experimental` branch and
 served by the rolling `desktop-beta` release — the same never-delete rule
