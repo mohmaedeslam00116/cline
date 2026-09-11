@@ -1146,3 +1146,20 @@ export {
 	formatValidationDiagnostics,
 	POST_EDIT_VALIDATION_EXTENSION_NAME,
 } from "./validation";
+export type {
+	ImplementationPlanArtifact,
+	PlanApprovalStatus,
+	PlanGateOptions,
+	ProposedChangeItem,
+	ProposedFileAction,
+	VerificationPlan,
+	WalkthroughArtifact,
+} from "./planning";
+export {
+	createPlanGateExtension,
+	parseImplementationPlan,
+	parseWalkthrough,
+	PLAN_GATE_EXTENSION_NAME,
+	PLAN_MODE_MUTATION_ERROR,
+} from "./planning";
+

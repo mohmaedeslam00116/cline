@@ -1,5 +1,9 @@
 "use client";
 
+import {
+	parseImplementationPlan,
+	parseWalkthrough,
+} from "@cline/shared/browser";
 import { GeneratedMediaContent } from "@cline/ui";
 import {
 	Message as AgentMessage,
@@ -16,7 +20,7 @@ import {
 	SplitIcon,
 	UndoIcon,
 } from "lucide-react";
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import type {
 	ChatMessage,
 	ChatMessageImage,
@@ -27,7 +31,9 @@ import { MemoizedMarkdown } from "../../../ui/markdown";
 import { formatChatMessageContent } from "../message-content";
 import { isSystemSteeringMessage } from "./group-messages";
 import { MessageImageCarousel } from "./image-carousel";
+import { PlanReviewPanel } from "./plan-review-panel";
 import { ReasoningBlock } from "./reasoning-block";
+import { WalkthroughPanel } from "./walkthrough-panel";
 
 function MessageImages({
 	images,
@@ -115,6 +121,9 @@ export const MessageBubble = memo(function MessageBubble({
 	reasoningContent,
 	reasoningRedacted,
 	thoughtDurationMilliseconds,
+	isPlanApproved = false,
+	isPlanApproving = false,
+	onApprovePlan,
 }: {
 	agentRole: AgentMessageRole;
 	message: ChatMessage;
@@ -149,22 +158,51 @@ export const MessageBubble = memo(function MessageBubble({
 	reasoningContent: string;
 	reasoningRedacted: boolean;
 	thoughtDurationMilliseconds?: number;
+	isPlanApproved?: boolean;
+	isPlanApproving?: boolean;
+	onApprovePlan?: (planMarkdown: string) => void | Promise<void>;
 }) {
 	const isUser = message.role === "user";
 	const isError = message.role === "error";
 	const checkpoint = message.meta?.checkpoint;
+	const isSteering = isSystemSteeringMessage(message);
+
+	const displayContent = formatChatMessageContent(
+		message.role,
+		message.content,
+	);
+	const parsedPlan = useMemo(() => {
+		if (message.role !== "assistant" || isStreaming) {
+			return null;
+		}
+		return parseImplementationPlan(displayContent);
+	}, [message.role, isStreaming, displayContent]);
+
+	const parsedWalkthrough = useMemo(() => {
+		if (message.role !== "assistant" || isStreaming) {
+			return null;
+		}
+		return parseWalkthrough(displayContent);
+	}, [message.role, isStreaming, displayContent]);
+
+	const conversationalContent = useMemo(() => {
+		if (parsedPlan?.rawMarkdown) {
+			return displayContent.replace(parsedPlan.rawMarkdown, "").trim();
+		}
+		if (parsedWalkthrough?.rawMarkdown) {
+			return displayContent.replace(parsedWalkthrough.rawMarkdown, "").trim();
+		}
+		return displayContent;
+	}, [displayContent, parsedPlan, parsedWalkthrough]);
+
 	// Runtime steering notes (completion nudges in scheduled/automation runs,
 	// team-obligation reminders) are user-role messages the machinery sends to
 	// the model, not something the person said or needs to read — hide them
 	// from the transcript entirely. Grouping still treats them as working-row
 	// machinery (never a turn boundary, an answer, or a run-count increment).
-	if (isSystemSteeringMessage(message)) {
+	if (isSteering) {
 		return null;
 	}
-	const displayContent = formatChatMessageContent(
-		message.role,
-		message.content,
-	);
 	const shouldRenderAssistantActions =
 		message.role === "assistant" &&
 		!isStreaming &&
@@ -237,13 +275,30 @@ export const MessageBubble = memo(function MessageBubble({
 
 				{message.media?.length ? <MessageMedia media={message.media} /> : null}
 
-				{displayContent ? (
+				{conversationalContent ? (
 					<div className="min-w-0 max-w-full wrap-break-word">
 						<MemoizedMarkdown
-							content={displayContent}
+							content={conversationalContent}
 							streaming={isStreaming && message.role === "assistant"}
 						/>
 					</div>
+				) : null}
+
+				{parsedPlan ? (
+					<PlanReviewPanel
+						isApproved={isPlanApproved}
+						isApproving={isPlanApproving}
+						onApprove={
+							onApprovePlan
+								? () => onApprovePlan(parsedPlan.rawMarkdown ?? parsedPlan.goal)
+								: undefined
+						}
+						plan={parsedPlan}
+					/>
+				) : null}
+
+				{parsedWalkthrough ? (
+					<WalkthroughPanel walkthrough={parsedWalkthrough} />
 				) : null}
 			</MessageContent>
 

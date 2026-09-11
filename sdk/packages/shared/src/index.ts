@@ -591,4 +591,5 @@ export * from "./team";
 export { createTool } from "./tools/create";
 export * from "./types";
 export { AUTH_ERROR_PATTERNS, isLikelyAuthError } from "./types/auth";
+export * from "./planning";
 export { initVcr } from "./vcr";

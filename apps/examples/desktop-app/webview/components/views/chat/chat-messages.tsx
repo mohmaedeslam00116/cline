@@ -84,6 +84,7 @@ type ChatMessagesProps = {
 		sessionId: string,
 		toolCallId?: string,
 	) => void | Promise<void>;
+	onApprovePlan?: (planMarkdown: string) => void | Promise<void>;
 };
 
 type AskQuestionRequestItem = {
@@ -118,6 +119,7 @@ function ChatMessagesImpl({
 	onEditMessage,
 	onForkSession,
 	onProceedWhileRunning,
+	onApprovePlan,
 }: ChatMessagesProps) {
 	const hasMessages = messages.length > 0;
 	// Scanned from the tail without copying: this component re-renders on
@@ -194,6 +196,33 @@ function ChatMessagesImpl({
 		sessionId: string | null;
 		image: ChatMessageImage;
 	} | null>(null);
+	const [approvedPlanIds, setApprovedPlanIds] = useState<Set<string>>(
+		() => new Set(),
+	);
+	const [approvingPlanIds, setApprovingPlanIds] = useState<Set<string>>(
+		() => new Set(),
+	);
+
+	const handleApprovePlan = useCallback(
+		async (messageId: string, planMarkdown: string) => {
+			setApprovingPlanIds((prev) => new Set(prev).add(messageId));
+			try {
+				if (onApprovePlan) {
+					await Promise.resolve(onApprovePlan(planMarkdown));
+				} else if (onProceedWhileRunning && sessionId) {
+					await Promise.resolve(onProceedWhileRunning(sessionId));
+				}
+				setApprovedPlanIds((prev) => new Set(prev).add(messageId));
+			} finally {
+				setApprovingPlanIds((prev) => {
+					const next = new Set(prev);
+					next.delete(messageId);
+					return next;
+				});
+			}
+		},
+		[onApprovePlan, onProceedWhileRunning, sessionId],
+	);
 	const sessionVersioningPending =
 		editingMessageId !== null ||
 		forkingMessageId !== null ||
@@ -576,19 +605,26 @@ function ChatMessagesImpl({
 										if (child.type !== "message") {
 											return null;
 										}
+										const isLastMsg =
+											child.message.role === "assistant" &&
+											lastConversationMessage === child.message;
 										return (
 											<MessageBubble
 												agentRole={child.agentRole}
-												isLastAssistantMessage={
-													child.message.role === "assistant" &&
-													lastConversationMessage === child.message
-												}
+												isLastAssistantMessage={isLastMsg}
 												isStreaming={streamingMessageId === child.message.id}
 												key={child.message.id}
 												message={child.message}
 												onCopyMessage={handleCopyMessage}
 												onExpandImage={handleExpandImage}
 												wasCopied={copiedMessageId === child.message.id}
+												isPlanApproved={
+													approvedPlanIds.has(child.message.id) || !isLastMsg
+												}
+												isPlanApproving={approvingPlanIds.has(child.message.id)}
+												onApprovePlan={(planMarkdown) =>
+													handleApprovePlan(child.message.id, planMarkdown)
+												}
 												{...getReasoningProps(child.reasoningMessages)}
 											/>
 										);
@@ -625,20 +661,27 @@ function ChatMessagesImpl({
 										message.role === "assistant" &&
 										previousItem !== undefined &&
 										previousItem.type !== "message";
+									const isLastAssistant =
+										message.role === "assistant" &&
+										lastConversationMessage === message;
 									return (
 										<MessageBubble
 											agentRole={agentRole}
 											followsWorkingRows={followsWorkingRows}
-											isLastAssistantMessage={
-												message.role === "assistant" &&
-												lastConversationMessage === message
-											}
+											isLastAssistantMessage={isLastAssistant}
 											isStreaming={streamingMessageId === message.id}
 											key={message.id}
 											message={message}
 											runCount={userRunCountByMessage.get(message)}
 											onExpandImage={handleExpandImage}
 											onCopyMessage={handleCopyMessage}
+											isPlanApproved={
+												approvedPlanIds.has(message.id) || !isLastAssistant
+											}
+											isPlanApproving={approvingPlanIds.has(message.id)}
+											onApprovePlan={(planMarkdown) =>
+												handleApprovePlan(message.id, planMarkdown)
+											}
 											onEditMessage={
 												onEditMessage ? requestEditMessage : undefined
 											}
