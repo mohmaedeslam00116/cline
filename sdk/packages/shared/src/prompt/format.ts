@@ -4,7 +4,7 @@ export function formatFileContentBlock(path: string, content: string): string {
 
 export function formatUserInputBlock(
 	input: string,
-	mode: "act" | "plan" | "yolo" = "act",
+	mode: "act" | "plan" | "yolo" | "ultra" = "act",
 ): string {
 	return `<user_input mode="${mode}">${input}</user_input>`;
 }
@@ -17,7 +17,7 @@ export function formatUserCommandBlock(input: string, slash: string): string {
 // mode values), but searches rather than anchors: persisted user content can
 // carry prepended <mode_notice> elements or trailing attachment blocks
 // around the wrapper.
-const USER_INPUT_MODE_RE = /<user_input\b[^>]*\bmode="(act|plan|yolo)"/;
+const USER_INPUT_MODE_RE = /<user_input\b[^>]*\bmode="(act|plan|yolo|ultra)"/;
 
 /**
  * Recovers the agent mode a persisted user message was sent in from its
@@ -26,9 +26,9 @@ const USER_INPUT_MODE_RE = /<user_input\b[^>]*\bmode="(act|plan|yolo)"/;
  */
 export function parseUserInputMode(
 	input?: string,
-): "act" | "plan" | "yolo" | undefined {
+): "act" | "plan" | "yolo" | "ultra" | undefined {
 	const match = USER_INPUT_MODE_RE.exec(input ?? "");
-	return match ? (match[1] as "act" | "plan" | "yolo") : undefined;
+	return match ? (match[1] as "act" | "plan" | "yolo" | "ultra") : undefined;
 }
 
 /**
@@ -39,15 +39,15 @@ export function parseUserInputMode(
  * display by stripModeNotices at display boundaries.
  */
 export function formatModeSwitchNotice(
-	from: "act" | "plan" | "yolo",
-	to: "act" | "plan" | "yolo",
+	from: "act" | "plan" | "yolo" | "ultra",
+	to: "act" | "plan" | "yolo" | "ultra",
 ): string {
 	return `<mode_notice>The user switched from ${from} mode to ${to} mode before sending this message.</mode_notice>`;
 }
 
 export type ModeSwitchNotice = {
-	from: "act" | "plan" | "yolo";
-	to: "act" | "plan" | "yolo";
+	from: "act" | "plan" | "yolo" | "ultra";
+	to: "act" | "plan" | "yolo" | "ultra";
 };
 
 /**
@@ -61,7 +61,10 @@ export type ModeSwitchNotice = {
 export function createModeSwitchNoticeTracker() {
 	let pending: ModeSwitchNotice | null = null;
 	return {
-		record(from: "act" | "plan" | "yolo", to: "act" | "plan" | "yolo"): void {
+		record(
+			from: "act" | "plan" | "yolo" | "ultra",
+			to: "act" | "plan" | "yolo" | "ultra",
+		): void {
 			if (from === to) {
 				return;
 			}

@@ -657,12 +657,14 @@ function lensExtraTools(
 /** Auto-approval is a tool policy, not a request to change the tool preset. */
 export function resolveDesktopSessionMode(
 	config: JsonRecord,
-): "act" | "plan" | "yolo" {
+): "act" | "plan" | "yolo" | "ultra" {
 	return config.mode === "plan"
 		? "plan"
 		: config.mode === "yolo"
 			? "yolo"
-			: "act";
+			: config.mode === "ultra"
+				? "ultra"
+				: "act";
 }
 
 export function buildSessionConnectionUpdate(

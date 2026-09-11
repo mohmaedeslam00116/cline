@@ -73,6 +73,9 @@ export interface LensTranslations {
 		readonly yoloName: string;
 		readonly yoloTitle: string;
 		readonly yoloDesc: string;
+		readonly ultraName: string;
+		readonly ultraTitle: string;
+		readonly ultraDesc: string;
 	};
 	readonly planReview: {
 		readonly badge: string;
@@ -96,6 +99,37 @@ export interface LensTranslations {
 		readonly verificationComplete: string;
 		readonly changesMade: string;
 		readonly verificationResults: string;
+		readonly expand: string;
+		readonly collapse: string;
+	};
+	readonly ultraPipeline: {
+		readonly badge: string;
+		readonly subtitle: string;
+		readonly tabPrd: string;
+		readonly tabArchitect: string;
+		readonly tabTasks: string;
+		readonly tabCode: string;
+		readonly tabQa: string;
+		readonly statusInProgress: string;
+		readonly statusVerified: string;
+		readonly statusSelfCorrecting: string;
+		readonly goalsTitle: string;
+		readonly userStoriesTitle: string;
+		readonly competitiveAnalysisTitle: string;
+		readonly requirementPoolTitle: string;
+		readonly techStackTitle: string;
+		readonly fileListTitle: string;
+		readonly classDiagramTitle: string;
+		readonly sequenceDiagramTitle: string;
+		readonly dependenciesTitle: string;
+		readonly apiSpecTitle: string;
+		readonly logicAnalysisTitle: string;
+		readonly taskDagTitle: string;
+		readonly testExecutionTitle: string;
+		readonly retriesTitle: string;
+		readonly verificationPassed: string;
+		readonly copyDeliverable: string;
+		readonly copied: string;
 		readonly expand: string;
 		readonly collapse: string;
 	};
@@ -176,6 +210,10 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			yoloName: "Autonomous",
 			yoloTitle: "Autonomous (YOLO)",
 			yoloDesc: "Autonomous execution with all tools auto-approved",
+			ultraName: "Ultra",
+			ultraTitle: "Ultra (MetaGPT Multi-Agent Pipeline)",
+			ultraDesc:
+				"Multi-agent collaborative SOP pipeline (PM -> Architect -> Project Manager -> Engineer -> QA) with executable feedback.",
 		},
 		planReview: {
 			badge: "Architect Plan",
@@ -202,6 +240,45 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			verificationResults: "Verification & Validation Results",
 			expand: "Expand",
 			collapse: "Collapse",
+		},
+		ultraPipeline: {
+			badge: "MetaGPT Assembly Line",
+			subtitle: "Multi-Agent Software Engineering Pipeline (arXiv:2308.00352)",
+			tabPrd: "1. PRD (PM)",
+			tabArchitect: "2. Design (Architect)",
+			tabTasks: "3. Tasks (PM)",
+			tabCode: "4. Code (Engineer)",
+			tabQa: "5. QA & Verification",
+			statusInProgress: "In Progress",
+			statusVerified: "Verified",
+			statusSelfCorrecting: "Self-Correcting",
+			goalsTitle: "Product Goals",
+			userStoriesTitle: "User Stories",
+			competitiveAnalysisTitle: "Competitive Analysis",
+			requirementPoolTitle: "Requirement Pool",
+			techStackTitle: "Implementation Approach",
+			fileListTitle: "Project Files",
+			classDiagramTitle: "Data Structures & Interfaces",
+			sequenceDiagramTitle: "Program Call Flow",
+			dependenciesTitle: "Third-Party Packages",
+			apiSpecTitle: "API Specification",
+			logicAnalysisTitle: "Logic Analysis",
+			taskDagTitle: "Task Execution DAG",
+			testExecutionTitle: "Test Execution & Results",
+			retriesTitle: "Executable Feedback Cycles",
+			verificationPassed: "All Tests Passed & Contracts Verified",
+			copyDeliverable: "Copy Deliverable",
+			copied: "Copied!",
+			expand: "Expand",
+			collapse: "Collapse",
+			priorityLabel: "Priority",
+			requirementLabel: "Requirement",
+			uiDraftTitle: "UI Design Draft",
+			engineerTitle: "Engineer Implementation",
+			engineerDesc:
+				"Implementation files adhering to Architect interfaces and task list:",
+			errorTracebacksTitle: "Captured Error Tracebacks",
+			footerPhase: "Ultra Mode • SOP Phase:",
 		},
 	},
 	ar: {
@@ -278,6 +355,10 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			yoloTitle: "تلقائي (شامل)",
 			yoloDesc:
 				"وضع التنفيذ التلقائي المستقل مع الموافقة التلقائية على جميع الأدوات",
+			ultraName: "ألترا",
+			ultraTitle: "ألترا (فريق متعدد الوكلاء - MetaGPT)",
+			ultraDesc:
+				"مسار عمل هندسي تعاوني متعدد الوكلاء (مدير منتج -> مهندس معماري -> مدير مشروع -> مهندس برمجي -> مهندس جودة) مع تغذية راجعة تنفيذية.",
 		},
 		planReview: {
 			badge: "خطة المعمار",
@@ -304,6 +385,45 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			verificationResults: "نتائج التحقق والمطابقة",
 			expand: "توسيع",
 			collapse: "طي",
+		},
+		ultraPipeline: {
+			badge: "خط تجميع MetaGPT",
+			subtitle: "مسار الهندسة البرمجية متعدد الوكلاء (arXiv:2308.00352)",
+			tabPrd: "1. المتطلبات (مدير المنتج)",
+			tabArchitect: "2. التصميم (المعمار)",
+			tabTasks: "3. المهام (مدير المشروع)",
+			tabCode: "4. الكود (المهندس)",
+			tabQa: "5. الجودة والتحقق",
+			statusInProgress: "قيد التنفيذ",
+			statusVerified: "تم التحقق",
+			statusSelfCorrecting: "تصحيح ذاتي جاري",
+			goalsTitle: "أهداف المنتج",
+			userStoriesTitle: "قصص المستخدمين",
+			competitiveAnalysisTitle: "التحليل التنافسي",
+			requirementPoolTitle: "مجمع المتطلبات",
+			techStackTitle: "نهج التنفيذ البرمجي",
+			fileListTitle: "ملفات المشروع",
+			classDiagramTitle: "هياكل البيانات والواجهات",
+			sequenceDiagramTitle: "مخطط تسلسل الاستدعاء",
+			dependenciesTitle: "الحزم الخارجية المطلوبة",
+			apiSpecTitle: "مواصفات الواجهات البرمجية",
+			logicAnalysisTitle: "التحليل المنطقي",
+			taskDagTitle: "مخطط تسلسل المهام (DAG)",
+			testExecutionTitle: "تنفيذ ونتائج الاختبارات",
+			retriesTitle: "دورات التغذية الراجعة التنفيذية",
+			verificationPassed: "تم اجتياز جميع الاختبارات وتأكيد العقود",
+			copyDeliverable: "نسخ المخرجات",
+			copied: "تم النسخ!",
+			expand: "توسيع",
+			collapse: "طي",
+			priorityLabel: "الأولوية",
+			requirementLabel: "المتطلب",
+			uiDraftTitle: "مسودة واجهة المستخدم",
+			engineerTitle: "تنفيذ المهندس البرمجي",
+			engineerDesc:
+				"ملفات التنفيذ البرمجي الملتزمة بواجهات المعمار وقائمة المهام:",
+			errorTracebacksTitle: "سجلات أخطاء التنفيذ الملتقطة",
+			footerPhase: "الوضع المتطور • مرحلة إجراءات التشغيل القياسية:",
 		},
 	},
 };

@@ -14,6 +14,7 @@ import {
 	Compass,
 	Cpu,
 	Paperclip,
+	Workflow,
 	X,
 	Zap,
 } from "lucide-react";
@@ -290,23 +291,23 @@ export type PromptDraft = {
 	value: string;
 };
 
-const MODES = ["act", "plan", "yolo"] as const;
+const MODES = ["act", "plan", "yolo", "ultra"] as const;
 
 export const ModeSwitcher = memo(function ModeSwitcher({
 	mode,
 	disabled = false,
 	onModeChange,
 }: {
-	mode: "act" | "plan" | "yolo";
+	mode: "act" | "plan" | "yolo" | "ultra";
 	disabled?: boolean;
-	onModeChange: (nextMode: "act" | "plan" | "yolo") => void;
+	onModeChange: (nextMode: "act" | "plan" | "yolo" | "ultra") => void;
 }) {
 	const t = getLensTranslations().modes;
 
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent<HTMLDivElement>) => {
 			if (disabled) return;
-			let nextMode: "act" | "plan" | "yolo" | null = null;
+			let nextMode: "act" | "plan" | "yolo" | "ultra" | null = null;
 			const currentIndex = MODES.indexOf(mode);
 			if (e.key === "ArrowRight" || e.key === "ArrowDown") {
 				e.preventDefault();
@@ -399,6 +400,27 @@ export const ModeSwitcher = memo(function ModeSwitcher({
 				<Zap className="size-3.5" />
 				<span className="max-[560px]:sr-only">{t.yoloName}</span>
 			</button>
+			{/* biome-ignore lint/a11y/useSemanticElements: the mode switcher is a styled radiogroup of buttons; aria-checked + role convey the semantics. */}
+			<button
+				aria-checked={mode === "ultra"}
+				aria-label={t.ultraTitle}
+				className={cn(
+					"inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+					mode === "ultra"
+						? "bg-background text-indigo-500 shadow-2xs font-semibold"
+						: "text-muted-foreground hover:text-foreground",
+				)}
+				data-mode="ultra"
+				disabled={disabled}
+				onClick={() => onModeChange("ultra")}
+				role="radio"
+				tabIndex={mode === "ultra" ? 0 : -1}
+				title={t.ultraDesc}
+				type="button"
+			>
+				<Workflow className="size-3.5" />
+				<span className="max-[560px]:sr-only">{t.ultraName}</span>
+			</button>
 		</div>
 	);
 });
@@ -410,7 +432,7 @@ type ChatInputBarProps = {
 	provider: string;
 	model: string;
 	modelContextWindow?: number;
-	mode: "act" | "plan" | "yolo";
+	mode: "act" | "plan" | "yolo" | "ultra";
 	thinking: ChatSessionConfig["thinking"];
 	reasoningEffort: ChatSessionConfig["reasoningEffort"];
 	/** Branch name, "no-git" for a non-repo folder, null while discovery is pending. */
@@ -420,7 +442,7 @@ type ChatInputBarProps = {
 	onProviderChange: (provider: string) => void;
 	onModelChange: (model: string) => void;
 	onModeToggle?: () => void;
-	onModeChange?: (mode: "act" | "plan" | "yolo") => void;
+	onModeChange?: (mode: "act" | "plan" | "yolo" | "ultra") => void;
 	onReasoningChange: (
 		next: Pick<ChatSessionConfig, "thinking" | "reasoningEffort">,
 	) => void;
@@ -582,7 +604,7 @@ function ChatInputBarImpl({
 	);
 	const canSend = hasDraft && !speechInputActive;
 	const handleModeSelect = useCallback(
-		(nextMode: "act" | "plan" | "yolo") => {
+		(nextMode: "act" | "plan" | "yolo" | "ultra") => {
 			if (onModeChange) {
 				onModeChange(nextMode);
 			} else if (onModeToggle && nextMode !== mode) {
@@ -1415,12 +1437,13 @@ function ChatInputBarImpl({
 										return;
 									}
 									const cycle: Record<
-										"act" | "plan" | "yolo",
-										"act" | "plan" | "yolo"
+										"act" | "plan" | "yolo" | "ultra",
+										"act" | "plan" | "yolo" | "ultra"
 									> = {
 										act: "plan",
 										plan: "yolo",
-										yolo: "act",
+										yolo: "ultra",
+										ultra: "act",
 									};
 									handleModeSelect(cycle[mode]);
 									return;

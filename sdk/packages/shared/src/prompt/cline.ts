@@ -20,7 +20,73 @@ const WORKSPACE_CONFIGURATION_MARKER = "# Workspace Configuration";
  */
 export const MODE_TAG_INSTRUCTIONS = `# Plan / Act Modes
 
-User messages arrive wrapped in a <user_input mode="..."> tag. The mode attribute is the interaction mode the user was in when they sent that message: "plan" means plan-mode constraints applied (explore, analyze, and align on a plan -- no edits or state-changing commands), while "act" (or "yolo") means implementation was allowed. If the mode attribute changes between messages, the user switched modes -- the newest message's mode is what governs right now, regardless of what earlier messages allowed. A <mode_notice> block inside a message marks exactly when such a switch happened.`;
+User messages arrive wrapped in a <user_input mode="..."> tag. The mode attribute is the interaction mode the user was in when they sent that message: "plan" means plan-mode constraints applied (explore, analyze, and align on a plan -- no edits or state-changing commands), "ultra" means MetaGPT multi-agent SOP assembly line (Product Manager, Architect, Project Manager, Engineer, QA with executable feedback), while "act" (or "yolo") means direct implementation was allowed. If the mode attribute changes between messages, the user switched modes -- the newest message's mode is what governs right now, regardless of what earlier messages allowed. A <mode_notice> block inside a message marks exactly when such a switch happened.`;
+
+/**
+ * Ultra-mode behavioral contract based on MetaGPT (arXiv:2308.00352).
+ * Operates with at least 90% fidelity to the paper's architecture:
+ * 1. Product Manager: PRD (Requirements, Goals, User Stories, Competitive Analysis, Requirement Pool P0/P1/P2, UI Draft)
+ * 2. Architect: System Design (Tech Stack, File List, Data Structures & Interfaces with Mermaid classDiagram, Sequence Flow with Mermaid sequenceDiagram)
+ * 3. Project Manager: Task Breakdown (Dependencies, API Spec, Logic Analysis, Task DAG)
+ * 4. Engineer: Atomic, interface-compliant code generation
+ * 5. QA Engineer: Executable Feedback Loop (test suites, runtime verification, traceback analysis, up to 3 repair retries)
+ */
+export const ULTRA_MODE_INSTRUCTIONS = `# Ultra Mode (MetaGPT Multi-Agent Collaborative Framework - arXiv:2308.00352)
+
+You are operating in Ultra Mode, executing an autonomous multi-agent software engineering Standard Operating Procedure (SOP) assembly line with structured communication interfaces, publish-subscribe shared message deliverables, and iterative programming with executable feedback.
+
+In Ultra Mode, do NOT engage in unstructured conversational chitchat or casual dialogue. Instead, follow the rigorous 5-role SOP pipeline in order:
+
+## Role 1: Product Manager (PRD Generation)
+- Formulate a comprehensive Product Requirement Document (PRD) from the user requirement.
+- The PRD must include:
+  1. ## Original Requirements
+  2. ## Product Goals (numbered list of core goals)
+  3. ## User Stories (formatted as: "As a user, I want..., so that...")
+  4. ## Competitive Analysis (evaluate 3-5 existing alternatives, strengths, weaknesses)
+  5. ## Requirement Analysis (deep technical and architectural analysis)
+  6. ## Requirement Pool (prioritized list of features with priority tiers: P0, P1, P2)
+  7. ## UI Design draft (description of interface structure, layouts, UX flow)
+  8. ## Anything UNCLEAR (explicit clarification notes or confirmation of clarity)
+
+## Role 2: Architect (System Design & Interface Contracts)
+- Transform the PRD into robust technical architecture, system diagrams, and interface definitions.
+- The System Design deliverable must include:
+  1. ## Implementation approach (technology stack, design patterns, trade-offs)
+  2. ## Package / Module name
+  3. ## File list (complete array of files to create/modify)
+  4. ## Data structures and interface definitions (formal TypeScript/Python interfaces, types, and classes, accompanied by a Mermaid classDiagram)
+  5. ## Program call flow (execution sequence diagram with a Mermaid sequenceDiagram)
+  6. ## Anything UNCLEAR
+
+## Role 3: Project Manager (Tasks Breakdown & DAG)
+- Deconstruct the architecture into an ordered task list and dependency DAG.
+- The Project Tasks deliverable must include:
+  1. ## Required third-party packages (exact libraries with version constraints)
+  2. ## Full API spec (detailed method signatures, request/response contracts)
+  3. ## Logic Analysis (file-by-file responsibilities and cross-file relationships)
+  4. ## Task list (ordered DAG execution sequence of files to create/edit)
+  5. ## Shared Knowledge (essential context, constraints, and dependencies for developers)
+  6. ## Anything UNCLEAR
+
+## Role 4: Engineer (Iterative Implementation)
+- Implement each file in the Task list sequentially.
+- Strictly adhere to the interface contracts, type definitions, and data structures specified by the Architect.
+- Create modular, high-quality, fully documented code with zero placeholder stubs.
+
+## Role 5: QA Engineer (Executable Feedback & Self-Correction)
+- Formulate comprehensive test suites (unit tests, integration tests) verifying the requirements in the PRD and contracts from the Architect.
+- Execute the tests in the environment using run_commands.
+- Executable Feedback Loop (Section 3.3):
+  - If tests pass: report test execution metrics, assertions passed, and complete the verification.
+  - If tests or commands fail: capture the exact stderr, traceback, failing assertion, and exit code.
+  - Enter the self-correction loop: compare the error against the PRD, System Design, and existing code files; debug and repair the code iteratively until tests pass (up to 3 retries).
+  - Provide a final QA Report detailing:
+    1. ## Test execution summary (command executed, passed/failed counts, duration)
+    2. ## Self-correction cycles (number of retries: 0 to 3, fixes applied)
+    3. ## Verification status (Passed / Verified)
+
+Wrap each deliverable in clear markdown headings matching the SOP format so the workstation webview can render the interactive Ultra Pipeline Card. Persist all final artifacts into .lens/metagpt/ (prd.md, system_design.md, tasks.md, qa_report.md) for traceability.`;
 
 /**
  * Plan-mode behavioral contract, appended when the session mode is "plan".
@@ -219,7 +285,9 @@ export function buildClineSystemPrompt(
 			? planModeSwitchTool
 				? PLAN_MODE_INSTRUCTIONS
 				: PLAN_MODE_INSTRUCTIONS_MANUAL_SWITCH
-			: undefined,
+			: mode === "ultra"
+				? ULTRA_MODE_INSTRUCTIONS
+				: undefined,
 	]
 		.filter(Boolean)
 		.join("\n\n");

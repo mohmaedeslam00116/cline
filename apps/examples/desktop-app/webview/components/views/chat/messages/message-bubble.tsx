@@ -33,6 +33,8 @@ import { isSystemSteeringMessage } from "./group-messages";
 import { MessageImageCarousel } from "./image-carousel";
 import { PlanReviewPanel } from "./plan-review-panel";
 import { ReasoningBlock } from "./reasoning-block";
+import { UltraPipelinePanel } from "./ultra-pipeline-panel";
+import { parseUltraPipeline } from "./ultra-pipeline-parser";
 import { WalkthroughPanel } from "./walkthrough-panel";
 
 function MessageImages({
@@ -187,6 +189,24 @@ export const MessageBubble = memo(function MessageBubble({
 		return parseWalkthrough(displayContent);
 	}, [message.role, isStreaming, parsedPlan, displayContent]);
 
+	const parsedUltraPipeline = useMemo(() => {
+		if (
+			message.role !== "assistant" ||
+			isStreaming ||
+			parsedPlan !== null ||
+			parsedWalkthrough !== null
+		) {
+			return null;
+		}
+		return parseUltraPipeline(displayContent);
+	}, [
+		message.role,
+		isStreaming,
+		parsedPlan,
+		parsedWalkthrough,
+		displayContent,
+	]);
+
 	const conversationalContent = useMemo(() => {
 		if (parsedPlan?.rawMarkdown) {
 			return displayContent.replace(parsedPlan.rawMarkdown, "").trim();
@@ -194,8 +214,11 @@ export const MessageBubble = memo(function MessageBubble({
 		if (parsedWalkthrough?.rawMarkdown) {
 			return displayContent.replace(parsedWalkthrough.rawMarkdown, "").trim();
 		}
+		if (parsedUltraPipeline?.rawMarkdown) {
+			return displayContent.replace(parsedUltraPipeline.rawMarkdown, "").trim();
+		}
 		return displayContent;
-	}, [displayContent, parsedPlan, parsedWalkthrough]);
+	}, [displayContent, parsedPlan, parsedWalkthrough, parsedUltraPipeline]);
 
 	// Runtime steering notes (completion nudges in scheduled/automation runs,
 	// team-obligation reminders) are user-role messages the machinery sends to
@@ -304,6 +327,10 @@ export const MessageBubble = memo(function MessageBubble({
 						isVerified={isVerified}
 						walkthrough={parsedWalkthrough}
 					/>
+				) : null}
+
+				{parsedUltraPipeline ? (
+					<UltraPipelinePanel pipeline={parsedUltraPipeline} />
 				) : null}
 			</MessageContent>
 
