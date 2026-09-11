@@ -14,6 +14,12 @@ import {
 	isCapabilityType,
 	LensPortError,
 } from "@lens/ports";
+import { resolveSafePath, scopeCoversPath } from "./path-boundary.js";
+
+export interface OperationScope {
+	readonly executable?: string;
+	readonly relativePath?: string;
+}
 
 export interface AuditRecord {
 	readonly seq: number;
@@ -80,22 +86,64 @@ export class CapabilityGrantRegistry {
 	}
 
 	/** Verify an active grant of `capability` within the given scope, or throw POLICY_DENIED. */
-	require(capability: CapabilityType, nowMs = Date.now()): CapabilityGrant {
+	require(
+		capability: CapabilityType,
+		scopeOrNowMs?: OperationScope | number,
+		nowMs?: number,
+	): CapabilityGrant {
+		const operationScope =
+			typeof scopeOrNowMs === "object" && scopeOrNowMs !== null
+				? scopeOrNowMs
+				: undefined;
+		const effectiveNowMs =
+			typeof scopeOrNowMs === "number" ? scopeOrNowMs : (nowMs ?? Date.now());
+
+		let sawScopeMismatch = false;
 		for (const grant of this.grants.values()) {
 			if (grant.capability !== capability) continue;
-			if (!isActiveGrant(grant, capability, nowMs)) continue;
+			if (!isActiveGrant(grant, capability, effectiveNowMs)) continue;
+
+			if (operationScope) {
+				if (operationScope.executable !== undefined) {
+					if (grant.scope.executable !== operationScope.executable) {
+						sawScopeMismatch = true;
+						continue;
+					}
+				}
+				if (operationScope.relativePath !== undefined) {
+					const resolved = resolveSafePath(
+						this.workspaceRoot,
+						operationScope.relativePath,
+					);
+					if (
+						!scopeCoversPath(
+							grant as Parameters<typeof scopeCoversPath>[0],
+							resolved,
+						)
+					) {
+						sawScopeMismatch = true;
+						continue;
+					}
+				}
+			}
+
 			this.audit("grant-verified", capability, `verified ${grant.grantId}`);
 			return grant;
 		}
 		const anyExpired = [...this.grants.values()].some(
 			(g) => g.capability === capability,
 		);
+		const detail = sawScopeMismatch
+			? `no active ${capability} grant matches the requested operation scope`
+			: anyExpired
+				? `all ${capability} grants have expired`
+				: `no active ${capability} grant`;
 		this.audit(
-			anyExpired ? "grant-expired" : "grant-denied",
+			anyExpired && !sawScopeMismatch ? "grant-expired" : "grant-denied",
 			capability,
-			`no active ${capability} grant`,
+			detail,
 		);
-		throw new LensPortError("POLICY_DENIED", `no active ${capability} grant`);
+		throw new LensPortError("POLICY_DENIED", detail);
 	}
 
 	/** List active grants (inspection/debugging). */

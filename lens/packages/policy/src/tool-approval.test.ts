@@ -183,6 +183,58 @@ describe("CapabilityGrantRegistry", () => {
 		}
 	});
 
+	it("enforces operation scope for executables and path prefixes in require", () => {
+		const reg = new CapabilityGrantRegistry("/ws");
+
+		// Terminal command grant scoped to 'git'
+		const gitGrant = reg.issue(
+			"RESTRICTED_TERMINAL_COMMAND",
+			{ executable: "git" },
+			60_000,
+			"git commands only",
+		);
+
+		// Valid matching executable succeeds
+		expect(
+			reg.require("RESTRICTED_TERMINAL_COMMAND", { executable: "git" }).grantId,
+		).toBe(gitGrant.grantId);
+
+		// Mismatched executable is rejected
+		expect(() =>
+			reg.require("RESTRICTED_TERMINAL_COMMAND", { executable: "rm" }),
+		).toThrow(LensPortError);
+		expect(() =>
+			reg.require("RESTRICTED_TERMINAL_COMMAND", { executable: "npm" }),
+		).toThrow(LensPortError);
+
+		// File write grant scoped to 'src' and 'lib'
+		const scopedWriteGrant = reg.issue(
+			"MUTATING_FILE_WRITE",
+			{ pathPrefixes: ["src", "lib"] },
+			60_000,
+			"src and lib modifications only",
+		);
+
+		// Paths inside allowed prefixes succeed
+		expect(
+			reg.require("MUTATING_FILE_WRITE", { relativePath: "src/index.ts" })
+				.grantId,
+		).toBe(scopedWriteGrant.grantId);
+		expect(
+			reg.require("MUTATING_FILE_WRITE", {
+				relativePath: "lib/utils/helper.ts",
+			}).grantId,
+		).toBe(scopedWriteGrant.grantId);
+
+		// Paths outside allowed prefixes are rejected
+		expect(() =>
+			reg.require("MUTATING_FILE_WRITE", { relativePath: "etc/passwd" }),
+		).toThrow(LensPortError);
+		expect(() =>
+			reg.require("MUTATING_FILE_WRITE", { relativePath: "package.json" }),
+		).toThrow(LensPortError);
+	});
+
 	it("throws POLICY_DENIED when no grant exists, and detects expiry", () => {
 		const reg = new CapabilityGrantRegistry("/ws");
 		expect(() => reg.require("READ_ONLY_INSPECTION")).toThrow(LensPortError);

@@ -77,13 +77,40 @@ export function getGrantCheckpointStatus(toolName: string): GrantCheckpoint {
 	};
 }
 
+export function expectedCapabilityForTool(toolName: string): string {
+	if (toolName === "run_commands" || toolName === "execute_command") {
+		return "RESTRICTED_TERMINAL_COMMAND";
+	}
+	if (AUTONOMOUS_MUTATING_TOOLS.has(toolName) || toolName === "write_to_file") {
+		return "MUTATING_FILE_WRITE";
+	}
+	return "READ_ONLY_INSPECTION";
+}
+
 export function resolveCheckpoint(
 	item: ToolApprovalRequestItem,
 ): GrantCheckpoint {
-	if (item.checkpoint && typeof item.checkpoint === "object") {
+	if (
+		item.checkpoint &&
+		typeof item.checkpoint === "object" &&
+		!Array.isArray(item.checkpoint)
+	) {
 		const cp = item.checkpoint as Record<string, unknown>;
-		if (typeof cp.capability === "string") {
-			const isAllowed = Boolean(cp.isAllowed ?? cp.allowed ?? false);
+		const rawAllowed =
+			typeof cp.isAllowed === "boolean"
+				? cp.isAllowed
+				: typeof cp.allowed === "boolean"
+					? cp.allowed
+					: null;
+		const capability =
+			typeof cp.capability === "string" ? cp.capability.trim() : null;
+
+		if (
+			rawAllowed !== null &&
+			capability !== null &&
+			capability === expectedCapabilityForTool(item.toolName)
+		) {
+			const isAllowed = rawAllowed;
 			const isMutating = AUTONOMOUS_MUTATING_TOOLS.has(item.toolName);
 			return {
 				status: isAllowed
@@ -101,7 +128,7 @@ export function resolveCheckpoint(
 									: "File Modification"
 								: "Read-Only Inspection"
 							: "Mutation Blocked",
-				capability: cp.capability,
+				capability,
 				isAllowed,
 				badgeVariant: isAllowed
 					? isMutating

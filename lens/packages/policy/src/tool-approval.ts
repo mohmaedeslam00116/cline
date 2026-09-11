@@ -21,8 +21,6 @@ export const PHASE1_READ_ONLY_TOOLS = new Set([
 	"list_code_definition_names",
 	"search_symbols",
 	"get_evidence_detail",
-	"fetch_web_content",
-	"web_search",
 	"skills",
 	"ask_question",
 ]);

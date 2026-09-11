@@ -100,6 +100,76 @@ describe("resolveCheckpoint", () => {
 		expect(resolved.status).toBe("mutating_allowed");
 		expect(resolved.capability).toBe("RESTRICTED_TERMINAL_COMMAND");
 	});
+
+	it("rejects string boolean values such as 'false' or 'true' and falls back to safe default", () => {
+		const itemStringFalse: ToolApprovalRequestItem = {
+			requestId: "req-str-false",
+			sessionId: "sess-1",
+			createdAt: new Date().toISOString(),
+			toolCallId: "call-str-false",
+			toolName: "write_to_file",
+			checkpoint: {
+				capability: "MUTATING_FILE_WRITE",
+				isAllowed: "false",
+				label: "Allowed String",
+			},
+		};
+		const resolvedFalse = resolveCheckpoint(itemStringFalse);
+		expect(resolvedFalse.status).toBe("mutating_denied");
+		expect(resolvedFalse.isAllowed).toBe(false);
+		expect(resolvedFalse.badgeVariant).toBe("destructive");
+		expect(resolvedFalse.label).toBe("Mutation Blocked");
+
+		const itemStringTrue: ToolApprovalRequestItem = {
+			requestId: "req-str-true",
+			sessionId: "sess-1",
+			createdAt: new Date().toISOString(),
+			toolCallId: "call-str-true",
+			toolName: "write_to_file",
+			checkpoint: {
+				capability: "MUTATING_FILE_WRITE",
+				isAllowed: "true",
+				label: "Allowed String",
+			},
+		};
+		const resolvedTrue = resolveCheckpoint(itemStringTrue);
+		expect(resolvedTrue.status).toBe("mutating_denied");
+		expect(resolvedTrue.isAllowed).toBe(false);
+	});
+
+	it("rejects mismatched capabilities and falls back to safe default", () => {
+		const itemMismatched: ToolApprovalRequestItem = {
+			requestId: "req-mismatch",
+			sessionId: "sess-1",
+			createdAt: new Date().toISOString(),
+			toolCallId: "call-mismatch",
+			toolName: "editor",
+			checkpoint: {
+				capability: "READ_ONLY_INSPECTION",
+				isAllowed: true,
+				label: "Spoofed Read-Only",
+			},
+		};
+		const resolved = resolveCheckpoint(itemMismatched);
+		expect(resolved.status).toBe("mutating_allowed");
+		expect(resolved.capability).toBe("MUTATING_FILE_WRITE");
+		expect(resolved.label).toBe("File Modification");
+
+		const itemMismatchedCmd: ToolApprovalRequestItem = {
+			requestId: "req-mismatch-cmd",
+			sessionId: "sess-1",
+			createdAt: new Date().toISOString(),
+			toolCallId: "call-mismatch-cmd",
+			toolName: "run_commands",
+			checkpoint: {
+				capability: "MUTATING_FILE_WRITE",
+				isAllowed: true,
+			},
+		};
+		const resolvedCmd = resolveCheckpoint(itemMismatchedCmd);
+		expect(resolvedCmd.status).toBe("mutating_allowed");
+		expect(resolvedCmd.capability).toBe("RESTRICTED_TERMINAL_COMMAND");
+	});
 });
 
 describe("ToolApprovalPanel component", () => {
