@@ -20,6 +20,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import type { AgentTool, RuntimeCapabilities } from "@cline/core";
 import {
+	AUTONOMOUS_MUTATING_TOOLS,
 	CapabilityGrantRegistry,
 	decideToolCall,
 	type PolicyDecision,
@@ -84,8 +85,26 @@ export function attachLensRuntimeCapabilities(
 					reason: `[LENS policy] ${decision.reason}`,
 				};
 			}
+			const enrichedRequest = {
+				...request,
+				checkpoint: {
+					capability:
+						request.toolName === "run_commands"
+							? "RESTRICTED_TERMINAL_COMMAND"
+							: AUTONOMOUS_MUTATING_TOOLS.has(request.toolName)
+								? "MUTATING_FILE_WRITE"
+								: "READ_ONLY_INSPECTION",
+					isAllowed: true,
+					label:
+						request.toolName === "run_commands"
+							? "Terminal Command"
+							: AUTONOMOUS_MUTATING_TOOLS.has(request.toolName)
+								? "File Modification"
+								: "Read-Only Inspection",
+				},
+			};
 			return base.requestToolApproval
-				? base.requestToolApproval(request)
+				? base.requestToolApproval(enrichedRequest as unknown as typeof request)
 				: { approved: true, reason: decision.reason };
 		},
 	};

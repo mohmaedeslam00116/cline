@@ -8,7 +8,12 @@ import type {
 	CapabilityType,
 	TelemetryPort,
 } from "@lens/ports";
-import { freezeGrant, isActiveGrant, LensPortError } from "@lens/ports";
+import {
+	freezeGrant,
+	isActiveGrant,
+	isCapabilityType,
+	LensPortError,
+} from "@lens/ports";
 
 export interface AuditRecord {
 	readonly seq: number;
@@ -34,17 +39,17 @@ export class CapabilityGrantRegistry {
 		private readonly sessionId = "lens-session",
 	) {}
 
-	/** Issue a grant. Phase 1 policy: only READ_ONLY_INSPECTION may be issued (ADR-0003). */
+	/** Issue a grant for any valid capability type. */
 	issue(
 		capability: CapabilityType,
 		scope: Omit<CapabilityGrant["scope"], "workspaceRoot">,
 		ttlMs: number,
 		reason: string,
 	): CapabilityGrant {
-		if (capability !== "READ_ONLY_INSPECTION") {
+		if (!isCapabilityType(capability)) {
 			throw new LensPortError(
 				"POLICY_DENIED",
-				`Phase 1 forbids issuing ${capability} grants (read-only containment)`,
+				`unknown capability '${String(capability)}'`,
 			);
 		}
 		// Fail-closed TTL validation: non-finite, zero, and negative lifetimes

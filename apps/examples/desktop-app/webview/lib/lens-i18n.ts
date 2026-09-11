@@ -52,6 +52,8 @@ export interface LensTranslations {
 		readonly failClosed: string;
 		readonly readOnlyInspection: string;
 		readonly mutationBlocked: string;
+		readonly fileModification: string;
+		readonly terminalExecution: string;
 		readonly pendingNow: string;
 		readonly iteration: string;
 		readonly request: string;
@@ -115,6 +117,8 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			failClosed: "(Phase-1 Fail Closed)",
 			readOnlyInspection: "Read-Only Inspection",
 			mutationBlocked: "Mutation Blocked",
+			fileModification: "File Modification",
+			terminalExecution: "Terminal Command",
 			pendingNow: "Pending now",
 			iteration: "Iteration",
 			request: "Request",
@@ -176,6 +180,8 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			failClosed: "(إغلاق آمن للمرحلة 1)",
 			readOnlyInspection: "فحص للقراءة فقط",
 			mutationBlocked: "تعديل محظور",
+			fileModification: "تعديل الملفات",
+			terminalExecution: "أمر طرفية",
 			pendingNow: "معلق الآن",
 			iteration: "التكرار",
 			request: "الطلب",
