@@ -67,6 +67,7 @@ import {
 } from "@/lib/desktop-tray";
 import { syncDesktopWindowTitle } from "@/lib/desktop-window-title";
 import { createLatestSuccessfulRequestGate } from "@/lib/latest-successful-request";
+import { writeModeSelectionToWindow } from "@/lib/mode-selection";
 import {
 	hasCompletedOnboarding,
 	markOnboardingCompleted,
@@ -1369,12 +1370,32 @@ function ChatThreadPane({
 			),
 		[setConfig],
 	);
+	const handleModeChange = useCallback(
+		(nextMode: "act" | "plan" | "yolo") => {
+			writeModeSelectionToWindow(nextMode);
+			setConfig((prev) =>
+				prev.mode === nextMode ? prev : { ...prev, mode: nextMode },
+			);
+		},
+		[setConfig],
+	);
 	const handleModeToggle = useCallback(
 		() =>
-			setConfig((prev) => ({
-				...prev,
-				mode: prev.mode === "plan" ? "act" : "plan",
-			})),
+			setConfig((prev) => {
+				const cycle: Record<"act" | "plan" | "yolo", "act" | "plan" | "yolo"> =
+					{
+						act: "plan",
+						plan: "yolo",
+						yolo: "act",
+					};
+				const nextMode =
+					cycle[(prev.mode as "act" | "plan" | "yolo") ?? "act"] ?? "act";
+				writeModeSelectionToWindow(nextMode);
+				return {
+					...prev,
+					mode: nextMode,
+				};
+			}),
 		[setConfig],
 	);
 	const handleProviderChange = useCallback(
@@ -1576,6 +1597,7 @@ function ChatThreadPane({
 			onSwitchGitBranch={switchGitBranch}
 			onModelChange={handleModelChange}
 			onModeToggle={handleModeToggle}
+			onModeChange={handleModeChange}
 			onPromptInputChange={handlePromptInputChange}
 			onOpenVoiceInputSettings={onOpenVoiceInputSettings}
 			onReasoningChange={handleReasoningChange}

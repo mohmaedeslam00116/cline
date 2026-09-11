@@ -10,9 +10,12 @@ import {
 	Brain,
 	CircleCheck,
 	CircleStop,
+	Code2,
+	Compass,
 	Cpu,
 	Paperclip,
 	X,
+	Zap,
 } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -286,6 +289,82 @@ export type PromptDraft = {
 	value: string;
 };
 
+export const ModeSwitcher = memo(function ModeSwitcher({
+	mode,
+	disabled = false,
+	onModeChange,
+}: {
+	mode: "act" | "plan" | "yolo";
+	disabled?: boolean;
+	onModeChange: (nextMode: "act" | "plan" | "yolo") => void;
+}) {
+	return (
+		<div
+			aria-label="Agent interaction mode"
+			className="inline-flex shrink-0 items-center rounded-md bg-muted/70 p-0.5 border border-border/50 text-xs shadow-2xs"
+			role="radiogroup"
+		>
+			{/* biome-ignore lint/a11y/useSemanticElements: the mode switcher is a styled radiogroup of buttons; aria-checked + role convey the semantics. */}
+			<button
+				aria-checked={mode === "act"}
+				aria-label="Code mode (Act)"
+				className={cn(
+					"inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+					mode === "act"
+						? "bg-background text-foreground shadow-2xs font-semibold"
+						: "text-muted-foreground hover:text-foreground",
+				)}
+				disabled={disabled}
+				onClick={() => onModeChange("act")}
+				role="radio"
+				title="Code (Act): Implementation mode with tool approvals"
+				type="button"
+			>
+				<Code2 className="size-3.5" />
+				<span className="max-[560px]:sr-only">Code</span>
+			</button>
+			{/* biome-ignore lint/a11y/useSemanticElements: the mode switcher is a styled radiogroup of buttons; aria-checked + role convey the semantics. */}
+			<button
+				aria-checked={mode === "plan"}
+				aria-label="Architect mode (Plan)"
+				className={cn(
+					"inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+					mode === "plan"
+						? "bg-background text-primary shadow-2xs font-semibold"
+						: "text-muted-foreground hover:text-foreground",
+				)}
+				disabled={disabled}
+				onClick={() => onModeChange("plan")}
+				role="radio"
+				title="Architect (Plan): Read-only design and analysis. File edits and mutating commands are blocked."
+				type="button"
+			>
+				<Compass className="size-3.5" />
+				<span className="max-[560px]:sr-only">Architect</span>
+			</button>
+			{/* biome-ignore lint/a11y/useSemanticElements: the mode switcher is a styled radiogroup of buttons; aria-checked + role convey the semantics. */}
+			<button
+				aria-checked={mode === "yolo"}
+				aria-label="Autonomous mode (YOLO)"
+				className={cn(
+					"inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+					mode === "yolo"
+						? "bg-background text-amber-500 dark:text-amber-400 shadow-2xs font-semibold"
+						: "text-muted-foreground hover:text-foreground",
+				)}
+				disabled={disabled}
+				onClick={() => onModeChange("yolo")}
+				role="radio"
+				title="Autonomous (YOLO): Autonomous execution with all tools auto-approved"
+				type="button"
+			>
+				<Zap className="size-3.5" />
+				<span className="max-[560px]:sr-only">Autonomous</span>
+			</button>
+		</div>
+	);
+});
+
 type ChatInputBarProps = {
 	variant?: "conversation" | "welcome";
 	status: ChatSessionStatus;
@@ -293,7 +372,7 @@ type ChatInputBarProps = {
 	provider: string;
 	model: string;
 	modelContextWindow?: number;
-	mode: "act" | "plan";
+	mode: "act" | "plan" | "yolo";
 	thinking: ChatSessionConfig["thinking"];
 	reasoningEffort: ChatSessionConfig["reasoningEffort"];
 	/** Branch name, "no-git" for a non-repo folder, null while discovery is pending. */
@@ -302,7 +381,8 @@ type ChatInputBarProps = {
 	onPromptInputChange: (value: string) => void;
 	onProviderChange: (provider: string) => void;
 	onModelChange: (model: string) => void;
-	onModeToggle: () => void;
+	onModeToggle?: () => void;
+	onModeChange?: (mode: "act" | "plan" | "yolo") => void;
 	onReasoningChange: (
 		next: Pick<ChatSessionConfig, "thinking" | "reasoningEffort">,
 	) => void;
@@ -346,6 +426,7 @@ function ChatInputBarImpl({
 	onProviderChange,
 	onModelChange,
 	onModeToggle,
+	onModeChange,
 	onReasoningChange,
 	onListGitBranches,
 	onSwitchGitBranch,
@@ -462,6 +543,16 @@ function ChatInputBarImpl({
 		[model, provider],
 	);
 	const canSend = hasDraft && !speechInputActive;
+	const handleModeSelect = useCallback(
+		(nextMode: "act" | "plan" | "yolo") => {
+			if (onModeChange) {
+				onModeChange(nextMode);
+			} else if (onModeToggle && nextMode !== mode) {
+				onModeToggle();
+			}
+		},
+		[mode, onModeChange, onModeToggle],
+	);
 	const handleSend = useCallback(() => {
 		if (speechInputActive) return;
 		const prompt = promptInput.trim();
@@ -1276,6 +1367,23 @@ function ChatInputBarImpl({
 									setDismissedMentionKey(mentionKey);
 									return;
 								}
+								if (
+									(e.ctrlKey || e.metaKey) &&
+									(e.key === "." ||
+										((e.key === "m" || e.key === "M") && e.shiftKey))
+								) {
+									e.preventDefault();
+									const cycle: Record<
+										"act" | "plan" | "yolo",
+										"act" | "plan" | "yolo"
+									> = {
+										act: "plan",
+										plan: "yolo",
+										yolo: "act",
+									};
+									handleModeSelect(cycle[mode]);
+									return;
+								}
 								if (e.key === "Escape" && canAbort) {
 									e.preventDefault();
 									onAbort();
@@ -1425,38 +1533,11 @@ function ChatInputBarImpl({
 						ref={fileInputRef}
 						type="file"
 					/>
-					<div className="hidden shrink-0 items-center rounded-md bg-muted p-0.5">
-						<button
-							aria-pressed={mode === "plan"}
-							className={cn(
-								"rounded px-2 py-1 ",
-								mode === "plan"
-									? "bg-background text-foreground shadow-xs"
-									: "hover:text-foreground",
-							)}
-							onClick={() => {
-								if (mode !== "plan") onModeToggle();
-							}}
-							type="button"
-						>
-							Plan
-						</button>
-						<button
-							aria-pressed={mode === "act"}
-							className={cn(
-								"rounded px-2 py-1 ",
-								mode === "act"
-									? "bg-background text-foreground shadow-xs"
-									: "hover:text-foreground",
-							)}
-							onClick={() => {
-								if (mode !== "act") onModeToggle();
-							}}
-							type="button"
-						>
-							Act
-						</button>
-					</div>
+					<ModeSwitcher
+						disabled={isBusy}
+						mode={mode}
+						onModeChange={handleModeSelect}
+					/>
 					<div className="min-w-0 shrink-0">
 						<ModelSelector
 							isBusy={isBusy}

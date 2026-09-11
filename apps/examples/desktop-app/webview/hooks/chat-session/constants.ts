@@ -1,6 +1,7 @@
 import { CLINE_DEFAULT_MODEL_ID } from "@cline/shared/browser";
 import type { ChatSessionConfig } from "@/lib/chat-schema";
 import { readModelSelectionStorageFromWindow } from "@/lib/model-selection";
+import { readModeSelectionFromWindow } from "@/lib/mode-selection";
 import { normalizeProviderId } from "@/lib/provider-id";
 import { readWorkspaceSelectionFromWindow } from "@/lib/workspace-paths";
 
@@ -48,11 +49,13 @@ export function getInitialChatConfig(): ChatSessionConfig {
 			? rememberedModelForDefaultProvider
 			: undefined) ||
 		DEFAULT_CHAT_CONFIG.model;
+	const mode = readModeSelectionFromWindow();
 
 	return {
 		...DEFAULT_CHAT_CONFIG,
 		provider,
 		model,
+		mode,
 		workspaceRoot: workspaceSelection.lastWorkspace,
 		cwd: workspaceSelection.lastWorkspace,
 	};

@@ -62,6 +62,14 @@ export interface LensTranslations {
 		readonly evidenceAndClaims: string;
 		readonly evidenceTooltip: string;
 	};
+	readonly modes: {
+		readonly actTitle: string;
+		readonly actDesc: string;
+		readonly planTitle: string;
+		readonly planDesc: string;
+		readonly yoloTitle: string;
+		readonly yoloDesc: string;
+	};
 }
 
 export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
@@ -127,6 +135,15 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			evidenceAndClaims: "Evidence & Claims",
 			evidenceTooltip: "View research evidence bundles and policy checkpoints",
 		},
+		modes: {
+			actTitle: "Code (Act)",
+			actDesc: "Implementation mode with tool approvals",
+			planTitle: "Architect (Plan)",
+			planDesc:
+				"Read-only design and analysis. File edits and mutating commands are blocked.",
+			yoloTitle: "Autonomous (YOLO)",
+			yoloDesc: "Autonomous execution with all tools auto-approved",
+		},
 	},
 	ar: {
 		brand: {
@@ -189,6 +206,15 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 		sidebar: {
 			evidenceAndClaims: "الأدلة والادعاءات",
 			evidenceTooltip: "عرض حزم أدلة البحث ونقاط تفتيش السياسة",
+		},
+		modes: {
+			actTitle: "كود (تنفيذ)",
+			actDesc: "وضع التنفيذ البرمجي مع طلب الموافقة على الأدوات",
+			planTitle: "معمار (تخطيط)",
+			planDesc: "وضع التصميم والتحليل للقراءة فقط مع حظر التعديل",
+			yoloTitle: "تلقائي (شامل)",
+			yoloDesc:
+				"وضع التنفيذ التلقائي المستقل مع الموافقة التلقائية على جميع الأدوات",
 		},
 	},
 };
