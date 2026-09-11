@@ -160,7 +160,9 @@ export function SquadConfigPopover({
 					aria-label={t.configureSquad}
 				>
 					<Users className="h-3.5 w-3.5 text-primary" />
-					<span>Squad ({activeCount})</span>
+					<span>
+						{t.squadLabel} ({activeCount})
+					</span>
 					<ChevronDown className="h-3 w-3 opacity-60" />
 				</Button>
 			</PopoverTrigger>
@@ -188,16 +190,23 @@ export function SquadConfigPopover({
 					{/* Presets */}
 					<div className="space-y-1.5">
 						<span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-							Squad Presets
+							{t.squadPresetsLabel}
 						</span>
 						<div className="grid grid-cols-3 gap-1.5">
 							{presets.map((p) => {
 								const isSelected = config.presetId === p.id;
+								const presetLabel =
+									p.id === "core"
+										? t.presetCore
+										: p.id === "full"
+											? t.presetFull
+											: t.presetRapid;
 								return (
 									<button
 										key={p.id}
 										type="button"
 										onClick={() => handleSelectPreset(p.id)}
+										title={presetLabel}
 										className={cn(
 											"flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all",
 											isSelected
@@ -205,11 +214,11 @@ export function SquadConfigPopover({
 												: "border-border/60 hover:border-border hover:bg-accent/40 text-muted-foreground",
 										)}
 									>
-										<span className="text-xs font-semibold capitalize">
+										<span className="text-xs font-semibold capitalize truncate max-w-full">
 											{p.id}
 										</span>
 										<span className="text-[10px] opacity-70">
-											{p.personaIds.length} agents
+											{p.personaIds.length} {t.agentsSuffix}
 										</span>
 									</button>
 								);
@@ -220,7 +229,7 @@ export function SquadConfigPopover({
 					{/* Specialist Personas Grid */}
 					<div className="space-y-1.5">
 						<span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-							Specialist Personas
+							{t.specialistPersonasLabel}
 						</span>
 						<div className="space-y-1 max-h-48 overflow-y-auto pr-1">
 							{allPersonas.map((persona) => {
@@ -242,10 +251,7 @@ export function SquadConfigPopover({
 											isRequired && "cursor-default",
 										)}
 									>
-										<div
-											className="w-5 h-5 rounded-full flex items-center justify-center text-white shrink-0"
-											style={{ backgroundColor: persona.color }}
-										>
+										<div className="w-5 h-5 rounded-full flex items-center justify-center text-foreground bg-muted shrink-0 border border-border/60">
 											<Icon className="h-3 w-3" />
 										</div>
 										<div className="flex-1 min-w-0">

@@ -131,7 +131,7 @@ export const BUILTIN_PERSONAS: Record<SpecialistPersonaId, SpecialistPersona> =
 				"Designs system architecture, tech stack, and module topologies",
 				"Defines exhaustive file lists and public interface contracts (classes, methods, types)",
 				"Constructs Mermaid class diagrams and sequence diagrams for program call flow",
-				"Reviews Athena's PRD for architectural constraints and answers Cipher's implementation inquiries",
+				"Reviews product requirements for architectural constraints and answers engineer implementation inquiries",
 				"Saves system design to 03_architecture_atlas.md",
 			],
 			deliverableName: "System Design & Architecture",
@@ -152,9 +152,9 @@ export const BUILTIN_PERSONAS: Record<SpecialistPersonaId, SpecialistPersona> =
 			glowClass: "ring-orange-500/40 shadow-orange-500/20",
 			responsibilities: [
 				"Implements production-grade code file-by-file with zero placeholders or mocks",
-				"Adheres strictly to Atlas's interface contracts and Athena's P0 requirements",
+				"Adheres strictly to system interface contracts and P0 product requirements",
 				"Installs dependencies and organizes project topology cleanly",
-				"Collaborates with Sentinel during test verification, applying up to 3 autonomous error fixes",
+				"Collaborates during test verification, applying up to 3 autonomous error fixes",
 				"Writes code directly into workspace files",
 			],
 			deliverableName: "Production Code Implementation",
@@ -175,7 +175,7 @@ export const BUILTIN_PERSONAS: Record<SpecialistPersonaId, SpecialistPersona> =
 			responsibilities: [
 				"Designs relational and document database schemas, indices, and relationships",
 				"Writes database migrations, seed scripts, and ORM entity models",
-				"Advises Atlas and Cipher on query efficiency, caching, and data persistence contracts",
+				"Advises on query efficiency, caching, and data persistence contracts",
 				"Saves schema definitions to 03b_data_schema_vector.md",
 			],
 			deliverableName: "Data Schemas & Storage Design",
@@ -198,7 +198,7 @@ export const BUILTIN_PERSONAS: Record<SpecialistPersonaId, SpecialistPersona> =
 				"Writes comprehensive unit and integration test suites",
 				"Executes automated tests and static analysis via workstation runner",
 				"Detects runtime errors, syntax errors, and contract mismatches",
-				"Drives 3-retry autonomous repair loop with Cipher by providing exact compiler tracebacks",
+				"Drives 3-retry autonomous repair loop by providing exact compiler tracebacks",
 				"Saves QA and verification reports to 05_qa_report_sentinel.md",
 			],
 			deliverableName: "QA & Test Verification Report",
@@ -294,11 +294,88 @@ export function buildUltraAgencyPrompt(
 		.filter(Boolean);
 
 	const squadManifest = activePersonas
-		.map(
-			(p) =>
-				`- **${p.name}** (${p.role}): ${p.tagline}\n  Deliverable: \`${p.deliverableFile}\`\n  Responsibilities:\n${p.responsibilities.map((r) => `    * ${r}`).join("\n")}`,
-		)
+		.map((p) => {
+			const deliv =
+				p.deliverableFile === "workspace_code"
+					? "Production Workspace Code"
+					: `\`${p.deliverableFile}\``;
+			return `- **${p.name}** (${p.role}): ${p.tagline}\n  Deliverable: ${deliv}\n  Responsibilities:\n${p.responsibilities.map((r) => `    * ${r}`).join("\n")}`;
+		})
 		.join("\n\n");
+
+	const personaIsolationRules = activePersonas
+		.map((p) => {
+			if (p.id === "cipher") {
+				return "   - **Cipher**: Produces complete, production-grade code directly in workspace target paths adhering strictly to specifications and interfaces.";
+			}
+			if (p.id === "sentinel") {
+				return "   - **Sentinel**: Runs tests and executes up to 3 autonomous self-correction repair cycles on compiler/runtime errors.";
+			}
+			return `   - **${p.name}**: Focuses on ${p.role.toLowerCase()} and produces formal deliverable \`${p.deliverableFile}\`.`;
+		})
+		.join("\n");
+
+	const hasPlanning = activePersonas.some(
+		(p) => p.id === "athena" || p.id === "atlas",
+	);
+	const hasImplementation = activePersonas.some(
+		(p) => p.id === "cipher" || p.id === "sentinel",
+	);
+
+	let checkpointInstructions =
+		"   - Fully autonomous execution enabled: Proceed through all stages without human pause gates.";
+	if (config.checkpointGatesEnabled) {
+		const gates: string[] = [];
+		if (hasPlanning) {
+			const planningNames = activePersonas
+				.filter((p) => p.id === "athena" || p.id === "atlas")
+				.map((p) => p.name)
+				.join(" and ");
+			gates.push(`   - **CHECKPOINT 1 (Strategy & Blueprint Gate)**:
+     After ${planningNames} complete deliverables and reach team alignment, Orion MUST pause and present the unified blueprint to the user for validation with:
+     \`### CHECKPOINT 1: STRATEGY & BLUEPRINT AWAITING APPROVAL\`
+     Do NOT start file modifications until the user confirms or provides adjustments.`);
+		}
+		if (hasImplementation) {
+			const implNames = activePersonas
+				.filter((p) => p.id === "cipher" || p.id === "sentinel")
+				.map((p) => p.name)
+				.join(" and ");
+			gates.push(`   - **CHECKPOINT 2 (Pre-Ship Verification Gate)**:
+     After ${implNames} complete implementation and verification, Orion MUST pause and present the verified change set, test logs, and deliverables for final review with:
+     \`### CHECKPOINT 2: PRE-SHIP VERIFICATION AWAITING APPROVAL\`
+     Do NOT conclude the session until the user confirms or provides adjustments.`);
+		}
+		checkpointInstructions =
+			gates.length > 0
+				? gates.join("\n")
+				: "   - No checkpoint-eligible personas active: Proceed through stages autonomously.";
+	}
+
+	const artifactPersonas = activePersonas.filter(
+		(p) => p.deliverableFile && p.deliverableFile !== "workspace_code",
+	);
+	const artifactList = artifactPersonas
+		.map((p) => `     * ${p.name}: \`${p.deliverableFile}\``)
+		.join("\n");
+
+	const codeImplementationNote = activePersonas.some((p) => p.id === "cipher")
+		? "   - Cipher implements production code directly into target workspace source files with zero placeholders."
+		: "   - Implement any production code directly in the target workspace file paths with zero placeholders.";
+
+	const p0 = activePersonas[0]?.name || "Orion";
+	const p1 =
+		activePersonas[1]?.name ||
+		(activePersonas[0]?.name !== "Atlas" ? "Atlas" : "Engineer");
+	const p2 = activePersonas[2]?.name || "Cipher";
+	const dynamicExamples = [
+		`   - Example: \`[${p0} -> ${p1}]: Mission brief ingested. Proceed with initial domain deliverable.\``,
+		activePersonas.length > 2
+			? `   - Example: \`[${p1} -> ${p2}]: Deliverable published; align interface specifications before next stage.\``
+			: "",
+	]
+		.filter(Boolean)
+		.join("\n");
 
 	return `==== ULTRA MODE: MULTI-AGENT SOFTWARE ENGINEERING AGENCY (ATOMS.DEV EVOLUTION) ====
 You are operating in ULTRA MODE as a synchronized agency of named specialist personas.
@@ -312,32 +389,18 @@ DYNAMIC COLLABORATION PROTOCOL:
    - Begin with a brief Team Mission Brief from Orion.
    - When transitioning between personas or when one agent consults another, log a structured handoff entry:
      \`[AgentA -> AgentB]: <succinct context, consultation question, or deliverable handoff>\`
-   - Example: \`[Orion -> Athena]: Requirement ingested. Athena, draft the PRD focusing on P0 items.\`
-   - Example: \`[Atlas -> Athena]: System design proposes Supabase; confirm auth scope matches user stories.\`
+${dynamicExamples}
 
 2. **Sub-Agent Cognitive Isolation**:
    - Each persona focuses strictly on their craft and does not dilute their outputs with unrelated concerns.
-   - Athena produces formal PRD (Goals, User Stories, Competitive Analysis, Requirement Pool [P0/P1/P2]).
-   - Atlas produces System Design (Implementation Approach, File List, Interface Contracts, Mermaid classDiagram and sequenceDiagram).
-   - Cipher produces complete, production-grade code adhering strictly to Atlas's interfaces.
-   - Sentinel runs tests and executes up to 3 autonomous self-correction repair cycles with Cipher if errors arise.
+${personaIsolationRules}
 
 3. **THE 2 GOLDEN CHECKPOINTS**:
-${
-	config.checkpointGatesEnabled
-		? `   - **CHECKPOINT 1 (Strategy & Blueprint Gate)**:
-     After Athena (PRD) and Atlas (Architecture) complete their deliverables and reach team alignment, Orion MUST pause and present the unified blueprint to the user for validation with:
-     \`### CHECKPOINT 1: STRATEGY & BLUEPRINT AWAITING APPROVAL\`
-     Do NOT start file modifications until the user confirms or provides adjustments.
-   - **CHECKPOINT 2 (Pre-Ship Verification Gate)**:
-     After Cipher implements the code and Sentinel runs automated verification tests (with up to 3 autonomous error fixes), Orion MUST present the verified change set, test logs, and deliverables for final review with:
-     \`### CHECKPOINT 2: PRE-SHIP VERIFICATION COMPLETE\``
-		: "   - Fully autonomous execution enabled: Proceed through all stages without human pause gates."
-}
+${checkpointInstructions}
 
 4. **PERSISTENCE & ARTIFACTS**:
    - Save all deliverables to the designated workspace files under \`.lens/ultra/\`:
-${activePersonas.map((p) => `     * ${p.name}: \`${p.deliverableFile}\``).join("\n")}
-   - Implement actual production code directly in the target workspace file paths with zero placeholders.
+${artifactList}
+${codeImplementationNote}
 `;
 }

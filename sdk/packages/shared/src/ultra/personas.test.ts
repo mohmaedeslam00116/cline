@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
-	BUILTIN_PERSONAS,
 	buildUltraAgencyPrompt,
 	getAllPersonas,
 	getDefaultSquadConfig,
 	getPersona,
 	getSquadPresets,
-	SQUAD_PRESETS,
+	type SpecialistPersonaId,
 } from "./personas";
 
 describe("BUILTIN_PERSONAS", () => {
@@ -14,7 +13,7 @@ describe("BUILTIN_PERSONAS", () => {
 		const personas = getAllPersonas();
 		expect(personas).toHaveLength(8);
 
-		const expectedIds = [
+		const expectedIds: SpecialistPersonaId[] = [
 			"orion",
 			"lyra",
 			"athena",
@@ -25,7 +24,7 @@ describe("BUILTIN_PERSONAS", () => {
 			"echo",
 		];
 		for (const id of expectedIds) {
-			const p = getPersona(id as any);
+			const p = getPersona(id);
 			expect(p).toBeDefined();
 			expect(p.id).toBe(id);
 			expect(p.name.length).toBeGreaterThan(0);
@@ -69,15 +68,25 @@ describe("SQUAD_PRESETS", () => {
 describe("buildUltraAgencyPrompt", () => {
 	it("synthesizes squad manifest and 2 Golden Checkpoints for default config", () => {
 		const prompt = buildUltraAgencyPrompt();
-		expect(prompt).toContain("ULTRA MODE: MULTI-AGENT SOFTWARE ENGINEERING AGENCY");
+		expect(prompt).toContain(
+			"ULTRA MODE: MULTI-AGENT SOFTWARE ENGINEERING AGENCY",
+		);
 		expect(prompt).toContain("Orion");
 		expect(prompt).toContain("Athena");
 		expect(prompt).toContain("Atlas");
 		expect(prompt).toContain("Cipher");
 		expect(prompt).toContain("Sentinel");
-		expect(prompt).toContain("CHECKPOINT 1: STRATEGY & BLUEPRINT AWAITING APPROVAL");
-		expect(prompt).toContain("CHECKPOINT 2: PRE-SHIP VERIFICATION COMPLETE");
+		expect(prompt).toContain(
+			"CHECKPOINT 1: STRATEGY & BLUEPRINT AWAITING APPROVAL",
+		);
+		expect(prompt).toContain(
+			"CHECKPOINT 2: PRE-SHIP VERIFICATION AWAITING APPROVAL",
+		);
 		expect(prompt).toContain(".lens/ultra/");
+		expect(prompt).not.toContain("workspace_code`");
+		expect(prompt).toContain(
+			"Cipher implements production code directly into target workspace source files",
+		);
 	});
 
 	it("omits checkpoint gates when disabled in config", () => {
@@ -87,6 +96,49 @@ describe("buildUltraAgencyPrompt", () => {
 			checkpointGatesEnabled: false,
 		});
 		expect(prompt).toContain("Fully autonomous execution enabled");
-		expect(prompt).not.toContain("CHECKPOINT 1: STRATEGY & BLUEPRINT AWAITING APPROVAL");
+		expect(prompt).not.toContain(
+			"CHECKPOINT 1: STRATEGY & BLUEPRINT AWAITING APPROVAL",
+		);
+		expect(prompt).not.toContain(
+			"CHECKPOINT 2: PRE-SHIP VERIFICATION AWAITING APPROVAL",
+		);
+	});
+
+	it("dynamically tailors steps and checkpoints to active personas only", () => {
+		// Custom squad without Athena (only Atlas for architecture) and without Sentinel
+		const prompt = buildUltraAgencyPrompt({
+			presetId: "custom",
+			activePersonaIds: ["orion", "atlas", "cipher"],
+			checkpointGatesEnabled: true,
+		});
+
+		// Should not refer to Athena or Sentinel
+		expect(prompt).not.toContain("Athena");
+		expect(prompt).not.toContain("Sentinel");
+		expect(prompt).toContain(
+			"After Atlas complete deliverables and reach team alignment",
+		);
+		expect(prompt).toContain(
+			"After Cipher complete implementation and verification",
+		);
+		// Checkpoint 1 and Checkpoint 2 are both present because Atlas (planning) and Cipher (implementation) are active
+		expect(prompt).toContain(
+			"CHECKPOINT 1: STRATEGY & BLUEPRINT AWAITING APPROVAL",
+		);
+		expect(prompt).toContain(
+			"CHECKPOINT 2: PRE-SHIP VERIFICATION AWAITING APPROVAL",
+		);
+	});
+
+	it("excludes checkpoint 1 if no planning personas are active", () => {
+		const prompt = buildUltraAgencyPrompt({
+			presetId: "custom",
+			activePersonaIds: ["orion", "cipher", "sentinel"],
+			checkpointGatesEnabled: true,
+		});
+		expect(prompt).not.toContain("CHECKPOINT 1");
+		expect(prompt).toContain(
+			"CHECKPOINT 2: PRE-SHIP VERIFICATION AWAITING APPROVAL",
+		);
 	});
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	parseArchitectDesign,
+	parseCheckpointStatus,
 	parsePRD,
 	parseProjectManagerTasks,
 	parseQAFeedback,
@@ -180,7 +181,7 @@ ${SAMPLE_METAGPT_OUTPUT}
 		expect(pipeline1?.checkpointStatus?.gate).toBe(1);
 		expect(pipeline1?.checkpointStatus?.isAwaitingApproval).toBe(true);
 
-		const textWithCp2 = `${SAMPLE_METAGPT_OUTPUT}\n### CHECKPOINT 2: PRE-SHIP VERIFICATION COMPLETE\n`;
+		const textWithCp2 = `${SAMPLE_METAGPT_OUTPUT}\n### CHECKPOINT 2: PRE-SHIP VERIFICATION AWAITING APPROVAL\n`;
 		const pipeline2 = parseUltraPipeline(textWithCp2);
 		expect(pipeline2?.checkpointStatus).toBeDefined();
 		expect(pipeline2?.checkpointStatus?.gate).toBe(2);
@@ -205,5 +206,93 @@ ${SAMPLE_METAGPT_OUTPUT}
 		expect(pipeline?.lyra?.findings).toContain("Benchmarked Prisma vs Drizzle");
 		expect(pipeline?.vector).toBeDefined();
 		expect(pipeline?.vector?.schemas).toContain("CREATE TABLE users");
+	});
+
+	it("correctly parses awaiting approval vs approved/completed checkpoint states", () => {
+		const pendingCp1 = `
+### CHECKPOINT 1: STRATEGY & BLUEPRINT AWAITING APPROVAL
+Please review Athena's PRD and Atlas's Architecture.
+`;
+		const res1 = parseCheckpointStatus(pendingCp1);
+		expect(res1).toBeDefined();
+		expect(res1?.gate).toBe(1);
+		expect(res1?.isAwaitingApproval).toBe(true);
+
+		const approvedCp1 = `
+### CHECKPOINT 1: STRATEGY & BLUEPRINT APPROVED
+User approved the strategy blueprint. Proceeding to implementation.
+`;
+		const res2 = parseCheckpointStatus(approvedCp1);
+		expect(res2).toBeDefined();
+		expect(res2?.gate).toBe(1);
+		expect(res2?.isAwaitingApproval).toBe(false);
+
+		const completedCp2 = `
+### CHECKPOINT 2: PRE-SHIP VERIFICATION COMPLETE
+All tests passed and contracts verified.
+`;
+		const res3 = parseCheckpointStatus(completedCp2);
+		expect(res3).toBeDefined();
+		expect(res3?.gate).toBe(2);
+		expect(res3?.isAwaitingApproval).toBe(false);
+	});
+
+	it("evaluates the latest occurrence when multiple checkpoints are logged", () => {
+		const progression = `
+### CHECKPOINT 1: STRATEGY & BLUEPRINT APPROVED
+Moving to coding phase.
+
+### CHECKPOINT 2: PRE-SHIP VERIFICATION AWAITING APPROVAL
+Sentinel completed tests. Awaiting user approval to ship.
+`;
+		const res = parseCheckpointStatus(progression);
+		expect(res).toBeDefined();
+		expect(res?.gate).toBe(2);
+		expect(res?.isAwaitingApproval).toBe(true);
+	});
+
+	it("returns undefined for near-miss or non-gate checkpoint mentions", () => {
+		const nearMiss = "We passed a routine checkpoint during execution.";
+		expect(parseCheckpointStatus(nearMiss)).toBeUndefined();
+	});
+
+	it("enforces stageCount >= 1 when collaborationFeed is present, and >= 2 when absent", () => {
+		const singlePrd = `
+# Ultra Mode Project
+## Product Manager: PRD
+### Product Goals
+1. Unique color sampling
+### User Stories
+- As a user, I want colors.
+### Competitive Analysis
+- None.
+### Requirement Pool
+- ("Color tool", "P0")
+`;
+
+		// Feed present + 0 deliverables -> null
+		const feedOnly = `
+Orion: Lead Orchestrator
+[Orion -> Athena]: Please draft PRD.
+[Athena -> Atlas]: Working on user stories.
+`;
+		expect(parseUltraPipeline(feedOnly)).toBeNull();
+
+		// Feed present + 1 deliverable (PRD) -> valid UltraPipeline
+		const feedAndPrd = `
+Orion: Lead Orchestrator
+[Orion -> Athena]: Please draft PRD.
+${singlePrd}
+`;
+		const resFeedAndPrd = parseUltraPipeline(feedAndPrd);
+		expect(resFeedAndPrd).not.toBeNull();
+		expect(resFeedAndPrd?.prd).toBeDefined();
+
+		// Feed absent + 1 deliverable -> null (requires >= 2)
+		const prdOnly = `
+Orion: Lead Orchestrator
+${singlePrd}
+`;
+		expect(parseUltraPipeline(prdOnly)).toBeNull();
 	});
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	AlertCircle,
 	Check,
 	CheckCircle2,
 	ChevronDown,
@@ -14,6 +15,7 @@ import {
 	GitBranch,
 	Layers,
 	ListChecks,
+	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
 	TestTube2,
@@ -72,7 +74,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 		if (pipeline.lyra) {
 			list.push({
 				key: "lyra",
-				label: "Research",
+				label: tAgency.researchTabLabel || "Research",
 				personaName: "Lyra",
 				personaColor: "#06b6d4",
 				icon: Compass,
@@ -141,7 +143,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 		}
 
 		return list;
-	}, [pipeline.lyra, pipeline.vector, pipeline.echo]);
+	}, [pipeline.lyra, pipeline.vector, pipeline.echo, tAgency.researchTabLabel]);
 
 	const handleTabKeyDown = useCallback(
 		(event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -304,7 +306,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 		<section
 			aria-label={tAgency.badge}
 			className={cn(
-				"my-3 overflow-hidden rounded-xl border border-indigo-500/30 bg-gradient-to-b from-indigo-950/15 via-background to-background shadow-md transition-colors",
+				"my-3 overflow-hidden rounded-xl border border-border/80 bg-card shadow-md transition-colors",
 				className,
 			)}
 			dir={dir}
@@ -312,7 +314,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 			{/* Top Header */}
 			<div className="flex items-center justify-between border-b border-border/50 bg-muted/40 px-3 py-2 text-xs">
 				<div className="flex items-center gap-2">
-					<div className="flex size-5 items-center justify-center rounded bg-indigo-500/10 text-indigo-500">
+					<div className="flex size-5 items-center justify-center rounded bg-primary/10 text-primary">
 						<Workflow className="size-3.5" />
 					</div>
 					<span className="font-semibold text-foreground">{tAgency.badge}</span>
@@ -352,7 +354,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 					{/* Squad Lineup Bar */}
 					<div className="flex flex-wrap items-center gap-2 border-b border-border/30 bg-muted/20 px-3 py-2 text-xs overflow-x-auto">
 						<span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground shrink-0 mr-1 flex items-center gap-1">
-							<Users className="size-3 text-indigo-400" />
+							<Users className="size-3 text-muted-foreground" />
 							{tAgency.squadBarTitle}:
 						</span>
 						{squadMembers.map((member) => (
@@ -380,19 +382,19 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 
 					{/* Inter-Agent Collaboration Feed */}
 					{pipeline.collaborationFeed.length > 0 && (
-						<div className="border-b border-border/30 bg-indigo-950/5 px-3 py-2 text-xs">
+						<div className="border-b border-border/30 bg-muted/10 px-3 py-2 text-xs">
 							<button
 								type="button"
-								className="flex w-full items-center justify-between cursor-pointer select-none text-[11px] font-medium text-indigo-500 dark:text-indigo-400 mb-1 focus-visible:outline-none"
+								className="flex w-full items-center justify-between cursor-pointer select-none text-[11px] font-medium text-foreground mb-1 focus-visible:outline-none"
 								onClick={() => setShowFeed((prev) => !prev)}
 							>
 								<span className="flex items-center gap-1.5">
-									<Sparkles className="size-3" />
+									<Sparkles className="size-3 text-primary" />
 									{tAgency.collaborationFeedTitle} (
 									{pipeline.collaborationFeed.length})
 								</span>
-								<span className="text-[10px] opacity-70">
-									{showFeed ? "Hide" : "Show"}
+								<span className="text-[10px] text-muted-foreground opacity-80">
+									{showFeed ? t.collapse : t.expand}
 								</span>
 							</button>
 
@@ -404,7 +406,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 											key={idx}
 											className="flex items-start gap-1.5 rounded bg-background/80 border border-border/40 p-1.5 text-[11px] leading-relaxed shadow-2xs"
 										>
-											<div className="inline-flex items-center gap-1 shrink-0 font-semibold font-mono text-[10px] text-indigo-500 dark:text-indigo-400">
+											<div className="inline-flex items-center gap-1 shrink-0 font-semibold font-mono text-[10px] text-primary">
 												<span>{entry.from}</span>
 												<span>→</span>
 												<span>{entry.to}</span>
@@ -422,7 +424,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 
 					{/* Specialist Deliverable Tabs Navigation */}
 					<div
-						aria-label="Agency Specialist Deliverables"
+						aria-label={tAgency.deliverablesAriaLabel}
 						className="flex overflow-x-auto border-b border-border/40 bg-muted/20 px-2 py-1 text-xs"
 						onKeyDown={handleTabKeyDown}
 						role="tablist"
@@ -438,7 +440,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 									className={cn(
 										"inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring shrink-0",
 										isSelected
-											? "bg-background text-indigo-500 shadow-2xs font-semibold"
+											? "bg-background text-primary shadow-2xs font-semibold"
 											: "text-muted-foreground hover:text-foreground",
 									)}
 									id={`ultra-tab-${tab.key}`}
@@ -470,6 +472,16 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 								id="ultra-tabpanel-lyra"
 								role="tabpanel"
 							>
+								<div className="flex items-center justify-between gap-2">
+									<h4 className="font-semibold text-foreground flex items-center gap-1.5">
+										<Compass className="size-3.5 text-cyan-500" />
+										<span>{tAgency.tabLyra}</span>
+									</h4>
+									<span className="inline-flex items-center gap-1 font-mono text-[11px] rounded border border-border/80 bg-muted/60 px-2 py-0.5 text-foreground">
+										<ShieldAlert className="size-3 text-amber-500" />
+										{tAgency.untrustedBadgeExact}
+									</span>
+								</div>
 								<div className="rounded border border-border/40 bg-muted/20 p-2.5">
 									<MemoizedMarkdown content={pipeline.lyra.findings} />
 								</div>
@@ -766,6 +778,25 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 										<div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
 											<Check className="size-4" />
 											<span>{t.verificationPassed}</span>
+										</div>
+									)}
+
+									{pipeline.qa?.status === "failed" && (
+										<div className="space-y-2">
+											<div className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 font-medium">
+												<AlertCircle className="size-4" />
+												<span>{tAgency.qaStatusFailed}</span>
+											</div>
+											{pipeline.qa.errors && pipeline.qa.errors.length > 0 && (
+												<div className="space-y-1">
+													<span className="text-[11px] font-semibold text-muted-foreground">
+														{t.errorTracebacksTitle}:
+													</span>
+													<div className="rounded bg-background/80 border border-rose-500/30 p-2 font-mono text-[11px] text-rose-500 dark:text-rose-400 max-h-36 overflow-y-auto whitespace-pre-wrap">
+														{pipeline.qa.errors.join("\n")}
+													</div>
+												</div>
+											)}
 										</div>
 									)}
 								</div>

@@ -455,33 +455,57 @@ export function parseCollaborationFeed(
 
 /**
  * Parses Checkpoint 1 & 2 gate status from the content.
+ * Recognizes explicit awaiting-approval markers while ensuring
+ * completed/approved states do not reopen the gate.
  */
 export function parseCheckpointStatus(
 	content: string,
 ): CheckpointStatus | undefined {
-	const cp2Match = /(?:###?\s+)?CHECKPOINT\s*2(?::\s*([^\n]+))?/i.exec(content);
-	if (cp2Match) {
-		return {
-			gate: 2,
-			title: cp2Match[1]?.trim() || "Pre-Ship Verification Gate",
-			isAwaitingApproval: true,
-			summary:
-				"Cipher has implemented the code and Sentinel has completed automated test verification.",
-		};
+	const cpRegex = /(?:###?\s+)?CHECKPOINT\s*([12])(?::\s*([^\n]+))?/gi;
+	const matches = Array.from(content.matchAll(cpRegex));
+
+	if (matches.length === 0) {
+		return undefined;
 	}
 
-	const cp1Match = /(?:###?\s+)?CHECKPOINT\s*1(?::\s*([^\n]+))?/i.exec(content);
-	if (cp1Match) {
-		return {
-			gate: 1,
-			title: cp1Match[1]?.trim() || "Strategy & Blueprint Gate",
-			isAwaitingApproval: true,
-			summary:
-				"Athena's PRD and Atlas's Architecture are aligned. Awaiting user approval to proceed to code generation.",
-		};
-	}
+	// Evaluate the latest checkpoint occurrence in the message stream
+	const lastMatch = matches[matches.length - 1];
+	const gate = parseInt(lastMatch[1], 10) as 1 | 2;
+	const rawTitle =
+		lastMatch[2]?.trim() ||
+		(gate === 2 ? "Pre-Ship Verification Gate" : "Strategy & Blueprint Gate");
 
-	return undefined;
+	// Context snippet following the checkpoint header (up to 250 characters)
+	const matchIndex = lastMatch.index ?? 0;
+	const contextSnippet = content.slice(matchIndex, matchIndex + 250);
+
+	// Determine if explicitly awaiting approval vs completed/approved
+	const hasApprovedOrComplete =
+		/approved|complete(?:d)?|passed|cleared/i.test(rawTitle) ||
+		/(?:status:\s*(?:approved|complete|passed)|has been approved|gate passed)/i.test(
+			contextSnippet,
+		);
+
+	const hasAwaitingMarker =
+		/awaiting(?:\s+user)?\s+approval|pending(?:\s+approval)?|requires?\s+approval|action\s+required/i.test(
+			rawTitle,
+		) ||
+		/awaiting(?:\s+user)?\s+approval|pending(?:\s+approval)?|please\s+review\s+and\s+approve/i.test(
+			contextSnippet,
+		);
+
+	// If marked as approved or complete, gate is not awaiting approval
+	const isAwaitingApproval = !hasApprovedOrComplete && hasAwaitingMarker;
+
+	return {
+		gate,
+		title: rawTitle,
+		isAwaitingApproval,
+		summary:
+			gate === 2
+				? "Cipher has implemented the code and Sentinel has completed automated test verification."
+				: "Athena's PRD and Atlas's Architecture are aligned. Awaiting user approval to proceed to code generation.",
+	};
 }
 
 /**
@@ -576,7 +600,8 @@ export function parseUltraPipeline(content: string): UltraPipeline | null {
 		Boolean(echo),
 	].filter(Boolean).length;
 
-	if (stageCount < 2 && collaborationFeed.length === 0) {
+	const minStages = collaborationFeed.length > 0 ? 1 : 2;
+	if (stageCount < minStages) {
 		return null;
 	}
 

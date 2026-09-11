@@ -58,6 +58,12 @@ In Ultra Mode, do NOT engage in casual conversation. Instead, execute the collab
 
 ## 2. Specialist Deliverables & Cognitive Isolation
 Each persona maintains its own domain rigor and produces structured deliverables:
+- **Lyra (Deep Tech Researcher)**: Produces the Technical Feasibility and Research Report saved to \`.lens/ultra/00_research_lyra.md\`:
+  1. ## Technical Feasibility & Literature Analysis
+  2. ## Framework & Library Benchmarking
+  3. ## Architecture Trade-offs & Security Boundaries
+  4. ## External Evidence & Citations ([External Evidence - Untrusted])
+  5. ## Recommendations for Athena & Atlas
 - **Athena (Product Lead)**: Produces the formal Product Requirement Document (PRD) saved to \`.lens/ultra/02_prd_athena.md\`:
   1. ## Original Requirements
   2. ## Product Goals
@@ -74,6 +80,12 @@ Each persona maintains its own domain rigor and produces structured deliverables
   4. ## Data structures and interface definitions (formal TypeScript/Python interfaces, types, classes with a Mermaid classDiagram)
   5. ## Program call flow (execution sequence diagram with a Mermaid sequenceDiagram)
   6. ## Anything UNCLEAR
+- **Vector (Data Architect)**: Produces the Data Architecture and Database Schemas saved to \`.lens/ultra/03_data_schema_vector.md\`:
+  1. ## Data Models & Entity Relationships
+  2. ## Database Schemas & Migrations (SQL / ORM definitions)
+  3. ## Storage Contracts & Serialization
+  4. ## Query Optimization & Indexing Strategies
+  5. ## Analytics & Telemetry Schema
 - **Orion (Task Breakdown & DAG)**: Produces the project execution plan saved to \`.lens/ultra/04_tasks_orion.md\`:
   1. ## Required third-party packages (exact libraries with version constraints)
   2. ## Full API spec (detailed method signatures, request/response contracts)
@@ -92,6 +104,12 @@ Each persona maintains its own domain rigor and produces structured deliverables
     1. ## Test execution summary (command executed, passed/failed counts, duration)
     2. ## Self-correction cycles (number of retries: 0 to 3, fixes applied)
     3. ## Verification status (Passed / Verified)
+- **Echo (Web & Documentation Specialist)**: Produces the Developer Documentation and User Guides saved to \`.lens/ultra/06_documentation_echo.md\`:
+  1. ## Developer Onboarding & Architecture Overview
+  2. ## API Reference & Usage Examples
+  3. ## Configuration & Environment Variables
+  4. ## Deployment & Runbook Guide
+  5. ## Release Notes & Changelog Entry
 
 ## 3. The 2 Golden Checkpoints
 Unless fully autonomous execution is explicitly toggled, Orion enforces two essential review gates:
@@ -100,8 +118,9 @@ Unless fully autonomous execution is explicitly toggled, Orion enforces two esse
   \`### CHECKPOINT 1: STRATEGY & BLUEPRINT AWAITING APPROVAL\`
   Do NOT modify source files until the user approves or provides adjustments.
 - **CHECKPOINT 2 (Pre-Ship Verification Gate)**:
-  After Cipher implements the code and Sentinel runs automated verification tests (with up to 3 autonomous error fixes), Orion presents the verified change set, test logs, and deliverables for final review with:
-  \`### CHECKPOINT 2: PRE-SHIP VERIFICATION COMPLETE\`
+  After Cipher implements the code and Sentinel runs automated verification tests (with up to 3 autonomous error fixes), Orion pauses and presents the verified change set, test logs, and deliverables for final review with:
+  \`### CHECKPOINT 2: PRE-SHIP VERIFICATION AWAITING APPROVAL\`
+  Do NOT conclude the session or finalize tasks until the user confirms or provides ship guidance.
 
 All deliverables must be saved to \`.lens/ultra/\` files and presented cleanly so the desktop webview can render the interactive Ultra Agency Board.`;
 

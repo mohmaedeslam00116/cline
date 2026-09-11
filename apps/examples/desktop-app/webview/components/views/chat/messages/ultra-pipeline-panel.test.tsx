@@ -125,9 +125,9 @@ describe("UltraPipelinePanel component", () => {
 		);
 		expect(container.textContent).toContain("Approve & Proceed");
 
-		const approveBtn = Array.from(
-			container.querySelectorAll("button"),
-		).find((b) => b.textContent?.includes("Approve & Proceed"));
+		const approveBtn = Array.from(container.querySelectorAll("button")).find(
+			(b) => b.textContent?.includes("Approve & Proceed"),
+		);
 		expect(approveBtn).toBeDefined();
 
 		await act(async () => {
@@ -209,6 +209,64 @@ describe("UltraPipelinePanel component", () => {
 		expect(container.textContent).toContain("main.py");
 		expect(container.textContent).toContain(
 			"All modules implemented adhering to Atlas interfaces.",
+		);
+	});
+
+	it("renders Lyra research tab with untrusted external evidence badge", async () => {
+		const pipelineWithLyra: UltraPipeline = {
+			...mockPipeline,
+			lyra: {
+				findings:
+					"Benchmarked SQLite vs PostgreSQL; SQLite chosen for local storage.",
+			},
+		};
+
+		await act(async () => {
+			root.render(<UltraPipelinePanel pipeline={pipelineWithLyra} />);
+		});
+
+		const lyraTab = Array.from(
+			container.querySelectorAll<HTMLButtonElement>('button[role="tab"]'),
+		).find((tab) => tab.textContent?.includes("Lyra"));
+		expect(lyraTab).toBeDefined();
+
+		await act(async () => {
+			lyraTab?.click();
+		});
+
+		expect(container.textContent).toContain("[External Evidence - Untrusted]");
+		expect(container.textContent).toContain("Benchmarked SQLite vs PostgreSQL");
+	});
+
+	it("renders failed QA status with clear failure indicator and error tracebacks", async () => {
+		const failedPipeline: UltraPipeline = {
+			...mockPipeline,
+			qa: {
+				testExecutionSummary: "2 failed, 1 passed",
+				retries: 3,
+				maxRetries: 3,
+				status: "failed",
+				errors: ["TypeError: Cannot read property of undefined at main.py:42"],
+			},
+		};
+
+		await act(async () => {
+			root.render(<UltraPipelinePanel pipeline={failedPipeline} />);
+		});
+
+		const qaTab = Array.from(
+			container.querySelectorAll<HTMLButtonElement>('button[role="tab"]'),
+		).find((tab) => tab.textContent?.includes("Sentinel"));
+		expect(qaTab).toBeDefined();
+
+		await act(async () => {
+			qaTab?.click();
+		});
+
+		expect(container.textContent).toContain("Verification Failed");
+		expect(container.textContent).toContain("Captured Error Tracebacks");
+		expect(container.textContent).toContain(
+			"TypeError: Cannot read property of undefined",
 		);
 	});
 });

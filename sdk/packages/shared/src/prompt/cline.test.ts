@@ -138,16 +138,23 @@ describe("buildClineSystemPrompt mode instructions", () => {
 		});
 		expect(prompt).toContain(ULTRA_MODE_INSTRUCTIONS);
 		expect(prompt).toContain("Orion");
+		expect(prompt).toContain("Lyra (Deep Tech Researcher)");
 		expect(prompt).toContain("Athena (Product Lead)");
 		expect(prompt).toContain("Atlas (Systems Architect)");
+		expect(prompt).toContain("Vector (Data Architect)");
 		expect(prompt).toContain("Cipher (Core Full-Stack Engineer)");
 		expect(prompt).toContain("Sentinel (QA & Executable Self-Correction)");
+		expect(prompt).toContain("Echo (Web & Documentation Specialist)");
 		expect(prompt).toContain("Mermaid classDiagram");
 		expect(prompt).toContain("Mermaid sequenceDiagram");
 		expect(prompt).toContain("Requirement Pool");
 		expect(prompt).toContain("3-retry autonomous repair loop");
-		expect(prompt).toContain("CHECKPOINT 1: STRATEGY & BLUEPRINT AWAITING APPROVAL");
-		expect(prompt).toContain("CHECKPOINT 2: PRE-SHIP VERIFICATION COMPLETE");
+		expect(prompt).toContain(
+			"CHECKPOINT 1: STRATEGY & BLUEPRINT AWAITING APPROVAL",
+		);
+		expect(prompt).toContain(
+			"CHECKPOINT 2: PRE-SHIP VERIFICATION AWAITING APPROVAL",
+		);
 		expect(prompt).toContain(".lens/ultra/");
 	});
 });
