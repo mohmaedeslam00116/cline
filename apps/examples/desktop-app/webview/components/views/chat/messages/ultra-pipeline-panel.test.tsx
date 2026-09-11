@@ -135,6 +135,43 @@ describe("UltraPipelinePanel component", () => {
 		expect(onProceed).toHaveBeenCalledTimes(1);
 	});
 
+	it("clears feedback input and passes trimmed feedback when proceeding", async () => {
+		const onProceed = vi.fn();
+		await act(async () => {
+			root.render(
+				<UltraPipelinePanel
+					pipeline={mockPipeline}
+					onProceedCheckpoint={onProceed}
+				/>,
+			);
+		});
+
+		const input = container.querySelector<HTMLInputElement>("input");
+		expect(input).not.toBeNull();
+
+		await act(async () => {
+			if (input) {
+				const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+					window.HTMLInputElement.prototype,
+					"value",
+				)?.set;
+				nativeInputValueSetter?.call(input, "   Refactor auth   ");
+				input.dispatchEvent(new Event("change", { bubbles: true }));
+			}
+		});
+
+		const approveBtn = Array.from(container.querySelectorAll("button")).find(
+			(b) => b.textContent?.includes("Approve & Proceed"),
+		);
+
+		await act(async () => {
+			approveBtn?.click();
+		});
+
+		expect(onProceed).toHaveBeenCalledWith("Refactor auth");
+		expect(input?.value).toBe("");
+	});
+
 	it("disables approve button when rendered without onProceedCheckpoint", async () => {
 		await act(async () => {
 			root.render(<UltraPipelinePanel pipeline={mockPipeline} />);

@@ -209,33 +209,22 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 		[activeTab],
 	);
 
-	const checkpointGate = pipeline.checkpointStatus?.gate;
-	const checkpointTitle = pipeline.checkpointStatus?.title;
-	const isAwaitingApproval = Boolean(
-		pipeline.checkpointStatus?.isAwaitingApproval,
-	);
+	const checkpointIdentity = `${pipeline.checkpointStatus?.gate ?? ""}:${pipeline.checkpointStatus?.title ?? ""}:${pipeline.checkpointStatus?.isAwaitingApproval ? "awaiting" : "idle"}`;
+
+	// Reset proceeding state when the checkpoint identity changes or approval is no longer pending
 	useEffect(() => {
-		if (
-			checkpointGate !== undefined ||
-			checkpointTitle !== undefined ||
-			isAwaitingApproval
-		) {
+		if (checkpointIdentity) {
 			setIsProceeding(false);
 		}
-	}, [checkpointGate, checkpointTitle, isAwaitingApproval]);
+	}, [checkpointIdentity]);
 
 	const handleProceed = useCallback(() => {
 		if (onProceedCheckpoint) {
 			setIsProceeding(true);
 			onProceedCheckpoint(feedbackText.trim() || undefined);
+			setFeedbackText("");
 		}
 	}, [feedbackText, onProceedCheckpoint]);
-
-	useEffect(() => {
-		if (!isProceeding) return;
-		const timer = setTimeout(() => setIsProceeding(false), 15000);
-		return () => clearTimeout(timer);
-	}, [isProceeding]);
 
 	const qaStatus = pipeline.qa?.status ?? "in_progress";
 	const statusBadge = useMemo(() => {
@@ -943,7 +932,8 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 						<span>
 							{t.footerPhase}{" "}
 							<span className="font-medium text-foreground">
-								{activeTab.toUpperCase()}
+								{tabs.find((tab) => tab.key === activeTab)?.label ??
+									activeTab.toUpperCase()}
 							</span>
 						</span>
 
