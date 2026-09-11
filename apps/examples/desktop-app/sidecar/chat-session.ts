@@ -798,12 +798,35 @@ async function resolveSystemPrompt(config: JsonRecord): Promise<string> {
 	});
 }
 
-function resolveToolPolicies(
+export function resolveToolPolicies(
 	config: JsonRecord,
-): { "*": { autoApprove: boolean } } | undefined {
+): Record<string, { autoApprove: boolean; enabled?: boolean }> {
+	const mode = resolveDesktopSessionMode(config);
+	if (mode === "yolo") {
+		return {
+			"*": {
+				autoApprove: true,
+				enabled: true,
+			},
+		};
+	}
+	const baseAutoApprove = config.autoApproveTools === true;
 	return {
 		"*": {
-			autoApprove: config.autoApproveTools !== false,
+			autoApprove: baseAutoApprove,
+			enabled: true,
+		},
+		editor: {
+			autoApprove: false,
+			enabled: mode !== "plan",
+		},
+		apply_patch: {
+			autoApprove: false,
+			enabled: mode !== "plan",
+		},
+		run_commands: {
+			autoApprove: false,
+			enabled: mode !== "plan",
 		},
 	};
 }

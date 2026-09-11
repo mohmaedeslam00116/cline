@@ -8,7 +8,18 @@ import type {
 	CapabilityType,
 	TelemetryPort,
 } from "@lens/ports";
-import { freezeGrant, isActiveGrant, LensPortError } from "@lens/ports";
+import {
+	freezeGrant,
+	isActiveGrant,
+	isCapabilityType,
+	LensPortError,
+} from "@lens/ports";
+import { resolveSafePath, scopeCoversPath } from "./path-boundary.js";
+
+export interface OperationScope {
+	readonly executable?: string;
+	readonly relativePath?: string;
+}
 
 export interface AuditRecord {
 	readonly seq: number;
@@ -34,17 +45,17 @@ export class CapabilityGrantRegistry {
 		private readonly sessionId = "lens-session",
 	) {}
 
-	/** Issue a grant. Phase 1 policy: only READ_ONLY_INSPECTION may be issued (ADR-0003). */
+	/** Issue a grant for any valid capability type. */
 	issue(
 		capability: CapabilityType,
 		scope: Omit<CapabilityGrant["scope"], "workspaceRoot">,
 		ttlMs: number,
 		reason: string,
 	): CapabilityGrant {
-		if (capability !== "READ_ONLY_INSPECTION") {
+		if (!isCapabilityType(capability)) {
 			throw new LensPortError(
 				"POLICY_DENIED",
-				`Phase 1 forbids issuing ${capability} grants (read-only containment)`,
+				`unknown capability '${String(capability)}'`,
 			);
 		}
 		// Fail-closed TTL validation: non-finite, zero, and negative lifetimes
@@ -75,22 +86,64 @@ export class CapabilityGrantRegistry {
 	}
 
 	/** Verify an active grant of `capability` within the given scope, or throw POLICY_DENIED. */
-	require(capability: CapabilityType, nowMs = Date.now()): CapabilityGrant {
+	require(
+		capability: CapabilityType,
+		scopeOrNowMs?: OperationScope | number,
+		nowMs?: number,
+	): CapabilityGrant {
+		const operationScope =
+			typeof scopeOrNowMs === "object" && scopeOrNowMs !== null
+				? scopeOrNowMs
+				: undefined;
+		const effectiveNowMs =
+			typeof scopeOrNowMs === "number" ? scopeOrNowMs : (nowMs ?? Date.now());
+
+		let sawScopeMismatch = false;
 		for (const grant of this.grants.values()) {
 			if (grant.capability !== capability) continue;
-			if (!isActiveGrant(grant, capability, nowMs)) continue;
+			if (!isActiveGrant(grant, capability, effectiveNowMs)) continue;
+
+			if (operationScope) {
+				if (operationScope.executable !== undefined) {
+					if (grant.scope.executable !== operationScope.executable) {
+						sawScopeMismatch = true;
+						continue;
+					}
+				}
+				if (operationScope.relativePath !== undefined) {
+					const resolved = resolveSafePath(
+						this.workspaceRoot,
+						operationScope.relativePath,
+					);
+					if (
+						!scopeCoversPath(
+							grant as Parameters<typeof scopeCoversPath>[0],
+							resolved,
+						)
+					) {
+						sawScopeMismatch = true;
+						continue;
+					}
+				}
+			}
+
 			this.audit("grant-verified", capability, `verified ${grant.grantId}`);
 			return grant;
 		}
 		const anyExpired = [...this.grants.values()].some(
 			(g) => g.capability === capability,
 		);
+		const detail = sawScopeMismatch
+			? `no active ${capability} grant matches the requested operation scope`
+			: anyExpired
+				? `all ${capability} grants have expired`
+				: `no active ${capability} grant`;
 		this.audit(
-			anyExpired ? "grant-expired" : "grant-denied",
+			anyExpired && !sawScopeMismatch ? "grant-expired" : "grant-denied",
 			capability,
-			`no active ${capability} grant`,
+			detail,
 		);
-		throw new LensPortError("POLICY_DENIED", `no active ${capability} grant`);
+		throw new LensPortError("POLICY_DENIED", detail);
 	}
 
 	/** List active grants (inspection/debugging). */

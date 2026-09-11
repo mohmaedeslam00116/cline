@@ -3,6 +3,7 @@ import type { ToolApprovalRequest } from "@cline/shared";
 import { LensPortError } from "@lens/ports";
 import { CapabilityGrantRegistry } from "./grant-registry.js";
 import {
+	AUTONOMOUS_MUTATING_TOOLS,
 	createPhase1ToolApproval,
 	decideToolCall,
 	PHASE1_READ_ONLY_TOOLS,
@@ -41,6 +42,15 @@ describe("Phase-1 tool approval (fail closed)", () => {
 			expect(d.approved).toBe(false);
 			expect(d.policyDenied).toBe(true);
 			expect(d.reason).toContain("read-only");
+		}
+	});
+
+	it("un-gates autonomous coding tools (editor, apply_patch, run_commands) for user approval", () => {
+		for (const tool of AUTONOMOUS_MUTATING_TOOLS) {
+			const d = decideToolCall(request(tool));
+			expect(d.approved).toBe(true);
+			expect(d.policyDenied).toBe(false);
+			expect(d.requiresApproval).toBe(true);
 		}
 	});
 
@@ -141,19 +151,88 @@ describe("CapabilityGrantRegistry", () => {
 		expect(reg.getAuditTrail()[0]?.detail).not.toBe("tampered");
 	});
 
-	it("refuses to issue mutating or terminal grants in Phase 1", () => {
+	it("issues mutating and terminal grants and rejects invalid capabilities", () => {
 		const reg = new CapabilityGrantRegistry("/ws");
-		expect(() => reg.issue("MUTATING_FILE_WRITE", {}, 60_000, "nope")).toThrow(
-			LensPortError,
+		const writeGrant = reg.issue(
+			"MUTATING_FILE_WRITE",
+			{},
+			60_000,
+			"user approved edit",
 		);
+		expect(writeGrant.capability).toBe("MUTATING_FILE_WRITE");
+		expect(reg.require("MUTATING_FILE_WRITE").grantId).toBe(writeGrant.grantId);
+
+		const termGrant = reg.issue(
+			"RESTRICTED_TERMINAL_COMMAND",
+			{ executable: "git" },
+			60_000,
+			"user approved command",
+		);
+		expect(termGrant.capability).toBe("RESTRICTED_TERMINAL_COMMAND");
+		expect(reg.require("RESTRICTED_TERMINAL_COMMAND").grantId).toBe(
+			termGrant.grantId,
+		);
+
 		expect(() =>
-			reg.issue("RESTRICTED_TERMINAL_COMMAND", {}, 60_000, "nope"),
+			reg.issue("INVALID_CAPABILITY" as never, {}, 60_000, "nope"),
 		).toThrow(LensPortError);
 		try {
-			reg.issue("MUTATING_FILE_WRITE", {}, 60_000, "nope");
+			reg.issue("INVALID_CAPABILITY" as never, {}, 60_000, "nope");
 		} catch (e) {
 			expect((e as LensPortError).code).toBe("POLICY_DENIED");
 		}
+	});
+
+	it("enforces operation scope for executables and path prefixes in require", () => {
+		const reg = new CapabilityGrantRegistry("/ws");
+
+		// Terminal command grant scoped to 'git'
+		const gitGrant = reg.issue(
+			"RESTRICTED_TERMINAL_COMMAND",
+			{ executable: "git" },
+			60_000,
+			"git commands only",
+		);
+
+		// Valid matching executable succeeds
+		expect(
+			reg.require("RESTRICTED_TERMINAL_COMMAND", { executable: "git" }).grantId,
+		).toBe(gitGrant.grantId);
+
+		// Mismatched executable is rejected
+		expect(() =>
+			reg.require("RESTRICTED_TERMINAL_COMMAND", { executable: "rm" }),
+		).toThrow(LensPortError);
+		expect(() =>
+			reg.require("RESTRICTED_TERMINAL_COMMAND", { executable: "npm" }),
+		).toThrow(LensPortError);
+
+		// File write grant scoped to 'src' and 'lib'
+		const scopedWriteGrant = reg.issue(
+			"MUTATING_FILE_WRITE",
+			{ pathPrefixes: ["src", "lib"] },
+			60_000,
+			"src and lib modifications only",
+		);
+
+		// Paths inside allowed prefixes succeed
+		expect(
+			reg.require("MUTATING_FILE_WRITE", { relativePath: "src/index.ts" })
+				.grantId,
+		).toBe(scopedWriteGrant.grantId);
+		expect(
+			reg.require("MUTATING_FILE_WRITE", {
+				relativePath: "lib/utils/helper.ts",
+			}).grantId,
+		).toBe(scopedWriteGrant.grantId);
+
+		// Paths outside allowed prefixes are rejected
+		expect(() =>
+			reg.require("MUTATING_FILE_WRITE", { relativePath: "etc/passwd" }),
+		).toThrow(LensPortError);
+		expect(() =>
+			reg.require("MUTATING_FILE_WRITE", { relativePath: "package.json" }),
+		).toThrow(LensPortError);
 	});
 
 	it("throws POLICY_DENIED when no grant exists, and detects expiry", () => {

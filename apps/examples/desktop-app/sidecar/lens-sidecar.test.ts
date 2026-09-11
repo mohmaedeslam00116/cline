@@ -144,6 +144,66 @@ describe("lens-sidecar wiring", () => {
 		expect(result?.approved).toBe(true);
 	});
 
+	it("autonomous mutating tools (editor, apply_patch, run_commands) pass through to the sidecar approval surface with checkpoint metadata", async () => {
+		process.env.LENS_MODE = "1";
+		const { ctx } = makeRecordedContext();
+		attachLensSession(ctx, "sess-lens");
+		const reachedTools: string[] = [];
+		const checkpoints: unknown[] = [];
+		const base: RuntimeCapabilities = {
+			requestToolApproval: (request) => {
+				reachedTools.push(request.toolName);
+				checkpoints.push(
+					(request as unknown as Record<string, unknown>).checkpoint,
+				);
+				return { approved: true, reason: "user approved" };
+			},
+		};
+		const wrapped = attachLensRuntimeCapabilities(base, ctx);
+
+		for (const tool of ["editor", "apply_patch", "run_commands"]) {
+			const result = await wrapped.requestToolApproval?.(
+				approvalRequest(tool, `call-${tool}`),
+			);
+			expect(result?.approved).toBe(true);
+			expect(result?.reason).toBe("user approved");
+		}
+
+		expect(reachedTools).toEqual(["editor", "apply_patch", "run_commands"]);
+		expect(checkpoints).toEqual([
+			{
+				capability: "MUTATING_FILE_WRITE",
+				isAllowed: true,
+				label: "File Modification",
+			},
+			{
+				capability: "MUTATING_FILE_WRITE",
+				isAllowed: true,
+				label: "File Modification",
+			},
+			{
+				capability: "RESTRICTED_TERMINAL_COMMAND",
+				isAllowed: true,
+				label: "Terminal Command",
+			},
+		]);
+	});
+
+	it("rejections by user for autonomous mutating tools are respected", async () => {
+		process.env.LENS_MODE = "1";
+		const { ctx } = makeRecordedContext();
+		attachLensSession(ctx, "sess-lens");
+		const base: RuntimeCapabilities = {
+			requestToolApproval: () => ({ approved: false, reason: "user rejected" }),
+		};
+		const wrapped = attachLensRuntimeCapabilities(base, ctx);
+		const result = await wrapped.requestToolApproval?.(
+			approvalRequest("editor", "reject-editor"),
+		);
+		expect(result?.approved).toBe(false);
+		expect(result?.reason).toBe("user rejected");
+	});
+
 	it("the evidence tool returns verified excerpts through the total error boundary", async () => {
 		process.env.LENS_MODE = "1";
 		const root = await mkdtemp(path.join(tmpdir(), "lens-sidecar-"));

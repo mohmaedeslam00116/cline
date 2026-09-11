@@ -14,11 +14,25 @@ import type { TelemetryPort } from "@lens/ports";
 /** Phase-1 read-only allowlist. Keep in lockstep with the executors wired in #11. */
 export const PHASE1_READ_ONLY_TOOLS = new Set([
 	"read_file",
+	"read_files",
 	"list_files",
 	"search_files",
+	"search_codebase",
 	"list_code_definition_names",
 	"search_symbols",
 	"get_evidence_detail",
+	"skills",
+	"ask_question",
+]);
+
+/**
+ * Autonomous coding tools un-gated for interactive execution.
+ * These mutating tools pass policy to the user approval surface.
+ */
+export const AUTONOMOUS_MUTATING_TOOLS = new Set([
+	"editor",
+	"apply_patch",
+	"run_commands",
 ]);
 
 export interface PolicyDecision {
@@ -26,15 +40,25 @@ export interface PolicyDecision {
 	readonly reason: string;
 	/** True when the denial came from the static Phase-1 policy (not a runtime state). */
 	readonly policyDenied: boolean;
+	/** True when the tool requires interactive user approval. */
+	readonly requiresApproval?: boolean;
 }
 
-/** Pure decision function: would this tool call be allowed under Phase-1 policy? */
+/** Pure decision function: would this tool call be allowed under policy? */
 export function decideToolCall(request: ToolApprovalRequest): PolicyDecision {
 	if (PHASE1_READ_ONLY_TOOLS.has(request.toolName)) {
 		return {
 			approved: true,
 			reason: "read-only tool allowed by Phase-1 policy",
 			policyDenied: false,
+		};
+	}
+	if (AUTONOMOUS_MUTATING_TOOLS.has(request.toolName)) {
+		return {
+			approved: true,
+			reason: "autonomous coding tool allowed subject to user approval",
+			policyDenied: false,
+			requiresApproval: true,
 		};
 	}
 	return {

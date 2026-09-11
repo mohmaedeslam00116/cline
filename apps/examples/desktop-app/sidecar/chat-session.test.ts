@@ -20,6 +20,7 @@ import {
 	mergeSessionConfig,
 	prewarmWorkspaceMetadata,
 	resolveDesktopSessionMode,
+	resolveToolPolicies,
 	rewriteDesktopTeamPrompt,
 	shouldUpdateSessionConnection,
 	WORKSPACE_METADATA_PREWARM_TTL_MS,
@@ -42,6 +43,52 @@ describe("resolveDesktopSessionMode", () => {
 	it("preserves explicit Plan and Yolo modes", () => {
 		expect(resolveDesktopSessionMode({ mode: "plan" })).toBe("plan");
 		expect(resolveDesktopSessionMode({ mode: "yolo" })).toBe("yolo");
+	});
+});
+
+describe("resolveToolPolicies", () => {
+	it("requires user approval for mutating tools (editor, apply_patch, run_commands) in act mode", () => {
+		const policies = resolveToolPolicies({
+			mode: "act",
+			autoApproveTools: true,
+		});
+		expect(policies["*"]).toEqual({ autoApprove: true, enabled: true });
+		expect(policies.editor).toEqual({ autoApprove: false, enabled: true });
+		expect(policies.apply_patch).toEqual({ autoApprove: false, enabled: true });
+		expect(policies.run_commands).toEqual({
+			autoApprove: false,
+			enabled: true,
+		});
+	});
+
+	it("disables mutating tools in plan mode", () => {
+		const policies = resolveToolPolicies({ mode: "plan" });
+		expect(policies.editor).toEqual({ autoApprove: false, enabled: false });
+		expect(policies.apply_patch).toEqual({
+			autoApprove: false,
+			enabled: false,
+		});
+		expect(policies.run_commands).toEqual({
+			autoApprove: false,
+			enabled: false,
+		});
+	});
+
+	it("auto-approves all tools in yolo mode", () => {
+		const policies = resolveToolPolicies({ mode: "yolo" });
+		expect(policies).toEqual({
+			"*": { autoApprove: true, enabled: true },
+		});
+		expect(policies.editor).toBeUndefined();
+	});
+
+	it("respects autoApproveTools: false for global baseline", () => {
+		const policies = resolveToolPolicies({
+			mode: "act",
+			autoApproveTools: false,
+		});
+		expect(policies["*"]).toEqual({ autoApprove: false, enabled: true });
+		expect(policies.editor).toEqual({ autoApprove: false, enabled: true });
 	});
 });
 

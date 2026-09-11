@@ -28,8 +28,14 @@ export const PHASE1_READ_ONLY_TOOLS = new Set([
 	"get_evidence_detail",
 ]);
 
+export const AUTONOMOUS_MUTATING_TOOLS = new Set([
+	"editor",
+	"apply_patch",
+	"run_commands",
+]);
+
 export interface GrantCheckpoint {
-	readonly status: "read_only" | "mutating_denied";
+	readonly status: "read_only" | "mutating_allowed" | "mutating_denied";
 	readonly label: string;
 	readonly capability: string;
 	readonly isAllowed: boolean;
@@ -46,6 +52,19 @@ export function getGrantCheckpointStatus(toolName: string): GrantCheckpoint {
 			badgeVariant: "secondary",
 		};
 	}
+	if (AUTONOMOUS_MUTATING_TOOLS.has(toolName)) {
+		return {
+			status: "mutating_allowed",
+			label:
+				toolName === "run_commands" ? "Terminal Command" : "File Modification",
+			capability:
+				toolName === "run_commands"
+					? "RESTRICTED_TERMINAL_COMMAND"
+					: "MUTATING_FILE_WRITE",
+			isAllowed: true,
+			badgeVariant: "default",
+		};
+	}
 	return {
 		status: "mutating_denied",
 		label: "Mutation Blocked",
@@ -58,24 +77,64 @@ export function getGrantCheckpointStatus(toolName: string): GrantCheckpoint {
 	};
 }
 
+export function expectedCapabilityForTool(toolName: string): string {
+	if (toolName === "run_commands" || toolName === "execute_command") {
+		return "RESTRICTED_TERMINAL_COMMAND";
+	}
+	if (AUTONOMOUS_MUTATING_TOOLS.has(toolName) || toolName === "write_to_file") {
+		return "MUTATING_FILE_WRITE";
+	}
+	return "READ_ONLY_INSPECTION";
+}
+
 export function resolveCheckpoint(
 	item: ToolApprovalRequestItem,
 ): GrantCheckpoint {
-	if (item.checkpoint && typeof item.checkpoint === "object") {
+	if (
+		item.checkpoint &&
+		typeof item.checkpoint === "object" &&
+		!Array.isArray(item.checkpoint)
+	) {
 		const cp = item.checkpoint as Record<string, unknown>;
-		if (typeof cp.capability === "string") {
-			const isAllowed = Boolean(cp.isAllowed ?? cp.allowed ?? false);
+		const rawAllowed =
+			typeof cp.isAllowed === "boolean"
+				? cp.isAllowed
+				: typeof cp.allowed === "boolean"
+					? cp.allowed
+					: null;
+		const capability =
+			typeof cp.capability === "string" ? cp.capability.trim() : null;
+
+		if (
+			rawAllowed !== null &&
+			capability !== null &&
+			capability === expectedCapabilityForTool(item.toolName)
+		) {
+			const isAllowed = rawAllowed;
+			const isMutating = AUTONOMOUS_MUTATING_TOOLS.has(item.toolName);
 			return {
-				status: isAllowed ? "read_only" : "mutating_denied",
+				status: isAllowed
+					? isMutating
+						? "mutating_allowed"
+						: "read_only"
+					: "mutating_denied",
 				label:
 					typeof cp.label === "string"
 						? cp.label
 						: isAllowed
-							? "Read-Only Inspection"
+							? isMutating
+								? item.toolName === "run_commands"
+									? "Terminal Command"
+									: "File Modification"
+								: "Read-Only Inspection"
 							: "Mutation Blocked",
-				capability: cp.capability,
+				capability,
 				isAllowed,
-				badgeVariant: isAllowed ? "secondary" : "destructive",
+				badgeVariant: isAllowed
+					? isMutating
+						? "default"
+						: "secondary"
+					: "destructive",
 			};
 		}
 	}
@@ -188,9 +247,13 @@ export function ToolApprovalPanel({
 										{checkpoint.isAllowed ? (
 											<ShieldCheck className="mr-0.5 h-3 w-3 text-foreground inline" />
 										) : null}
-										{checkpoint.isAllowed
-											? t.readOnlyInspection
-											: t.mutationBlocked}
+										{checkpoint.status === "mutating_allowed"
+											? item.toolName === "run_commands"
+												? t.terminalExecution
+												: t.fileModification
+											: checkpoint.isAllowed
+												? t.readOnlyInspection
+												: t.mutationBlocked}
 									</Badge>
 								</div>
 							}

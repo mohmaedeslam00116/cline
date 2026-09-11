@@ -1076,7 +1076,34 @@ async function handleHubApprovalRequest(
 			!Array.isArray(event.payload.policy)
 				? (event.payload.policy as ToolApprovalRequest["policy"])
 				: { autoApprove: false },
-		checkpoint: event.payload?.checkpoint,
+		checkpoint: (() => {
+			if (
+				event.payload?.checkpoint &&
+				typeof event.payload.checkpoint === "object" &&
+				!Array.isArray(event.payload.checkpoint)
+			) {
+				const rawCp = event.payload.checkpoint as Record<string, unknown>;
+				const isAllowed =
+					typeof rawCp.isAllowed === "boolean"
+						? rawCp.isAllowed
+						: typeof rawCp.allowed === "boolean"
+							? rawCp.allowed
+							: undefined;
+				const capability =
+					typeof rawCp.capability === "string"
+						? rawCp.capability.trim()
+						: undefined;
+				if (isAllowed !== undefined && capability) {
+					return {
+						capability,
+						isAllowed,
+						label:
+							typeof rawCp.label === "string" ? rawCp.label.trim() : undefined,
+					};
+				}
+			}
+			return undefined;
+		})(),
 	} as ToolApprovalRequest);
 	const client = ctx.hubClient;
 	if (!client)
