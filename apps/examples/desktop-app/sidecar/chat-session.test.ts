@@ -7,7 +7,7 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { materializeUserFiles } from "./attachments";
 import {
@@ -16,6 +16,7 @@ import {
 	createDesktopMistakeLimitPrompt,
 	createDesktopMistakeRecovery,
 	handleChatSessionCommand,
+	hasModeChanged,
 	hasProviderChanged,
 	mergeSessionConfig,
 	prewarmWorkspaceMetadata,
@@ -61,7 +62,7 @@ describe("resolveToolPolicies", () => {
 		});
 	});
 
-	it("disables mutating tools in plan mode", () => {
+	it("disables mutating editor tools in plan mode while keeping run_commands enabled for inspection", () => {
 		const policies = resolveToolPolicies({ mode: "plan" });
 		expect(policies.editor).toEqual({ autoApprove: false, enabled: false });
 		expect(policies.apply_patch).toEqual({
@@ -70,7 +71,7 @@ describe("resolveToolPolicies", () => {
 		});
 		expect(policies.run_commands).toEqual({
 			autoApprove: false,
-			enabled: false,
+			enabled: true,
 		});
 	});
 
@@ -89,6 +90,23 @@ describe("resolveToolPolicies", () => {
 		});
 		expect(policies["*"]).toEqual({ autoApprove: false, enabled: true });
 		expect(policies.editor).toEqual({ autoApprove: false, enabled: true });
+	});
+});
+
+describe("hasModeChanged", () => {
+	it("detects mode transitions between act, plan, and yolo", () => {
+		expect(hasModeChanged({ mode: "act" }, { mode: "plan" })).toBe(true);
+		expect(hasModeChanged({ mode: "plan" }, { mode: "yolo" })).toBe(true);
+		expect(hasModeChanged({ mode: "yolo" }, { mode: "act" })).toBe(true);
+	});
+
+	it("returns false when modes are identical or default to act", () => {
+		expect(hasModeChanged({ mode: "plan" }, { mode: "plan" })).toBe(false);
+		expect(hasModeChanged({ mode: "yolo" }, { mode: "yolo" })).toBe(false);
+		expect(hasModeChanged({ mode: "act" }, { mode: "act" })).toBe(false);
+		expect(hasModeChanged({}, {})).toBe(false);
+		expect(hasModeChanged({}, { mode: "act" })).toBe(false);
+		expect(hasModeChanged({ mode: "act" }, {})).toBe(false);
 	});
 });
 
@@ -517,7 +535,7 @@ describe("session forks", () => {
 		await restoreStarted;
 		try {
 			expect(ctx.restoringWorkspacePaths).toEqual(
-				new Set(["/workspace/project"]),
+				new Set([resolve("/workspace/project")]),
 			);
 			await expect(
 				handleChatSessionCommand(ctx, {
@@ -908,7 +926,7 @@ describe("session forks", () => {
 					},
 				],
 			]),
-			restoringWorkspacePaths: new Set(["/workspace/project"]),
+			restoringWorkspacePaths: new Set([resolve("/workspace/project")]),
 			sessionManager: { send },
 		} as unknown as SidecarContext;
 
@@ -1022,8 +1040,10 @@ describe("first-send connection updates", () => {
 		expect(send).toHaveBeenCalledWith({
 			sessionId,
 			prompt: "",
+			mode: "act",
 			delivery: undefined,
 			userImages: ["data:image/png;base64,aGVsbG8="],
+			userFiles: undefined,
 		});
 	});
 
@@ -1064,6 +1084,7 @@ describe("first-send connection updates", () => {
 			expect(send).toHaveBeenCalledWith({
 				sessionId,
 				prompt: "",
+				mode: "act",
 				delivery,
 				userImages: undefined,
 				userFiles: [expect.stringMatching(/notes\.txt$/)],
@@ -1331,6 +1352,103 @@ describe("first-send connection updates", () => {
 		expect(start.mock.invocationCallOrder[0]).toBeLessThan(
 			send.mock.invocationCallOrder[0] ?? 0,
 		);
+	});
+
+	it("rebuilds session and prepends <mode_notice> when switching mode between turns", async () => {
+		const { ctx, readMessages, send, sessionId, start, stop } = createContext({
+			config: { ...baseConfig, mode: "act" },
+		});
+
+		await handleChatSessionCommand(ctx, {
+			action: "send",
+			sessionId,
+			prompt: "plan our next refactor",
+			config: {
+				...baseConfig,
+				mode: "plan",
+			},
+		});
+
+		expect(readMessages).toHaveBeenCalledWith(sessionId);
+		expect(stop).toHaveBeenCalledWith(sessionId);
+		expect(start).toHaveBeenCalledWith(
+			expect.objectContaining({
+				config: expect.objectContaining({
+					mode: "plan",
+					sessionId,
+				}),
+				initialMessages: [
+					{ role: "user", content: "first prompt" },
+					{ role: "assistant", content: "first response" },
+				],
+			}),
+		);
+		expect(send).toHaveBeenCalledWith(
+			expect.objectContaining({
+				sessionId,
+				mode: "plan",
+				prompt: expect.stringMatching(
+					/^<mode_notice>[\s\S]*<\/mode_notice>\nplan our next refactor$/,
+				),
+			}),
+		);
+	});
+
+	it("blocks mode changes while a turn is currently running", async () => {
+		const { ctx, send, sessionId } = createContext({
+			config: { ...baseConfig, mode: "act" },
+		});
+		const session = ctx.liveSessions.get(sessionId);
+		if (session) {
+			session.busy = true;
+			session.status = "running";
+		}
+
+		await expect(
+			handleChatSessionCommand(ctx, {
+				action: "send",
+				sessionId,
+				prompt: "switch while busy",
+				config: {
+					...baseConfig,
+					mode: "plan",
+				},
+			}),
+		).rejects.toThrow("Cannot switch modes while a turn is running");
+		expect(send).not.toHaveBeenCalled();
+	});
+
+	it("allows subsequent sends after a mode switch without getting stuck in transitioningProvider", async () => {
+		const { ctx, send, sessionId } = createContext({
+			config: { ...baseConfig, mode: "act" },
+		});
+
+		// First send: switches from Act to Plan mode
+		await handleChatSessionCommand(ctx, {
+			action: "send",
+			sessionId,
+			prompt: "plan refactor",
+			config: {
+				...baseConfig,
+				mode: "plan",
+			},
+		});
+
+		const session = ctx.liveSessions.get(sessionId);
+		expect(session?.transitioningProvider).toBe(false);
+
+		// Second send: should succeed without throwing "A provider switch is already in progress"
+		await handleChatSessionCommand(ctx, {
+			action: "send",
+			sessionId,
+			prompt: "second plan step",
+			config: {
+				...baseConfig,
+				mode: "plan",
+			},
+		});
+
+		expect(send).toHaveBeenCalledTimes(2);
 	});
 
 	it("blocks a concurrent send throughout provider-switch preparation", async () => {

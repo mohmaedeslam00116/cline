@@ -342,6 +342,51 @@ describe("findFileEditingCommand — review feedback cases", () => {
 		expect(blocks("find . -type f -exec grep -l TODO {} +")).toBe(false);
 		expect(blocks("find . -name '*.ts' | xargs -I {} rm {}")).toBe(true);
 	});
+
+	it("blocks arbitrary subshells and inline code interpreters", () => {
+		expect(findFileEditingCommand("bash -c 'rm file'")).toBe(
+			"`bash -c` (arbitrary shell execution)",
+		);
+		expect(findFileEditingCommand("sh -c 'echo > file'")).toBe(
+			"`sh -c` (arbitrary shell execution)",
+		);
+		expect(findFileEditingCommand("zsh -c 'touch marker'")).toBe(
+			"`zsh -c` (arbitrary shell execution)",
+		);
+		expect(findFileEditingCommand("pwsh -Command 'Remove-Item file'")).toBe(
+			"`pwsh -Command` (arbitrary shell execution)",
+		);
+		expect(findFileEditingCommand("powershell -c 'del file'")).toBe(
+			"`powershell -Command` (arbitrary shell execution)",
+		);
+		expect(
+			findFileEditingCommand("python -c \"open('file', 'w').write('x')\""),
+		).toBe("`python -c` (arbitrary code execution)");
+		expect(
+			findFileEditingCommand("python3 -c 'import os; os.remove(\"x\")'"),
+		).toBe("`python3 -c` (arbitrary code execution)");
+		expect(
+			findFileEditingCommand('node -e \'fs.writeFileSync("a", "b")\''),
+		).toBe("`node -e` (arbitrary code execution)");
+		expect(findFileEditingCommand("node --eval 'fs.unlinkSync(\"a\")'")).toBe(
+			"`node -e` (arbitrary code execution)",
+		);
+		expect(findFileEditingCommand("bun -e 'console.log(1)'")).toBe(
+			"`bun -e` (arbitrary code execution)",
+		);
+		expect(findFileEditingCommand("deno eval 'console.log(1)'")).toBe(
+			"`deno eval` (arbitrary code execution)",
+		);
+		expect(findFileEditingCommand("perl -e 'print 1'")).toBe(
+			"`perl -e` (arbitrary code execution)",
+		);
+		expect(findFileEditingCommand("ruby -e 'File.delete(\"x\")'")).toBe(
+			"`ruby -e` (arbitrary code execution)",
+		);
+		expect(findFileEditingCommand("php -r 'unlink(\"x\");'")).toBe(
+			"`php -r` (arbitrary code execution)",
+		);
+	});
 });
 
 describe("findFileEditingCommand — structured commands", () => {

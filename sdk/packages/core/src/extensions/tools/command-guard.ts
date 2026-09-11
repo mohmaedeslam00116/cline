@@ -342,6 +342,67 @@ function checkTokens(tokens: string[]): string | undefined {
 		return `\`${name}\``;
 	}
 
+	// Shell inline command execution flags (-c, -Command).
+	if (
+		["bash", "sh", "zsh", "dash", "ksh"].includes(name) &&
+		args.some((arg) => arg === "-c" || arg.startsWith("-c"))
+	) {
+		return `\`${name} -c\` (arbitrary shell execution)`;
+	}
+	if (
+		(name === "pwsh" || name === "powershell") &&
+		args.some((arg) => {
+			const lower = arg.toLowerCase();
+			return (
+				lower === "-c" ||
+				lower === "-command" ||
+				lower.startsWith("-c") ||
+				lower === "/c"
+			);
+		})
+	) {
+		return `\`${name} -Command\` (arbitrary shell execution)`;
+	}
+
+	// Python inline code execution (-c).
+	if (/^python[\d.]*$/.test(name) || /^pypy[\d.]*$/.test(name)) {
+		if (args.some((arg) => arg === "-c" || arg.startsWith("-c"))) {
+			return `\`${name} -c\` (arbitrary code execution)`;
+		}
+		const moduleIndex = args.indexOf("-m");
+		const module =
+			moduleIndex === -1 ? undefined : args[moduleIndex + 1]?.toLowerCase();
+		if (module === "pip" || module === "pip3") {
+			const subcommand = args
+				.slice(moduleIndex + 2)
+				.find((arg) => !arg.startsWith("-"))
+				?.toLowerCase();
+			if (subcommand && PIP_SUBCOMMANDS.has(subcommand)) {
+				return `\`pip ${subcommand}\``;
+			}
+		}
+		return undefined;
+	}
+
+	// Node / Bun / Deno inline code execution.
+	if (
+		(name === "node" || name === "nodejs" || name === "bun") &&
+		args.some((arg) => arg === "-e" || arg === "--eval")
+	) {
+		return `\`${name} -e\` (arbitrary code execution)`;
+	}
+	if (name === "deno" && args.includes("eval")) {
+		return "`deno eval` (arbitrary code execution)";
+	}
+
+	// Ruby / PHP inline code execution.
+	if (name === "ruby" && args.some((arg) => arg === "-e")) {
+		return "`ruby -e` (arbitrary code execution)";
+	}
+	if (name === "php" && args.some((arg) => arg === "-r")) {
+		return "`php -r` (arbitrary code execution)";
+	}
+
 	const subcommands = BLOCKED_SUBCOMMANDS[name];
 	if (subcommands) {
 		// Help output never mutates (`git switch --help`).
@@ -376,23 +437,6 @@ function checkTokens(tokens: string[]): string | undefined {
 		return undefined;
 	}
 
-	// `python -m pip install ...` is pip.
-	if (/^python[\d.]*$/.test(name)) {
-		const moduleIndex = args.indexOf("-m");
-		const module =
-			moduleIndex === -1 ? undefined : args[moduleIndex + 1]?.toLowerCase();
-		if (module === "pip" || module === "pip3") {
-			const subcommand = args
-				.slice(moduleIndex + 2)
-				.find((arg) => !arg.startsWith("-"))
-				?.toLowerCase();
-			if (subcommand && PIP_SUBCOMMANDS.has(subcommand)) {
-				return `\`pip ${subcommand}\``;
-			}
-		}
-		return undefined;
-	}
-
 	// In-place edit flags on otherwise read-only text tools. The flag cluster
 	// must end at the lowercase `i` (optionally followed by a `.suffix`), so
 	// value-taking uppercase flags like `perl -Ilib` do not match.
@@ -403,8 +447,13 @@ function checkTokens(tokens: string[]): string | undefined {
 	) {
 		return "`sed -i` (in-place edit)";
 	}
-	if (name === "perl" && args.some((arg) => IN_PLACE_FLAG.test(arg))) {
-		return "`perl -i` (in-place edit)";
+	if (
+		name === "perl" &&
+		args.some((arg) => IN_PLACE_FLAG.test(arg) || arg === "-e" || arg === "-E")
+	) {
+		return args.some((arg) => arg === "-e" || arg === "-E")
+			? "`perl -e` (arbitrary code execution)"
+			: "`perl -i` (in-place edit)";
 	}
 	if (/^[gnm]?awk$/.test(name)) {
 		const usesInplace = args.some(

@@ -14,6 +14,7 @@ import type { ProviderModel } from "@/lib/provider-schema";
 import {
 	buildUserInstructionSlashCommands,
 	ChatInputBar,
+	ModeSwitcher,
 } from "./chat-input-bar";
 
 const {
@@ -2244,5 +2245,235 @@ describe("ChatInputBar token ring", () => {
 		);
 		const progressCircle = trigger?.querySelector("circle.stroke-red-500");
 		expect(progressCircle?.getAttribute("stroke-dashoffset")).toBe("0");
+	});
+});
+
+describe("ModeSwitcher component", () => {
+	it("renders all three modes with correct aria-checked and roving tabIndex", async () => {
+		await act(async () => {
+			root.render(<ModeSwitcher mode="plan" onModeChange={vi.fn()} />);
+		});
+
+		const radiogroup = container.querySelector('[role="radiogroup"]');
+		expect(radiogroup).not.toBeNull();
+		expect(radiogroup?.getAttribute("aria-label")).toBe(
+			"Agent interaction mode",
+		);
+
+		const actBtn = container.querySelector('button[aria-label="Code (Act)"]');
+		const planBtn = container.querySelector(
+			'button[aria-label="Architect (Plan)"]',
+		);
+		const yoloBtn = container.querySelector(
+			'button[aria-label="Autonomous (YOLO)"]',
+		);
+
+		expect(actBtn?.getAttribute("aria-checked")).toBe("false");
+		expect(planBtn?.getAttribute("aria-checked")).toBe("true");
+		expect(yoloBtn?.getAttribute("aria-checked")).toBe("false");
+
+		expect(actBtn?.getAttribute("tabindex")).toBe("-1");
+		expect(planBtn?.getAttribute("tabindex")).toBe("0");
+		expect(yoloBtn?.getAttribute("tabindex")).toBe("-1");
+	});
+
+	it("uses monochrome neutral styling for YOLO mode", async () => {
+		await act(async () => {
+			root.render(<ModeSwitcher mode="yolo" onModeChange={vi.fn()} />);
+		});
+
+		const yoloBtn = container.querySelector(
+			'button[aria-label="Autonomous (YOLO)"]',
+		);
+		expect(yoloBtn?.classList.contains("text-foreground")).toBe(true);
+		expect(yoloBtn?.classList.contains("text-amber-500")).toBe(false);
+	});
+
+	it("supports ArrowRight/ArrowLeft navigation with wraparound", async () => {
+		const onModeChange = vi.fn();
+		await act(async () => {
+			root.render(<ModeSwitcher mode="act" onModeChange={onModeChange} />);
+		});
+
+		const radiogroup = container.querySelector('[role="radiogroup"]');
+		expect(radiogroup).not.toBeNull();
+
+		// ArrowRight from act -> plan
+		await act(async () => {
+			radiogroup?.dispatchEvent(
+				new KeyboardEvent("keydown", { bubbles: true, key: "ArrowRight" }),
+			);
+		});
+		expect(onModeChange).toHaveBeenCalledWith("plan");
+
+		// ArrowLeft from act -> yolo (wraparound)
+		await act(async () => {
+			radiogroup?.dispatchEvent(
+				new KeyboardEvent("keydown", { bubbles: true, key: "ArrowLeft" }),
+			);
+		});
+		expect(onModeChange).toHaveBeenCalledWith("yolo");
+	});
+
+	it("invokes onModeChange when clicking mode buttons", async () => {
+		const onModeChange = vi.fn();
+		await act(async () => {
+			root.render(<ModeSwitcher mode="act" onModeChange={onModeChange} />);
+		});
+
+		const planBtn = container.querySelector(
+			'button[aria-label="Architect (Plan)"]',
+		) as HTMLButtonElement;
+		const yoloBtn = container.querySelector(
+			'button[aria-label="Autonomous (YOLO)"]',
+		) as HTMLButtonElement;
+
+		await act(async () => {
+			planBtn.click();
+		});
+		expect(onModeChange).toHaveBeenCalledWith("plan");
+
+		await act(async () => {
+			yoloBtn.click();
+		});
+		expect(onModeChange).toHaveBeenCalledWith("yolo");
+	});
+
+	it("disables all mode buttons when disabled prop is true", async () => {
+		const onModeChange = vi.fn();
+		await act(async () => {
+			root.render(
+				<ModeSwitcher disabled={true} mode="act" onModeChange={onModeChange} />,
+			);
+		});
+
+		const buttons =
+			container.querySelectorAll<HTMLButtonElement>('[role="radio"]');
+		expect(buttons.length).toBe(3);
+		for (const btn of buttons) {
+			expect(btn.disabled).toBe(true);
+		}
+	});
+});
+
+describe("Mode switching in ChatInputBar", () => {
+	it("triggers onModeToggle on Ctrl+. shortcut", async () => {
+		const onModeToggle = vi.fn();
+		await act(async () => {
+			root.render(
+				<WorkspaceProvider value={workspaceValue}>
+					<ChatInputBar
+						attachments={[]}
+						gitBranch="main"
+						mode="act"
+						model="test-model"
+						onAbort={vi.fn()}
+						onAttachFiles={vi.fn()}
+						onEditPromptInQueue={vi.fn()}
+						onListGitBranches={vi.fn(async () => ({
+							current: "main",
+							branches: ["main"],
+						}))}
+						onModeToggle={onModeToggle}
+						onModelChange={vi.fn()}
+						onPromptInputChange={vi.fn()}
+						onProviderChange={vi.fn()}
+						onReasoningChange={vi.fn()}
+						onRemoveAttachment={vi.fn()}
+						onRemovePromptInQueue={vi.fn()}
+						onSend={vi.fn()}
+						onSteerPromptInQueue={vi.fn()}
+						onSwitchGitBranch={vi.fn(async () => true)}
+						promptDraft={{ version: 0, value: "test" }}
+						promptsInQueue={[]}
+						provider="cline"
+						reasoningEffort="low"
+						status="idle"
+						summary={{ toolCalls: 0, tokensIn: 0, tokensOut: 0 }}
+						thinking
+					/>
+				</WorkspaceProvider>,
+			);
+		});
+
+		const textarea = container.querySelector("textarea");
+		expect(textarea).not.toBeNull();
+
+		await act(async () => {
+			textarea?.dispatchEvent(
+				new KeyboardEvent("keydown", {
+					bubbles: true,
+					key: ".",
+					ctrlKey: true,
+				}),
+			);
+		});
+		expect(onModeToggle).toHaveBeenCalledTimes(1);
+
+		await act(async () => {
+			textarea?.dispatchEvent(
+				new KeyboardEvent("keydown", {
+					bubbles: true,
+					key: "m",
+					ctrlKey: true,
+					shiftKey: true,
+				}),
+			);
+		});
+		expect(onModeToggle).toHaveBeenCalledTimes(2);
+	});
+
+	it("does not trigger onModeToggle when session is running (busy)", async () => {
+		const onModeToggle = vi.fn();
+		await act(async () => {
+			root.render(
+				<WorkspaceProvider value={workspaceValue}>
+					<ChatInputBar
+						attachments={[]}
+						gitBranch="main"
+						mode="act"
+						model="test-model"
+						onAbort={vi.fn()}
+						onAttachFiles={vi.fn()}
+						onEditPromptInQueue={vi.fn()}
+						onListGitBranches={vi.fn(async () => ({
+							current: "main",
+							branches: ["main"],
+						}))}
+						onModeToggle={onModeToggle}
+						onModelChange={vi.fn()}
+						onPromptInputChange={vi.fn()}
+						onProviderChange={vi.fn()}
+						onReasoningChange={vi.fn()}
+						onRemoveAttachment={vi.fn()}
+						onRemovePromptInQueue={vi.fn()}
+						onSend={vi.fn()}
+						onSteerPromptInQueue={vi.fn()}
+						onSwitchGitBranch={vi.fn(async () => true)}
+						promptDraft={{ version: 0, value: "test" }}
+						promptsInQueue={[]}
+						provider="cline"
+						reasoningEffort="low"
+						status="running"
+						summary={{ toolCalls: 0, tokensIn: 0, tokensOut: 0 }}
+						thinking
+					/>
+				</WorkspaceProvider>,
+			);
+		});
+
+		const textarea = container.querySelector("textarea");
+		expect(textarea).not.toBeNull();
+
+		await act(async () => {
+			textarea?.dispatchEvent(
+				new KeyboardEvent("keydown", {
+					bubbles: true,
+					key: ".",
+					ctrlKey: true,
+				}),
+			);
+		});
+		expect(onModeToggle).not.toHaveBeenCalled();
 	});
 });

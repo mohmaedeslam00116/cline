@@ -39,15 +39,15 @@ export function parseUserInputMode(
  * display by stripModeNotices at display boundaries.
  */
 export function formatModeSwitchNotice(
-	from: "act" | "plan",
-	to: "act" | "plan",
+	from: "act" | "plan" | "yolo",
+	to: "act" | "plan" | "yolo",
 ): string {
 	return `<mode_notice>The user switched from ${from} mode to ${to} mode before sending this message.</mode_notice>`;
 }
 
 export type ModeSwitchNotice = {
-	from: "act" | "plan";
-	to: "act" | "plan";
+	from: "act" | "plan" | "yolo";
+	to: "act" | "plan" | "yolo";
 };
 
 /**
@@ -61,7 +61,7 @@ export type ModeSwitchNotice = {
 export function createModeSwitchNoticeTracker() {
 	let pending: ModeSwitchNotice | null = null;
 	return {
-		record(from: "act" | "plan", to: "act" | "plan"): void {
+		record(from: "act" | "plan" | "yolo", to: "act" | "plan" | "yolo"): void {
 			if (from === to) {
 				return;
 			}

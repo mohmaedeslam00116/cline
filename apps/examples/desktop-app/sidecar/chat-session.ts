@@ -26,6 +26,7 @@ import {
 	buildClineSystemPrompt,
 	type ConsecutiveMistakeLimitContext,
 	type ConsecutiveMistakeLimitDecision,
+	formatModeSwitchNotice,
 	formatUserCommandBlock,
 } from "@cline/shared";
 import {
@@ -764,6 +765,15 @@ export function hasProviderChanged(
 	return nextProviderId !== undefined && currentProviderId !== nextProviderId;
 }
 
+export function hasModeChanged(
+	currentConfig: JsonRecord,
+	nextConfig: JsonRecord,
+): boolean {
+	const currentMode = resolveDesktopSessionMode(currentConfig);
+	const nextMode = resolveDesktopSessionMode(nextConfig);
+	return currentMode !== nextMode;
+}
+
 async function resolveSystemPrompt(config: JsonRecord): Promise<string> {
 	const cwd = String(
 		config.cwd ?? config.workspaceRoot ?? config.workspace_root ?? "",
@@ -826,7 +836,7 @@ export function resolveToolPolicies(
 		},
 		run_commands: {
 			autoApprove: false,
-			enabled: mode !== "plan",
+			enabled: true,
 		},
 	};
 }
@@ -1118,7 +1128,10 @@ async function rebuildSessionForProviderChange(
 			resolveSystemPrompt(nextConfig),
 		]);
 
-	cancelSidecarMistakeQuestions(ctx, sessionId, "Session provider changed");
+	const cancelReason = hasModeChanged(previousConfig, nextConfig)
+		? "Session mode changed"
+		: "Session provider changed";
+	cancelSidecarMistakeQuestions(ctx, sessionId, cancelReason);
 	await manager.stop(sessionId);
 	let replacementStarted = false;
 	try {
@@ -1214,9 +1227,19 @@ async function handleSend(
 			request.config &&
 			hasProviderChanged(session.config, request.config),
 	);
+	const modeChanged = Boolean(
+		session && request.config && hasModeChanged(session.config, request.config),
+	);
 	if (providerChanged && session?.busy) {
 		throw new Error("Cannot switch providers while a turn is running");
 	}
+	if (modeChanged && session?.busy) {
+		throw new Error("Cannot switch modes while a turn is running");
+	}
+	const needsRebuild = providerChanged || modeChanged;
+	const previousMode = session?.config
+		? resolveDesktopSessionMode(session.config)
+		: undefined;
 	const ownsBusyState = Boolean(
 		session && delivery !== "queue" && delivery !== "steer",
 	);
@@ -1226,13 +1249,13 @@ async function handleSend(
 			session.busy = true;
 			session.status = "running";
 		}
-		if (providerChanged) {
+		if (needsRebuild) {
 			session.transitioningProvider = true;
 		}
 	}
 	try {
 		if (request.config && nextConfig) {
-			if (providerChanged && session) {
+			if (needsRebuild && session) {
 				await rebuildSessionForProviderChange(
 					ctx,
 					manager,
@@ -1252,7 +1275,7 @@ async function handleSend(
 			}
 			if (session) {
 				session.config = nextConfig;
-				if (providerChanged) {
+				if (needsRebuild) {
 					session.attachedViaHub = false;
 				}
 			}
@@ -1268,13 +1291,23 @@ async function handleSend(
 			// muted by its subscription, so the session is no longer attach-only.
 			session.attachedViaHub = false;
 		}
+
+		const nextMode = resolveDesktopSessionMode(
+			nextConfig ?? session?.config ?? request.config ?? {},
+		);
+		let finalRuntimePrompt = runtimePrompt;
+		if (modeChanged && previousMode && previousMode !== nextMode) {
+			finalRuntimePrompt = `${formatModeSwitchNotice(previousMode, nextMode)}\n${runtimePrompt}`;
+		}
+
 		if (delivery === "queue") {
 			if (session) {
 				session.prompt = prompt;
 			}
 			await manager.send({
 				sessionId,
-				prompt: runtimePrompt,
+				prompt: finalRuntimePrompt,
+				mode: nextMode,
 				delivery: "queue",
 				userImages: request.attachments?.userImages,
 				userFiles,
@@ -1314,7 +1347,8 @@ async function handleSend(
 		try {
 			result = await manager.send({
 				sessionId,
-				prompt: runtimePrompt,
+				prompt: finalRuntimePrompt,
+				mode: nextMode,
 				delivery,
 				userImages: request.attachments?.userImages,
 				userFiles,
@@ -1387,7 +1421,7 @@ async function handleSend(
 			if (ownsBusyState) {
 				session.busy = false;
 			}
-			if (providerChanged) {
+			if (needsRebuild) {
 				session.transitioningProvider = false;
 			}
 		}
