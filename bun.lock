@@ -175,6 +175,9 @@
         "@fontsource-variable/geist-mono": "^5.2.8",
         "@fontsource-variable/inter": "^5.2.8",
         "@hookform/resolvers": "^3.9.1",
+        "@lens/policy": "workspace:*",
+        "@lens/ports": "workspace:*",
+        "@lens/research": "workspace:*",
         "@pierre/diffs": "^1.3.0",
         "@radix-ui/react-accordion": "1.2.12",
         "@radix-ui/react-alert-dialog": "1.1.15",
@@ -608,9 +611,26 @@
         "lightningcss-win32-x64-msvc": "1.29.2",
       },
     },
+    "lens/packages/policy": {
+      "name": "@lens/policy",
+      "version": "0.1.0",
+      "dependencies": {
+        "@lens/ports": "workspace:*",
+      },
+      "devDependencies": {
+        "@cline/shared": "workspace:*",
+      },
+    },
     "lens/packages/ports": {
       "name": "@lens/ports",
       "version": "0.1.0",
+    },
+    "lens/packages/research": {
+      "name": "@lens/research",
+      "version": "0.1.0",
+      "dependencies": {
+        "@lens/ports": "workspace:*",
+      },
     },
     "sdk/examples": {
       "name": "examples",
@@ -1641,7 +1661,11 @@
 
     "@langfuse/vercel-ai-sdk": ["@langfuse/vercel-ai-sdk@5.9.1", "", { "dependencies": { "@ai-sdk/otel": "1.0.2", "@langfuse/core": "^5.9.1" }, "peerDependencies": { "@opentelemetry/api": "^1.9.0", "ai": ">=7.0.0 <8" } }, "sha512-gZPZJ3JXYTkT7W61VhbNHXgn/88+laoAQGMc082ESeXBwfuMVVPKDueZzM0xy6s0BTtPLW5WmbJ5NkLNCtR3Nw=="],
 
+    "@lens/policy": ["@lens/policy@workspace:lens/packages/policy"],
+
     "@lens/ports": ["@lens/ports@workspace:lens/packages/ports"],
+
+    "@lens/research": ["@lens/research@workspace:lens/packages/research"],
 
     "@linear/sdk": ["@linear/sdk@76.0.0", "", { "dependencies": { "@graphql-typed-document-node/core": "^3.2.0" } }, "sha512-Xt0x5Kl6qBoWhGFypb8ykyP+c5kT7scmRPs1uJidSPOaRgkMJ/4y41QpmZCWCBUMmZtf/O0VktgQio6rLXT94w=="],
 

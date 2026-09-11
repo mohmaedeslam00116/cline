@@ -8,6 +8,7 @@ import {
 	ChevronDown,
 	CircleUserRound,
 	Clock3,
+	FileSearch,
 	Filter,
 	FolderTree,
 	GitFork,
@@ -90,6 +91,7 @@ import {
 	productNameForVersion,
 } from "@/lib/app-channel";
 import { desktopClient } from "@/lib/desktop-client";
+import { getLensTranslations } from "@/lib/lens-i18n";
 import {
 	ALL_SESSION_SOURCES,
 	filterSessionsBySource,
@@ -109,7 +111,7 @@ import {
 import { cn } from "@/lib/utils";
 
 type Thread = SessionThread;
-type AppView = "chat" | "sessions" | "settings";
+type AppView = "chat" | "sessions" | "settings" | "evidence";
 
 const filterOptions = ["All", "Running"] as const;
 type FilterOption = (typeof filterOptions)[number];
@@ -281,6 +283,7 @@ export function AgentSidebar({
 }) {
 	const { isMobile, setOpen, setOpenMobile, state } = useSidebar();
 	const isCollapsed = !isMobile && state === "collapsed";
+	const lensI18n = useMemo(() => getLensTranslations(), []);
 	const { user, activeOrganization } = useAccount();
 	const { displayName, email } = user || {};
 	const username = displayName?.split(" ")?.[0] || email?.split("@")?.[0];
@@ -976,12 +979,50 @@ export function AgentSidebar({
 									</Button>
 								))
 							: null}
+						<Button
+							aria-current={view === "evidence" ? "page" : undefined}
+							aria-label={lensI18n.sidebar.evidenceAndClaims}
+							className={cn(
+								view === "evidence" &&
+									"bg-surface-hover text-sidebar-foreground",
+							)}
+							onClick={() => {
+								setView("evidence");
+								closeMobileSidebar();
+							}}
+							title={lensI18n.sidebar.evidenceTooltip}
+							type="button"
+							variant="sidebarItem"
+						>
+							<FileSearch className="size-4 shrink-0" />
+							<span className="truncate">
+								{lensI18n.sidebar.evidenceAndClaims}
+							</span>
+						</Button>
 					</nav>
 				) : null}
 
 				{isCollapsed ? (
 					<div className="mt-2 flex min-h-0 flex-1 flex-col items-start gap-1 px-1.5">
 						<AppUpdateIndicator className="mx-auto size-9" />
+						<Button
+							aria-current={view === "evidence" ? "page" : undefined}
+							aria-label={lensI18n.sidebar.evidenceAndClaims}
+							className={cn(
+								"size-9 justify-center px-0",
+								view === "evidence" &&
+									"bg-surface-hover text-sidebar-foreground",
+							)}
+							onClick={() => {
+								setView("evidence");
+								closeMobileSidebar();
+							}}
+							title={lensI18n.sidebar.evidenceAndClaims}
+							type="button"
+							variant="sidebarItem"
+						>
+							<FileSearch className="size-4" />
+						</Button>
 						{view === "settings" ? (
 							<SettingsSectionNavigation
 								activeSection={settingsSection}

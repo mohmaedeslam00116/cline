@@ -145,6 +145,14 @@ const DiffView = dynamic(
 	{ loading: viewLoading, ssr: false },
 );
 
+const EvidencePanel = dynamic(
+	() =>
+		import("@/components/views/evidence/evidence-panel").then(
+			(module) => module.EvidencePanel,
+		),
+	{ loading: viewLoading, ssr: false },
+);
+
 function makeThreadId(): string {
 	return `thread_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }
@@ -174,6 +182,9 @@ export default function Home() {
 	// the effect below reads the persisted state right after mount.
 	const [showOnboarding, setShowOnboarding] = useState(false);
 	const [commandBarOpen, setCommandBarOpen] = useState(false);
+	const [activeLiveSessionId, setActiveLiveSessionId] = useState<string | null>(
+		null,
+	);
 	// Shared by the sidebar search icon and the Cmd/Ctrl+P shortcut.
 	const handleOpenCommandBar = useCallback(() => setCommandBarOpen(true), []);
 	// "welcome" for the full first-run flow; "connect" when re-entered from
@@ -481,9 +492,17 @@ export default function Home() {
 									/>
 								) : activeThread ? (
 									<div
-										aria-hidden={view === "settings" ? true : undefined}
+										aria-hidden={
+											view === "settings" || view === "evidence"
+												? true
+												: undefined
+										}
 										className="flex min-h-0 flex-1 flex-col"
-										inert={view === "settings" ? true : undefined}
+										inert={
+											view === "settings" || view === "evidence"
+												? true
+												: undefined
+										}
 									>
 										<ChatThreadPane
 											key={activeThread.id}
@@ -508,6 +527,7 @@ export default function Home() {
 												handleSettingsSectionChange("Voice")
 											}
 											onThreadStarted={handleThreadStarted}
+											onActiveSessionChange={setActiveLiveSessionId}
 										/>
 									</div>
 								) : null}
@@ -517,6 +537,18 @@ export default function Home() {
 											onNavigateSection={handleSettingsSectionChange}
 											onOpenSession={handleOpenSessionById}
 											section={settingsSection}
+										/>
+									</div>
+								) : null}
+								{view === "evidence" ? (
+									<div className="absolute inset-0 z-30 bg-background text-foreground">
+										<EvidencePanel
+											sessionId={
+												activeLiveSessionId ??
+												activeHistorySessionId ??
+												activeThread?.historySession?.sessionId
+											}
+											onBackToChat={() => handleViewChange("chat")}
 										/>
 									</div>
 								) : null}
@@ -572,6 +604,7 @@ function ChatThreadPane({
 	parentSession,
 	onOpenVoiceInputSettings,
 	onThreadStarted,
+	onActiveSessionChange,
 }: {
 	threadId: string;
 	historySession?: SessionHistoryItem;
@@ -594,6 +627,7 @@ function ChatThreadPane({
 	parentSession?: { sessionId: string; title?: string };
 	onOpenVoiceInputSettings?: () => void;
 	onThreadStarted?: (threadId: string) => void;
+	onActiveSessionChange?: (sessionId: string | null) => void;
 }) {
 	const {
 		sessionId,
@@ -627,6 +661,11 @@ function ChatThreadPane({
 		abort,
 		hydrateSession,
 	} = useChatSession();
+
+	useEffect(() => {
+		onActiveSessionChange?.(sessionId || null);
+	}, [sessionId, onActiveSessionChange]);
+
 	// The live composer text lives inside ChatInputBar so typing does not
 	// re-render this whole pane. The pane mirrors it in a ref (for reads) and
 	// pushes external updates (quick actions, undo, resets) via promptDraft.

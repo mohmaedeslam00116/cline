@@ -1418,6 +1418,26 @@ export async function handleCommand(
 		};
 	}
 
+	// ── LENS (Phase 1) ────────────────────────────────────────
+	if (command === "lens_evidence_index") {
+		const sessionId =
+			typeof args?.sessionId === "string" ? args.sessionId.trim() : "";
+		if (!sessionId) {
+			throw new Error("Missing required sessionId");
+		}
+		const { lensEvidenceIndex } = await import("./commands-lens");
+		return await lensEvidenceIndex(ctx, sessionId);
+	}
+	if (command === "lens_policy_audit") {
+		const sessionId =
+			typeof args?.sessionId === "string" ? args.sessionId.trim() : "";
+		if (!sessionId) {
+			throw new Error("Missing required sessionId");
+		}
+		const { lensPolicyAudit } = await import("./commands-lens");
+		return await lensPolicyAudit(ctx, sessionId);
+	}
+
 	// ── Session data reading ──────────────────────────────────────────
 	if (command === "read_session_messages") {
 		return await readSessionMessages(

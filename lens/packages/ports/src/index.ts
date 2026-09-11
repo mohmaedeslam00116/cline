@@ -1,36 +1,32 @@
-export { LensPortError } from "./errors.js";
-export type { LensErrorCode } from "./errors.js";
+export type { CancellationPort } from "./cancellation-port.js";
+export type { CapabilityGrant, CapabilityType } from "./capability-grant.js";
 
 export {
 	CAPABILITY_TYPES,
-	isCapabilityType,
-	isActiveGrant,
 	freezeGrant,
+	isActiveGrant,
+	isCapabilityType,
 } from "./capability-grant.js";
-export type { CapabilityType, CapabilityGrant } from "./capability-grant.js";
-
+export type { LensErrorCode } from "./errors.js";
+export { LensPortError } from "./errors.js";
 export type {
 	FileInfo,
+	RepoInspectionPort,
 	SearchOptions,
 	SearchResult,
-	RepoInspectionPort,
 } from "./repo-inspection-port.js";
-
 export type {
-	VerifiedClaim,
-	VerifiedExcerpt,
 	EvidenceBundle,
 	EvidenceBundleMetadata,
-	ResearchRetrievalPort,
 	ResearchRetrievalError,
+	ResearchRetrievalPort,
 	UntrustedContent,
+	VerifiedClaim,
+	VerifiedExcerpt,
 } from "./research-retrieval-port.js";
-
 export type {
 	AgentLifecycleEvent,
 	AgentLifecycleEventType,
-	TokenDeltaEvent,
 	TelemetryPort,
+	TokenDeltaEvent,
 } from "./telemetry-port.js";
-
-export type { CancellationPort } from "./cancellation-port.js";

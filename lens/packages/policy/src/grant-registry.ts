@@ -3,13 +3,21 @@
  * In-memory for Phase 1 (grants live and die with the sidecar session);
  * the audit trail is append-only so every grant decision is traceable.
  */
-import type { CapabilityGrant, CapabilityType, TelemetryPort } from "@lens/ports";
+import type {
+	CapabilityGrant,
+	CapabilityType,
+	TelemetryPort,
+} from "@lens/ports";
 import { freezeGrant, isActiveGrant, LensPortError } from "@lens/ports";
 
 export interface AuditRecord {
 	readonly seq: number;
 	readonly timestamp: string;
-	readonly kind: "grant-issued" | "grant-verified" | "grant-denied" | "grant-expired";
+	readonly kind:
+		| "grant-issued"
+		| "grant-verified"
+		| "grant-denied"
+		| "grant-expired";
 	readonly capability: CapabilityType;
 	readonly sessionId: string;
 	readonly detail: string;
@@ -34,13 +42,19 @@ export class CapabilityGrantRegistry {
 		reason: string,
 	): CapabilityGrant {
 		if (capability !== "READ_ONLY_INSPECTION") {
-			throw new LensPortError("POLICY_DENIED", `Phase 1 forbids issuing ${capability} grants (read-only containment)`);
+			throw new LensPortError(
+				"POLICY_DENIED",
+				`Phase 1 forbids issuing ${capability} grants (read-only containment)`,
+			);
 		}
 		// Fail-closed TTL validation: non-finite, zero, and negative lifetimes
 		// would otherwise mint non-expiring grants (Infinity passes any
 		// isActiveGrant clock comparison).
 		if (!Number.isFinite(ttlMs) || ttlMs <= 0) {
-			throw new LensPortError("POLICY_DENIED", `grant ttl must be a finite, positive number of ms (got ${String(ttlMs)})`);
+			throw new LensPortError(
+				"POLICY_DENIED",
+				`grant ttl must be a finite, positive number of ms (got ${String(ttlMs)})`,
+			);
 		}
 		// Spread caller scope FIRST so a hostile caller cannot override the
 		// registry-bound workspaceRoot; the fixed root wins.
@@ -52,7 +66,11 @@ export class CapabilityGrantRegistry {
 			reason,
 		});
 		this.grants.set(grant.grantId, grant);
-		this.audit("grant-issued", capability, `issued ${grant.grantId} ttl=${ttlMs}ms: ${reason}`);
+		this.audit(
+			"grant-issued",
+			capability,
+			`issued ${grant.grantId} ttl=${ttlMs}ms: ${reason}`,
+		);
 		return grant;
 	}
 
@@ -64,14 +82,22 @@ export class CapabilityGrantRegistry {
 			this.audit("grant-verified", capability, `verified ${grant.grantId}`);
 			return grant;
 		}
-		const anyExpired = [...this.grants.values()].some((g) => g.capability === capability);
-		this.audit(anyExpired ? "grant-expired" : "grant-denied", capability, `no active ${capability} grant`);
+		const anyExpired = [...this.grants.values()].some(
+			(g) => g.capability === capability,
+		);
+		this.audit(
+			anyExpired ? "grant-expired" : "grant-denied",
+			capability,
+			`no active ${capability} grant`,
+		);
 		throw new LensPortError("POLICY_DENIED", `no active ${capability} grant`);
 	}
 
 	/** List active grants (inspection/debugging). */
 	active(nowMs = Date.now()): readonly CapabilityGrant[] {
-		return [...this.grants.values()].filter((g) => isActiveGrant(g, g.capability, nowMs));
+		return [...this.grants.values()].filter((g) =>
+			isActiveGrant(g, g.capability, nowMs),
+		);
 	}
 
 	/** Append-only audit trail, cloned per call: callers cannot mutate records or observe later appends. */
@@ -79,8 +105,25 @@ export class CapabilityGrantRegistry {
 		return this.auditTrail.map((record) => ({ ...record }));
 	}
 
-	private audit(kind: AuditRecord["kind"], capability: CapabilityType, detail: string): void {
-		this.auditTrail.push({ seq: this.auditTrail.length, timestamp: new Date().toISOString(), kind, capability, sessionId: this.sessionId, detail });
-		this.telemetry?.emitEvent({ type: kind === "grant-verified" ? "tool-call-started" : "policy-denied", sessionId: this.sessionId, seq: this.auditTrail.length, timestamp: new Date().toISOString(), data: { kind, capability, detail } });
+	private audit(
+		kind: AuditRecord["kind"],
+		capability: CapabilityType,
+		detail: string,
+	): void {
+		this.auditTrail.push({
+			seq: this.auditTrail.length,
+			timestamp: new Date().toISOString(),
+			kind,
+			capability,
+			sessionId: this.sessionId,
+			detail,
+		});
+		this.telemetry?.emitEvent({
+			type: kind === "grant-verified" ? "tool-call-started" : "policy-denied",
+			sessionId: this.sessionId,
+			seq: this.auditTrail.length,
+			timestamp: new Date().toISOString(),
+			data: { kind, capability, detail },
+		});
 	}
 }

@@ -1,8 +1,15 @@
 import { describe, expect, it } from "bun:test";
-import { CAPABILITY_TYPES, isActiveGrant, isCapabilityType } from "./capability-grant.js";
+import {
+	type CAPABILITY_TYPES,
+	isActiveGrant,
+	isCapabilityType,
+} from "./capability-grant.js";
 import { LensPortError } from "./errors.js";
 
-const grant = (capability: (typeof CAPABILITY_TYPES)[number], expiresAt: number) => ({
+const grant = (
+	capability: (typeof CAPABILITY_TYPES)[number],
+	expiresAt: number,
+) => ({
 	grantId: "g1",
 	capability,
 	scope: { workspaceRoot: "/ws" },
@@ -26,13 +33,31 @@ describe("isCapabilityType", () => {
 describe("isActiveGrant", () => {
 	const now = 1_000_000;
 	it("is active for a matching, unexpired grant", () => {
-		expect(isActiveGrant(grant("READ_ONLY_INSPECTION", now + 1), "READ_ONLY_INSPECTION", now)).toBe(true);
+		expect(
+			isActiveGrant(
+				grant("READ_ONLY_INSPECTION", now + 1),
+				"READ_ONLY_INSPECTION",
+				now,
+			),
+		).toBe(true);
 	});
 	it("is inactive when expired at the boundary (strictly-greater rule)", () => {
-		expect(isActiveGrant(grant("READ_ONLY_INSPECTION", now), "READ_ONLY_INSPECTION", now)).toBe(false);
+		expect(
+			isActiveGrant(
+				grant("READ_ONLY_INSPECTION", now),
+				"READ_ONLY_INSPECTION",
+				now,
+			),
+		).toBe(false);
 	});
 	it("is inactive for a different capability", () => {
-		expect(isActiveGrant(grant("READ_ONLY_INSPECTION", now + 1), "MUTATING_FILE_WRITE", now)).toBe(false);
+		expect(
+			isActiveGrant(
+				grant("READ_ONLY_INSPECTION", now + 1),
+				"MUTATING_FILE_WRITE",
+				now,
+			),
+		).toBe(false);
 	});
 });
 
@@ -44,7 +69,9 @@ describe("LensPortError", () => {
 	});
 	it("preserves the optional cause", () => {
 		const sentinel = new Error("upstream failure");
-		const e = new LensPortError("ADAPTER_FAILURE", "wrapped", { cause: sentinel });
+		const e = new LensPortError("ADAPTER_FAILURE", "wrapped", {
+			cause: sentinel,
+		});
 		expect(e.cause).toBe(sentinel);
 	});
 });

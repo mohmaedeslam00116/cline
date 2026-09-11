@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import { resolveSafePath, scopeCoversPath } from "./path-boundary.js";
 import { LensPortError } from "@lens/ports";
+import { resolveSafePath, scopeCoversPath } from "./path-boundary.js";
 
 describe("resolveSafePath", () => {
 	it("resolves a normal relative path (POSIX and Windows separators)", () => {
@@ -35,7 +35,9 @@ describe("resolveSafePath", () => {
 	});
 
 	it("rejects multi-hop traversal above the root with the SECURITY_ACCESS_DENIED code", () => {
-		expect(() => resolveSafePath("/workspace", "../secret")).toThrow(LensPortError);
+		expect(() => resolveSafePath("/workspace", "../secret")).toThrow(
+			LensPortError,
+		);
 		try {
 			resolveSafePath("/workspace", "a/../../b");
 			expect.unreachable();
@@ -46,9 +48,15 @@ describe("resolveSafePath", () => {
 	});
 
 	it("rejects absolute and drive/UNC shapes", () => {
-		expect(() => resolveSafePath("/workspace", "/etc/passwd")).toThrow(LensPortError);
-		expect(() => resolveSafePath("C:\\ws", "C:\\Windows\\system32")).toThrow(LensPortError);
-		expect(() => resolveSafePath("C:\\ws", "\\\\server\\share")).toThrow(LensPortError);
+		expect(() => resolveSafePath("/workspace", "/etc/passwd")).toThrow(
+			LensPortError,
+		);
+		expect(() => resolveSafePath("C:\\ws", "C:\\Windows\\system32")).toThrow(
+			LensPortError,
+		);
+		expect(() => resolveSafePath("C:\\ws", "\\\\server\\share")).toThrow(
+			LensPortError,
+		);
 	});
 
 	it("rejects null bytes and empty roots", () => {
@@ -58,7 +66,9 @@ describe("resolveSafePath", () => {
 });
 
 describe("scopeCoversPath", () => {
-	const grant = (workspaceRoot: string, pathPrefixes?: string[]) => ({ scope: { workspaceRoot, pathPrefixes } });
+	const grant = (workspaceRoot: string, pathPrefixes?: string[]) => ({
+		scope: { workspaceRoot, pathPrefixes },
+	});
 
 	it("covers everything when no prefixes are set", () => {
 		const resolved = resolveSafePath("/workspace", "src/index.ts");
@@ -68,8 +78,12 @@ describe("scopeCoversPath", () => {
 	it("enforces component-aligned prefixes (no ../ tricks)", () => {
 		const resolved = resolveSafePath("/workspace", "src/index.ts");
 		expect(scopeCoversPath(grant("/workspace", ["src"]), resolved)).toBe(true);
-		expect(scopeCoversPath(grant("/workspace", ["srcs"]), resolved)).toBe(false);
-		expect(scopeCoversPath(grant("/workspace", ["src/other"]), resolved)).toBe(false);
+		expect(scopeCoversPath(grant("/workspace", ["srcs"]), resolved)).toBe(
+			false,
+		);
+		expect(scopeCoversPath(grant("/workspace", ["src/other"]), resolved)).toBe(
+			false,
+		);
 	});
 
 	it("requires the same workspace root", () => {

@@ -1,11 +1,11 @@
 {
-	"name": "@lens/policy",
+	"name": "@lens/research",
 	"version": "0.1.0",
-	"description": "LENS Privileged Policy Layer — capability grants, path boundaries, fail-closed tool approval (Phase 1: read-only)",
+	"description": "LENS research engine — BM25 retrieval, bounded public-web scraping, and the content-addressed Evidence Store (Phase 1: credential-free)",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/mohmaedeslam00116/cline",
-		"directory": "lens/packages/policy"
+		"directory": "lens/packages/research"
 	},
 	"type": "module",
 	"main": "dist/index.js",
@@ -31,8 +31,5 @@
 	},
 	"dependencies": {
 		"@lens/ports": "workspace:*"
-	},
-	"devDependencies": {
-		"@cline/shared": "workspace:*"
 	}
 }

@@ -30,6 +30,10 @@ import {
 	disposeDesktopFeatureFlagsService,
 	getDesktopFeatureFlagsService,
 } from "./feature-flags";
+import {
+	attachLensRuntimeCapabilities,
+	isLensModeEnabled,
+} from "./lens-sidecar";
 import { sessionLogPath } from "./paths";
 import type {
 	LiveSession,
@@ -542,6 +546,7 @@ export function handleCoreSessionEvent(
 				session.endedAt = nowMs();
 				session.status = reason || "ended";
 			}
+			// Preserve LENS session state on termination for post-run evidence & audit inspection
 			discardAllTrackedAttachments(sessionId, session);
 			sendEvent(ctx, "chat_session_ended", { sessionId, reason });
 			break;
@@ -768,13 +773,19 @@ export function cancelSidecarMistakeQuestions(
 export function createSidecarRuntimeCapabilities(
 	ctx: SidecarContext,
 ): RuntimeCapabilities {
-	return {
+	const base: RuntimeCapabilities = {
 		toolExecutors: {
 			askQuestion: (question, options, context) =>
 				requestSidecarAskQuestion(ctx, question, options, context),
 		},
 		requestToolApproval: (request) => requestSidecarToolApproval(ctx, request),
 	};
+	// LENS Phase 1 (ticket #11): compose the fail-closed policy into the
+	// approval flow. Upstream behavior is unchanged when LENS mode is off.
+	if (isLensModeEnabled()) {
+		return attachLensRuntimeCapabilities(base, ctx);
+	}
+	return base;
 }
 
 function requestSidecarToolApproval(
@@ -803,6 +814,10 @@ function requestSidecarToolApproval(
 				iteration: request.iteration,
 				agentId: request.agentId,
 				conversationId: request.conversationId,
+				checkpoint:
+					(request as unknown as Record<string, unknown>).checkpoint ??
+					(request.policy as unknown as Record<string, unknown> | undefined)
+						?.checkpoint,
 			},
 			owner,
 			resolve,
@@ -1001,6 +1016,7 @@ export function handleHubLiveEvent(
 			session.status = reason;
 			session.busy = false;
 			session.endedAt = nowMs();
+			// Preserve LENS session state on termination for post-run evidence & audit inspection
 			sendEvent(ctx, "chat_session_ended", { sessionId, reason });
 			return;
 		}
@@ -1060,7 +1076,8 @@ async function handleHubApprovalRequest(
 			!Array.isArray(event.payload.policy)
 				? (event.payload.policy as ToolApprovalRequest["policy"])
 				: { autoApprove: false },
-	});
+		checkpoint: event.payload?.checkpoint,
+	} as ToolApprovalRequest);
 	const client = ctx.hubClient;
 	if (!client)
 		throw new Error("Hub client disconnected before approval response");

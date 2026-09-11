@@ -49,6 +49,25 @@ lens/
 
 A scripted scenario: prompt → deep web research → `EvidenceBundle` persisted content-addressed → new session with claims index → repo questions answered with `get_evidence_detail` citations → **`RepoSnapshotHash` provably unchanged** (zero mutation). Plus: existing Base suites (`build:sdk`, `build:web`, `typecheck`, desktop `test:chat-ui`) stay green; policy denial tests prove mutating tools fail closed.
 
+### Acceptance Checklist
+- [x] **Loop-1 Research Engine**: Topic prompt executed against `LensResearchEngine`, producing an `EvidenceBundle` with all claims carrying `contentIsUntrusted: true`.
+- [x] **Content-Addressed Evidence Store**: Bundle saved under `<workspace>/.lens/sessions/<sessionId>/evidence/<digest>.json` and byte-reproducible.
+- [x] **Claims Index & Extra Tool**: Claims index surfaced via `lens_evidence_index`; excerpts fetched via read-only `get_evidence_detail` with `contentIsUntrusted: true`.
+- [x] **Fail-Closed Containment**: All mutating operations (`write_to_file`, `execute_command`) denied before execution by policy; read-only operations permitted; `lens_policy_denied` emitted on transport.
+- [x] **Zero Mutation Guarantee**: `RepoSnapshotHash` cryptographically verified unchanged before and after the full research and coding interaction.
+- [x] **Base Suites Green**: `build:sdk`, `build:lens`, `build:web`, `typecheck`, and `test:chat-ui` (140/140 passed) all passing.
+- [x] **Automated Acceptance Test**: Implemented and passing in [`apps/examples/desktop-app/sidecar/acceptance-scenario.test.ts`](../apps/examples/desktop-app/sidecar/acceptance-scenario.test.ts).
+
+### Verification Test Breakdown
+- `@lens/ports`: 5/5 tests passed (`bun -F @lens/ports test`)
+- `@lens/policy`: 12/12 tests passed (`bun -F @lens/policy test`)
+- `@lens/research`: 52/52 tests passed (`bun -F @lens/research test`)
+- Sidecar & Acceptance: 7/7 tests passed (`bun --cwd apps/examples/desktop-app vitest run sidecar/acceptance-scenario.test.ts sidecar/lens-sidecar.test.ts --config vitest.config.ts`)
+- Chat UI Suite: 140/140 tests passed (`bun run --cwd apps/examples/desktop-app test:chat-ui`)
+- Monorepo Typecheck: Clean, code 0 (`bun run --cwd apps/examples/desktop-app typecheck`)
+- Production Build: Next.js webview compiled successfully (`bun run --cwd apps/examples/desktop-app build:web`)
+- Biome Linter: Clean across all modified files and `@lens/*` packages (`bun biome check lens/` and desktop-app files)
+
 ## 5. Open points carried into implementation
 
 - Exact `ToolExecutors` map shape (verify during #10 wiring) — §6 of the ports report.

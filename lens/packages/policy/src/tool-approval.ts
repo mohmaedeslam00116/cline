@@ -31,7 +31,11 @@ export interface PolicyDecision {
 /** Pure decision function: would this tool call be allowed under Phase-1 policy? */
 export function decideToolCall(request: ToolApprovalRequest): PolicyDecision {
 	if (PHASE1_READ_ONLY_TOOLS.has(request.toolName)) {
-		return { approved: true, reason: "read-only tool allowed by Phase-1 policy", policyDenied: false };
+		return {
+			approved: true,
+			reason: "read-only tool allowed by Phase-1 policy",
+			policyDenied: false,
+		};
 	}
 	return {
 		approved: false,
@@ -41,7 +45,10 @@ export function decideToolCall(request: ToolApprovalRequest): PolicyDecision {
 }
 
 /** The `requestToolApproval` implementation handed to `RuntimeCapabilities`. */
-export function createPhase1ToolApproval(telemetry?: TelemetryPort, sessionId = "lens-session") {
+export function createPhase1ToolApproval(
+	telemetry?: TelemetryPort,
+	sessionId = "lens-session",
+) {
 	return (request: ToolApprovalRequest): ToolApprovalResult => {
 		const decision = decideToolCall(request);
 		telemetry?.emitEvent({
@@ -49,7 +56,12 @@ export function createPhase1ToolApproval(telemetry?: TelemetryPort, sessionId = 
 			sessionId,
 			seq: Date.now(),
 			timestamp: new Date().toISOString(),
-			data: { toolCallId: request.toolCallId, toolName: request.toolName, approved: decision.approved, reason: decision.reason },
+			data: {
+				toolCallId: request.toolCallId,
+				toolName: request.toolName,
+				approved: decision.approved,
+				reason: decision.reason,
+			},
 		});
 		return { approved: decision.approved, reason: decision.reason };
 	};
