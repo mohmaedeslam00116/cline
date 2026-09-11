@@ -107,7 +107,7 @@ export function CustomizeView({
 						</Button>
 					) : undefined
 				}
-				description="Extend what Cline can do and change how it works. Manage what's installed, or browse the marketplace for more options."
+				description="Extend what LENS Workstation can do and change how it works. Manage what's installed, or browse the marketplace for more options."
 				title="Customize"
 			/>
 

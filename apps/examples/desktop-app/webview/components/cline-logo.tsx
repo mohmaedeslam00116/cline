@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export function ClineLogo({ className }: { className?: string }) {
+export function LensLogo({ className }: { className?: string }) {
 	return (
 		<span
 			aria-hidden="true"
@@ -18,3 +18,5 @@ export function ClineLogo({ className }: { className?: string }) {
 		/>
 	);
 }
+
+export const ClineLogo = LensLogo;

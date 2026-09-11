@@ -188,16 +188,7 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 };
 
 export function getLensLocale(): LensLocale {
-	if (typeof window === "undefined") {
-		return "en";
-	}
-	const stored = window.localStorage.getItem("lens_locale");
-	if (stored === "ar" || stored === "en") {
-		return stored;
-	}
-	if (window.navigator?.language?.startsWith("ar")) {
-		return "ar";
-	}
+	// English-only across LENS Workstation UI per design decision
 	return "en";
 }
 
