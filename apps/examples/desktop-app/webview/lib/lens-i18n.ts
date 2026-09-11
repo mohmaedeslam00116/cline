@@ -63,10 +63,14 @@ export interface LensTranslations {
 		readonly evidenceTooltip: string;
 	};
 	readonly modes: {
+		readonly modeGroupLabel: string;
+		readonly actName: string;
 		readonly actTitle: string;
 		readonly actDesc: string;
+		readonly planName: string;
 		readonly planTitle: string;
 		readonly planDesc: string;
+		readonly yoloName: string;
 		readonly yoloTitle: string;
 		readonly yoloDesc: string;
 	};
@@ -136,11 +140,15 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			evidenceTooltip: "View research evidence bundles and policy checkpoints",
 		},
 		modes: {
+			modeGroupLabel: "Agent interaction mode",
+			actName: "Code",
 			actTitle: "Code (Act)",
 			actDesc: "Implementation mode with tool approvals",
+			planName: "Architect",
 			planTitle: "Architect (Plan)",
 			planDesc:
 				"Read-only design and analysis. File edits and mutating commands are blocked.",
+			yoloName: "Autonomous",
 			yoloTitle: "Autonomous (YOLO)",
 			yoloDesc: "Autonomous execution with all tools auto-approved",
 		},
@@ -208,10 +216,14 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			evidenceTooltip: "عرض حزم أدلة البحث ونقاط تفتيش السياسة",
 		},
 		modes: {
+			modeGroupLabel: "نمط تفاعل الوكيل",
+			actName: "كود",
 			actTitle: "كود (تنفيذ)",
 			actDesc: "وضع التنفيذ البرمجي مع طلب الموافقة على الأدوات",
+			planName: "معمار",
 			planTitle: "معمار (تخطيط)",
 			planDesc: "وضع التصميم والتحليل للقراءة فقط مع حظر التعديل",
+			yoloName: "تلقائي",
 			yoloTitle: "تلقائي (شامل)",
 			yoloDesc:
 				"وضع التنفيذ التلقائي المستقل مع الموافقة التلقائية على جميع الأدوات",

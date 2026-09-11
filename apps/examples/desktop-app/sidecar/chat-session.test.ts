@@ -1418,6 +1418,39 @@ describe("first-send connection updates", () => {
 		expect(send).not.toHaveBeenCalled();
 	});
 
+	it("allows subsequent sends after a mode switch without getting stuck in transitioningProvider", async () => {
+		const { ctx, send, sessionId } = createContext({
+			config: { ...baseConfig, mode: "act" },
+		});
+
+		// First send: switches from Act to Plan mode
+		await handleChatSessionCommand(ctx, {
+			action: "send",
+			sessionId,
+			prompt: "plan refactor",
+			config: {
+				...baseConfig,
+				mode: "plan",
+			},
+		});
+
+		const session = ctx.liveSessions.get(sessionId);
+		expect(session?.transitioningProvider).toBe(false);
+
+		// Second send: should succeed without throwing "A provider switch is already in progress"
+		await handleChatSessionCommand(ctx, {
+			action: "send",
+			sessionId,
+			prompt: "second plan step",
+			config: {
+				...baseConfig,
+				mode: "plan",
+			},
+		});
+
+		expect(send).toHaveBeenCalledTimes(2);
+	});
+
 	it("blocks a concurrent send throughout provider-switch preparation", async () => {
 		let resolveMessages:
 			| ((messages: Array<{ role: string; content: string }>) => void)

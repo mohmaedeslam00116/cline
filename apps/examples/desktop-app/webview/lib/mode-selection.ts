@@ -10,12 +10,12 @@ export function parseModeSelection(raw: string | null): DesktopMode {
 }
 
 export function readModeSelectionFromWindow(): DesktopMode {
-	if (typeof window === "undefined" || !window.localStorage) {
+	if (typeof window === "undefined") {
 		return "act";
 	}
 	try {
 		return parseModeSelection(
-			window.localStorage.getItem(MODE_SELECTION_STORAGE_KEY),
+			window.localStorage?.getItem(MODE_SELECTION_STORAGE_KEY),
 		);
 	} catch {
 		return "act";
@@ -23,11 +23,11 @@ export function readModeSelectionFromWindow(): DesktopMode {
 }
 
 export function writeModeSelectionToWindow(mode: DesktopMode): void {
-	if (typeof window === "undefined" || !window.localStorage) {
+	if (typeof window === "undefined") {
 		return;
 	}
 	try {
-		window.localStorage.setItem(MODE_SELECTION_STORAGE_KEY, mode);
+		window.localStorage?.setItem(MODE_SELECTION_STORAGE_KEY, mode);
 	} catch {
 		// Ignore storage write failures (e.g. quota, private browsing)
 	}

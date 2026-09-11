@@ -1421,7 +1421,7 @@ async function handleSend(
 			if (ownsBusyState) {
 				session.busy = false;
 			}
-			if (providerChanged) {
+			if (needsRebuild) {
 				session.transitioningProvider = false;
 			}
 		}
