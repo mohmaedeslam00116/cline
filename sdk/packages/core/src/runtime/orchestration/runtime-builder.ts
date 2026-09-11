@@ -54,6 +54,7 @@ import {
 } from "../../services/global-settings";
 import { createLocalTeamStore } from "../../services/storage/team-store";
 import type { CoreAgentMode, CoreSessionConfig } from "../../types/config";
+import { createPlanGateExtension } from "../../planning";
 import { createPostEditValidationExtension } from "../../validation";
 import type {
 	RuntimeBuilder,
@@ -567,9 +568,14 @@ export class DefaultRuntimeBuilder implements RuntimeBuilder {
 						...effectivePostEditValidation,
 					})
 				: undefined;
+		const planGateExtension =
+			normalized.mode === "plan" && normalized.enableTools
+				? createPlanGateExtension({ mode: normalized.mode })
+				: undefined;
 		const injectedExtensions = [
 			userInstructionPlugin,
 			planModeCommandGuard,
+			planGateExtension,
 			postEditValidationExtension,
 		].filter((extension) => extension !== undefined);
 		const runtimeExtensions =

@@ -74,6 +74,31 @@ export interface LensTranslations {
 		readonly yoloTitle: string;
 		readonly yoloDesc: string;
 	};
+	readonly planReview: {
+		readonly badge: string;
+		readonly reviewRequired: string;
+		readonly approved: string;
+		readonly userReviewRequired: string;
+		readonly openQuestions: string;
+		readonly proposedChanges: string;
+		readonly verificationPlan: string;
+		readonly automatedTests: string;
+		readonly manualVerification: string;
+		readonly approveButton: string;
+		readonly approvingButton: string;
+		readonly approvedFooter: string;
+		readonly reviewFooter: string;
+		readonly expand: string;
+		readonly collapse: string;
+	};
+	readonly walkthrough: {
+		readonly badge: string;
+		readonly verificationComplete: string;
+		readonly changesMade: string;
+		readonly verificationResults: string;
+		readonly expand: string;
+		readonly collapse: string;
+	};
 }
 
 export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
@@ -152,6 +177,32 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			yoloTitle: "Autonomous (YOLO)",
 			yoloDesc: "Autonomous execution with all tools auto-approved",
 		},
+		planReview: {
+			badge: "Architect Plan",
+			reviewRequired: "Review Required",
+			approved: "Approved",
+			userReviewRequired: "User Review Required",
+			openQuestions: "Open Questions",
+			proposedChanges: "Proposed Changes",
+			verificationPlan: "Verification Plan",
+			automatedTests: "Automated Tests:",
+			manualVerification: "Manual Verification:",
+			approveButton: "Approve & Proceed",
+			approvingButton: "Approving...",
+			approvedFooter: "Plan approved. Workstation is executing in Code mode.",
+			reviewFooter:
+				"Review the implementation steps above. Proceed when ready to begin coding.",
+			expand: "Expand",
+			collapse: "Collapse",
+		},
+		walkthrough: {
+			badge: "Task Walkthrough",
+			verificationComplete: "Verification Complete",
+			changesMade: "Changes Made",
+			verificationResults: "Verification & Validation Results",
+			expand: "Expand",
+			collapse: "Collapse",
+		},
 	},
 	ar: {
 		brand: {
@@ -227,6 +278,32 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			yoloTitle: "تلقائي (شامل)",
 			yoloDesc:
 				"وضع التنفيذ التلقائي المستقل مع الموافقة التلقائية على جميع الأدوات",
+		},
+		planReview: {
+			badge: "خطة المعمار",
+			reviewRequired: "مطلوب المراجعة",
+			approved: "تمت الموافقة",
+			userReviewRequired: "مراجعة المستخدم مطلوبة",
+			openQuestions: "الأسئلة المفتوحة",
+			proposedChanges: "التغييرات المقترحة",
+			verificationPlan: "خطة التحقق",
+			automatedTests: "الاختبارات المؤتمتة:",
+			manualVerification: "التحقق اليدوي:",
+			approveButton: "موافقة ومتابعة",
+			approvingButton: "جارٍ الموافقة...",
+			approvedFooter: "تمت الموافقة على الخطة. محطة العمل تنفذ في وضع الكود.",
+			reviewFooter:
+				"راجع خطوات التنفيذ أعلاه. تابع عند الاستعداد لبدء كتابة الكود.",
+			expand: "توسيع",
+			collapse: "طي",
+		},
+		walkthrough: {
+			badge: "مراجعة إنجاز المهمة",
+			verificationComplete: "اكتمل التحقق",
+			changesMade: "التغييرات المنجزة",
+			verificationResults: "نتائج التحقق والمطابقة",
+			expand: "توسيع",
+			collapse: "طي",
 		},
 	},
 };

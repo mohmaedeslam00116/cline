@@ -1379,6 +1379,15 @@ function ChatThreadPane({
 		},
 		[setConfig],
 	);
+	const handleApprovePlan = useCallback(
+		async (_planMarkdown: string) => {
+			handleModeChange("act");
+			if (sessionId) {
+				await proceedWhileRunning(sessionId);
+			}
+		},
+		[handleModeChange, proceedWhileRunning, sessionId],
+	);
 	const handleModeToggle = useCallback(
 		() =>
 			setConfig((prev) => {
@@ -1682,6 +1691,8 @@ function ChatThreadPane({
 								onRestoreCheckpoint={handleRestoreCheckpoint}
 								onForkSession={handleForkSession}
 								onProceedWhileRunning={proceedWhileRunning}
+								onApprovePlan={handleApprovePlan}
+								onModeChange={handleModeChange}
 								pendingToolApprovals={pendingToolApprovals}
 								pendingAskQuestions={pendingAskQuestions}
 								sessionId={displayedSessionId}
