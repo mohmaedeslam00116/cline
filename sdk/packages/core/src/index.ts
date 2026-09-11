@@ -984,6 +984,24 @@ export {
 	ToolPresets,
 	truncateCommandOutput,
 } from "./extensions/tools";
+export type {
+	ImplementationPlanArtifact,
+	PlanApprovalStatus,
+	PlanGateOptions,
+	ProposedChangeItem,
+	ProposedFileAction,
+	VerificationPlan,
+	WalkthroughArtifact,
+} from "./planning";
+export {
+	createPlanGateExtension,
+	isMutatingTool,
+	PLAN_GATE_EXTENSION_NAME,
+	PLAN_MODE_MUTATION_ERROR,
+	PLAN_MODE_READ_ONLY_TOOLS,
+	parseImplementationPlan,
+	parseWalkthrough,
+} from "./planning";
 export {
 	applyClineFeaturedModels,
 	type ClineRecommendedModel,
@@ -1146,20 +1164,3 @@ export {
 	formatValidationDiagnostics,
 	POST_EDIT_VALIDATION_EXTENSION_NAME,
 } from "./validation";
-export type {
-	ImplementationPlanArtifact,
-	PlanApprovalStatus,
-	PlanGateOptions,
-	ProposedChangeItem,
-	ProposedFileAction,
-	VerificationPlan,
-	WalkthroughArtifact,
-} from "./planning";
-export {
-	createPlanGateExtension,
-	parseImplementationPlan,
-	parseWalkthrough,
-	PLAN_GATE_EXTENSION_NAME,
-	PLAN_MODE_MUTATION_ERROR,
-} from "./planning";
-

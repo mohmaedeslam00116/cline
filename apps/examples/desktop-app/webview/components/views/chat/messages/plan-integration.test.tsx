@@ -25,7 +25,7 @@ afterEach(async () => {
 describe("MessageBubble plan and walkthrough integration", () => {
 	it("renders PlanReviewPanel when assistant message contains an implementation plan", async () => {
 		const planMarkdown = [
-			"# Refactor Auth Subsystem",
+			"# Implementation Plan: Refactor Auth Subsystem",
 			"",
 			"## User Review Required",
 			"> JWT secret rotation policy change",
@@ -114,6 +114,7 @@ describe("MessageBubble plan and walkthrough integration", () => {
 				<MessageBubble
 					agentRole="assistant"
 					isLastAssistantMessage={true}
+					isVerified={true}
 					message={message}
 					reasoningContent=""
 					reasoningRedacted={false}

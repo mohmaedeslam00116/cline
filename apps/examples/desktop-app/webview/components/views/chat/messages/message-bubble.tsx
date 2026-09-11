@@ -124,6 +124,7 @@ export const MessageBubble = memo(function MessageBubble({
 	isPlanApproved = false,
 	isPlanApproving = false,
 	onApprovePlan,
+	isVerified = false,
 }: {
 	agentRole: AgentMessageRole;
 	message: ChatMessage;
@@ -161,6 +162,7 @@ export const MessageBubble = memo(function MessageBubble({
 	isPlanApproved?: boolean;
 	isPlanApproving?: boolean;
 	onApprovePlan?: (planMarkdown: string) => void | Promise<void>;
+	isVerified?: boolean;
 }) {
 	const isUser = message.role === "user";
 	const isError = message.role === "error";
@@ -179,11 +181,11 @@ export const MessageBubble = memo(function MessageBubble({
 	}, [message.role, isStreaming, displayContent]);
 
 	const parsedWalkthrough = useMemo(() => {
-		if (message.role !== "assistant" || isStreaming) {
+		if (message.role !== "assistant" || isStreaming || parsedPlan !== null) {
 			return null;
 		}
 		return parseWalkthrough(displayContent);
-	}, [message.role, isStreaming, displayContent]);
+	}, [message.role, isStreaming, parsedPlan, displayContent]);
 
 	const conversationalContent = useMemo(() => {
 		if (parsedPlan?.rawMarkdown) {
@@ -298,7 +300,10 @@ export const MessageBubble = memo(function MessageBubble({
 				) : null}
 
 				{parsedWalkthrough ? (
-					<WalkthroughPanel walkthrough={parsedWalkthrough} />
+					<WalkthroughPanel
+						isVerified={isVerified}
+						walkthrough={parsedWalkthrough}
+					/>
 				) : null}
 			</MessageContent>
 

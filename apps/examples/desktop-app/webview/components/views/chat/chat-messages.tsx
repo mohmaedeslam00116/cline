@@ -85,6 +85,7 @@ type ChatMessagesProps = {
 		toolCallId?: string,
 	) => void | Promise<void>;
 	onApprovePlan?: (planMarkdown: string) => void | Promise<void>;
+	onModeChange?: (mode: "act" | "plan" | "yolo") => void | Promise<void>;
 };
 
 type AskQuestionRequestItem = {
@@ -120,6 +121,7 @@ function ChatMessagesImpl({
 	onForkSession,
 	onProceedWhileRunning,
 	onApprovePlan,
+	onModeChange,
 }: ChatMessagesProps) {
 	const hasMessages = messages.length > 0;
 	// Scanned from the tail without copying: this component re-renders on
@@ -209,10 +211,25 @@ function ChatMessagesImpl({
 			try {
 				if (onApprovePlan) {
 					await Promise.resolve(onApprovePlan(planMarkdown));
-				} else if (onProceedWhileRunning && sessionId) {
-					await Promise.resolve(onProceedWhileRunning(sessionId));
+				} else {
+					if (onModeChange) {
+						await Promise.resolve(onModeChange("act"));
+					}
+					if (onProceedWhileRunning && sessionId) {
+						await Promise.resolve(onProceedWhileRunning(sessionId));
+					}
 				}
 				setApprovedPlanIds((prev) => new Set(prev).add(messageId));
+			} catch (err) {
+				const description =
+					err instanceof Error
+						? err.message
+						: "Failed to approve implementation plan.";
+				toast({
+					variant: "destructive",
+					title: "Approval failed",
+					description,
+				});
 			} finally {
 				setApprovingPlanIds((prev) => {
 					const next = new Set(prev);
@@ -221,7 +238,7 @@ function ChatMessagesImpl({
 				});
 			}
 		},
-		[onApprovePlan, onProceedWhileRunning, sessionId],
+		[onApprovePlan, onModeChange, onProceedWhileRunning, sessionId],
 	);
 	const sessionVersioningPending =
 		editingMessageId !== null ||
@@ -618,10 +635,9 @@ function ChatMessagesImpl({
 												onCopyMessage={handleCopyMessage}
 												onExpandImage={handleExpandImage}
 												wasCopied={copiedMessageId === child.message.id}
-												isPlanApproved={
-													approvedPlanIds.has(child.message.id) || !isLastMsg
-												}
+												isPlanApproved={approvedPlanIds.has(child.message.id)}
 												isPlanApproving={approvingPlanIds.has(child.message.id)}
+												isVerified={status === "completed"}
 												onApprovePlan={(planMarkdown) =>
 													handleApprovePlan(child.message.id, planMarkdown)
 												}
@@ -675,10 +691,9 @@ function ChatMessagesImpl({
 											runCount={userRunCountByMessage.get(message)}
 											onExpandImage={handleExpandImage}
 											onCopyMessage={handleCopyMessage}
-											isPlanApproved={
-												approvedPlanIds.has(message.id) || !isLastAssistant
-											}
+											isPlanApproved={approvedPlanIds.has(message.id)}
 											isPlanApproving={approvingPlanIds.has(message.id)}
+											isVerified={status === "completed"}
 											onApprovePlan={(planMarkdown) =>
 												handleApprovePlan(message.id, planMarkdown)
 											}

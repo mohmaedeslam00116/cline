@@ -8,18 +8,21 @@ import type {
 } from "@cline/shared/browser";
 import {
 	AlertTriangle,
+	ArrowLeft,
 	ArrowRight,
 	CheckCircle2,
 	ChevronDown,
+	ChevronLeft,
 	ChevronRight,
 	ClipboardList,
 	FileCode2,
 	HelpCircle,
 	ListChecks,
 } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { getLensDirection, getLensTranslations } from "@/lib/lens-i18n";
 import { cn } from "@/lib/utils";
 
 export type { ProposedChangeItem, ProposedFileAction, VerificationPlan };
@@ -39,6 +42,9 @@ export function PlanReviewPanel({
 	isApproving?: boolean;
 }) {
 	const [isExpanded, setIsExpanded] = useState(true);
+	const bodyId = useId();
+	const t = getLensTranslations().planReview;
+	const isRtl = getLensDirection() === "rtl";
 
 	const hasReviewItems = plan.userReviewRequired.length > 0;
 	const hasQuestions = plan.openQuestions.length > 0;
@@ -47,34 +53,38 @@ export function PlanReviewPanel({
 		plan.verificationPlan.automated.length > 0 ||
 		plan.verificationPlan.manual.length > 0;
 
+	const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
+	const ChevronExpandIcon = isRtl ? ChevronLeft : ChevronRight;
+
 	return (
-		<section className="rounded-xl border border-border bg-card p-4 shadow-xs transition-all">
+		<section className="rounded-xl border border-border/80 bg-card p-4 shadow-xs transition-all">
 			{/* Header */}
 			<div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
 				<div className="flex items-center gap-2.5">
-					<div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+					<div className="flex size-7 items-center justify-center rounded-lg border border-border/70 bg-muted/60 text-foreground">
 						<ClipboardList className="size-4" />
 					</div>
 					<div>
 						<div className="flex items-center gap-2">
 							<span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-								Architect Plan
+								{t.badge}
 							</span>
 							<Badge
-								variant={isApproved ? "secondary" : "default"}
+								variant={isApproved ? "secondary" : "outline"}
 								className={cn(
-									"px-1.5 py-0 text-[10px]",
-									isApproved &&
-										"bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+									"px-1.5 py-0 text-[10px] font-mono",
+									isApproved
+										? "border-border/80 bg-muted/60 text-foreground"
+										: "border-border/70 text-muted-foreground",
 								)}
 							>
 								{isApproved ? (
 									<>
-										<CheckCircle2 className="mr-1 size-3 text-emerald-500 inline" />
-										Approved
+										<CheckCircle2 className="me-1 inline size-3 text-foreground" />
+										{t.approved}
 									</>
 								) : (
-									"Review Required"
+									t.reviewRequired
 								)}
 							</Badge>
 						</div>
@@ -86,18 +96,20 @@ export function PlanReviewPanel({
 
 				<button
 					type="button"
+					aria-expanded={isExpanded}
+					aria-controls={bodyId}
 					onClick={() => setIsExpanded((prev) => !prev)}
-					className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
+					className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
 				>
 					{isExpanded ? (
 						<>
-							<span>Collapse</span>
+							<span>{t.collapse}</span>
 							<ChevronDown className="size-3.5" />
 						</>
 					) : (
 						<>
-							<span>Expand</span>
-							<ChevronRight className="size-3.5" />
+							<span>{t.expand}</span>
+							<ChevronExpandIcon className="size-3.5" />
 						</>
 					)}
 				</button>
@@ -105,15 +117,18 @@ export function PlanReviewPanel({
 
 			{/* Plan Body */}
 			{isExpanded && (
-				<div className="mt-3 space-y-3.5 text-xs text-foreground/90">
+				<div
+					id={bodyId}
+					className="mt-3 space-y-3.5 text-xs text-foreground/90"
+				>
 					{/* User Review Required */}
 					{hasReviewItems && (
-						<div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
-							<div className="flex items-center gap-1.5 font-medium text-amber-600 dark:text-amber-400">
-								<AlertTriangle className="size-3.5" />
-								<span>User Review Required</span>
+						<div className="rounded-lg border border-border/80 bg-muted/40 p-3">
+							<div className="flex items-center gap-1.5 font-medium text-foreground">
+								<AlertTriangle className="size-3.5 text-muted-foreground" />
+								<span>{t.userReviewRequired}</span>
 							</div>
-							<ul className="mt-2 space-y-1 pl-4 list-disc text-foreground/80">
+							<ul className="mt-2 space-y-1 ps-4 list-disc text-foreground/80">
 								{plan.userReviewRequired.map((item) => (
 									<li key={item}>{item}</li>
 								))}
@@ -125,10 +140,10 @@ export function PlanReviewPanel({
 					{hasQuestions && (
 						<div className="rounded-lg border border-border/80 bg-muted/40 p-3">
 							<div className="flex items-center gap-1.5 font-medium text-foreground">
-								<HelpCircle className="size-3.5 text-primary" />
-								<span>Open Questions</span>
+								<HelpCircle className="size-3.5 text-muted-foreground" />
+								<span>{t.openQuestions}</span>
 							</div>
-							<ul className="mt-2 space-y-1 pl-4 list-disc text-muted-foreground">
+							<ul className="mt-2 space-y-1 ps-4 list-disc text-muted-foreground">
 								{plan.openQuestions.map((q) => (
 									<li key={q}>{q}</li>
 								))}
@@ -140,8 +155,10 @@ export function PlanReviewPanel({
 					{hasChanges && (
 						<div>
 							<div className="flex items-center gap-1.5 font-medium text-foreground">
-								<FileCode2 className="size-3.5 text-primary" />
-								<span>Proposed Changes ({plan.proposedChanges.length})</span>
+								<FileCode2 className="size-3.5 text-muted-foreground" />
+								<span>
+									{t.proposedChanges} ({plan.proposedChanges.length})
+								</span>
 							</div>
 							<div className="mt-2 divide-y divide-border/60 rounded-lg border border-border/70 bg-muted/20">
 								{plan.proposedChanges.map((change) => (
@@ -174,16 +191,16 @@ export function PlanReviewPanel({
 					{hasVerification && (
 						<div>
 							<div className="flex items-center gap-1.5 font-medium text-foreground">
-								<ListChecks className="size-3.5 text-primary" />
-								<span>Verification Plan</span>
+								<ListChecks className="size-3.5 text-muted-foreground" />
+								<span>{t.verificationPlan}</span>
 							</div>
 							<div className="mt-2 space-y-2 rounded-lg border border-border/70 bg-muted/20 p-3">
 								{plan.verificationPlan.automated.length > 0 && (
 									<div>
 										<span className="font-semibold text-[11px] text-muted-foreground uppercase">
-											Automated Tests:
+											{t.automatedTests}
 										</span>
-										<ul className="mt-1 space-y-0.5 pl-4 list-disc font-mono text-[11px] text-foreground/80">
+										<ul className="mt-1 space-y-0.5 ps-4 list-disc font-mono text-[11px] text-foreground/80">
 											{plan.verificationPlan.automated.map((cmd) => (
 												<li key={cmd}>{cmd}</li>
 											))}
@@ -193,9 +210,9 @@ export function PlanReviewPanel({
 								{plan.verificationPlan.manual.length > 0 && (
 									<div>
 										<span className="font-semibold text-[11px] text-muted-foreground uppercase">
-											Manual Verification:
+											{t.manualVerification}
 										</span>
-										<ul className="mt-1 space-y-0.5 pl-4 list-disc text-muted-foreground">
+										<ul className="mt-1 space-y-0.5 ps-4 list-disc text-muted-foreground">
 											{plan.verificationPlan.manual.map((step) => (
 												<li key={step}>{step}</li>
 											))}
@@ -211,9 +228,7 @@ export function PlanReviewPanel({
 			{/* Action Footer */}
 			<div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-3">
 				<p className="text-[11px] text-muted-foreground">
-					{isApproved
-						? "Plan approved. Workstation is executing in Code mode."
-						: "Review the implementation steps above. Proceed when ready to begin coding."}
+					{isApproved ? t.approvedFooter : t.reviewFooter}
 				</p>
 
 				{!isApproved && onApprove && (
@@ -235,8 +250,8 @@ export function PlanReviewPanel({
 							disabled={isApproving}
 							onClick={() => onApprove()}
 						>
-							<span>{isApproving ? "Approving..." : "Approve & Proceed"}</span>
-							<ArrowRight className="size-3.5" />
+							<span>{isApproving ? t.approvingButton : t.approveButton}</span>
+							<ArrowIcon className="size-3.5" />
 						</Button>
 					</div>
 				)}

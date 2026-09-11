@@ -30,6 +30,10 @@ export interface ImplementationPlanArtifact {
 	verificationPlan: VerificationPlan;
 	rawMarkdown?: string;
 	status: PlanApprovalStatus;
+	metadata?: {
+		RequestFeedback?: boolean;
+		UserFacing?: boolean;
+	};
 }
 
 export interface WalkthroughArtifact {
@@ -41,5 +45,4 @@ export interface WalkthroughArtifact {
 
 export interface PlanGateOptions {
 	mode?: string;
-	onPlanDetected?: (plan: ImplementationPlanArtifact) => void;
 }

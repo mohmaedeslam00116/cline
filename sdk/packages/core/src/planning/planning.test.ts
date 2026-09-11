@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 import { parseImplementationPlan, parseWalkthrough } from "./parser";
 import {
 	createPlanGateExtension,
+	isMutatingTool,
 	PLAN_GATE_EXTENSION_NAME,
 	PLAN_MODE_MUTATION_ERROR,
 } from "./plan-gate-extension";
@@ -43,7 +44,7 @@ function makeBeforeToolContext(
 
 describe("parseImplementationPlan", () => {
 	it("parses full Antigravity 2 implementation plan markdown", () => {
-		const markdown = `# Refactor Auth Subsystem
+		const markdown = `# Implementation Plan: Refactor Auth Subsystem
 
 Brief background about auth changes.
 
@@ -58,130 +59,170 @@ Brief background about auth changes.
 ## Proposed Changes
 Grouped by component:
 
-### Core Auth
-#### [MODIFY] [auth-service.ts](file:///d:/src/auth-service.ts)
-#### [NEW] [token-store.ts](file:///d:/src/token-store.ts)
-#### [DELETE] [legacy-auth.ts](file:///d:/src/legacy-auth.ts)
+### Core SDK
+#### [MODIFY] [auth.ts](file:///src/auth.ts)
+#### [NEW] [token.ts](file:///src/token.ts)
+
+### CLI
+#### [DELETE] [legacy-auth.ts](file:///src/cli/legacy-auth.ts)
 
 ## Verification Plan
 ### Automated Tests
-- bun vitest run auth.test.ts
+- bun test sdk/packages/core/src/auth.test.ts
 - bun run typecheck
 
 ### Manual Verification
-- Log in with test user credentials
+- Start desktop app and confirm login session token is persisted.
 `;
 
 		const plan = parseImplementationPlan(markdown);
 		expect(plan).not.toBeNull();
-		expect(plan?.goal).toBe("Refactor Auth Subsystem");
+		expect(plan?.goal).toBe("Implementation Plan: Refactor Auth Subsystem");
 		expect(plan?.status).toBe("pending_approval");
-
-		// User Review Required
-		expect(plan?.userReviewRequired.length).toBeGreaterThan(0);
-		expect(
-			plan?.userReviewRequired.some((line) =>
-				line.includes("changes the token storage format"),
-			),
-		).toBe(true);
-
-		// Open Questions
-		expect(plan?.openQuestions.length).toBe(1);
-		expect(plan?.openQuestions[0]).toContain("backward compatibility");
-
-		// Proposed Changes
-		expect(plan?.proposedChanges).toEqual([
-			{
-				action: "modify",
-				file: "d:/src/auth-service.ts",
-				component: "Core Auth",
-			},
-			{
-				action: "new",
-				file: "d:/src/token-store.ts",
-				component: "Core Auth",
-			},
-			{
-				action: "delete",
-				file: "d:/src/legacy-auth.ts",
-				component: "Core Auth",
-			},
-		]);
-
-		// Verification Plan
+		expect(plan?.userReviewRequired).toHaveLength(2);
+		expect(plan?.openQuestions).toHaveLength(1);
+		expect(plan?.proposedChanges).toHaveLength(3);
+		expect(plan?.proposedChanges[0]).toEqual({
+			action: "modify",
+			file: "src/auth.ts",
+			component: "Core SDK",
+		});
+		expect(plan?.proposedChanges[1]).toEqual({
+			action: "new",
+			file: "src/token.ts",
+			component: "Core SDK",
+		});
+		expect(plan?.proposedChanges[2]).toEqual({
+			action: "delete",
+			file: "src/cli/legacy-auth.ts",
+			component: "CLI",
+		});
 		expect(plan?.verificationPlan.automated).toEqual([
-			"bun vitest run auth.test.ts",
+			"bun test sdk/packages/core/src/auth.test.ts",
 			"bun run typecheck",
 		]);
 		expect(plan?.verificationPlan.manual).toEqual([
-			"Log in with test user credentials",
+			"Start desktop app and confirm login session token is persisted.",
 		]);
+		expect(plan?.metadata?.RequestFeedback).toBe(true);
+		expect(plan?.metadata?.UserFacing).toBe(true);
 	});
 
 	it("returns null for non-plan markdown", () => {
-		expect(parseImplementationPlan("Just a casual chat message.")).toBeNull();
-		expect(parseImplementationPlan("")).toBeNull();
-		expect(parseImplementationPlan("# Random Title\nSome text")).toBeNull();
+		expect(parseImplementationPlan("Just some ordinary markdown")).toBeNull();
+		expect(
+			parseImplementationPlan("# Random Title\n\nSome paragraph text"),
+		).toBeNull();
+		// Lacking Proposed Changes section
+		expect(
+			parseImplementationPlan(
+				"# Implementation Plan\n\n## User Review Required\n- Check this",
+			),
+		).toBeNull();
+		// Lacking User Review Required section
+		expect(
+			parseImplementationPlan(
+				"# Implementation Plan\n\n## Proposed Changes\n#### [MODIFY] a.ts",
+			),
+		).toBeNull();
+		// Lacking plan heading
+		expect(
+			parseImplementationPlan(
+				"# Normal Conversation\n\n## User Review Required\n- Note\n\n## Proposed Changes\n#### [MODIFY] a.ts",
+			),
+		).toBeNull();
 	});
 
 	it("extracts bare file paths when markdown links are omitted", () => {
-		const markdown = `# Implementation Plan
+		const markdown = `# Implementation Plan: Refactor
+## User Review Required
+- Note on tokens
 ## Proposed Changes
-#### [NEW] src/new-file.ts
-#### [MODIFY] src/old-file.ts
+### Backend
+#### [NEW] [src/server.ts]
+#### [MODIFY] src/router.ts
 `;
 		const plan = parseImplementationPlan(markdown);
 		expect(plan).not.toBeNull();
 		expect(plan?.proposedChanges).toHaveLength(2);
-		expect(plan?.proposedChanges[0]).toEqual({
-			action: "new",
-			file: "src/new-file.ts",
-			component: undefined,
-		});
-		expect(plan?.proposedChanges[1]).toEqual({
-			action: "modify",
-			file: "src/old-file.ts",
-			component: undefined,
-		});
+		expect(plan?.proposedChanges[0].file).toBe("src/server.ts");
+		expect(plan?.proposedChanges[1].file).toBe("src/router.ts");
+	});
+
+	it("extracts only the matched artifact range for rawMarkdown", () => {
+		const markdown = `Here is my recommendation:
+
+# Implementation Plan: Targeted Change
+
+## User Review Required
+- Please review API change
+
+## Proposed Changes
+### Core
+#### [MODIFY] [core.ts](file:///core.ts)
+
+Please let me know if you approve this plan.`;
+
+		const plan = parseImplementationPlan(markdown);
+		expect(plan).not.toBeNull();
+		expect(plan?.rawMarkdown).not.toContain("Here is my recommendation:");
+		expect(plan?.rawMarkdown).not.toContain(
+			"Please let me know if you approve this plan.",
+		);
+		expect(plan?.rawMarkdown).toContain(
+			"# Implementation Plan: Targeted Change",
+		);
+		expect(plan?.rawMarkdown).toContain(
+			"#### [MODIFY] [core.ts](file:///core.ts)",
+		);
 	});
 });
 
 describe("parseWalkthrough", () => {
 	it("parses full walkthrough artifact markdown", () => {
-		const markdown = `# Walkthrough - Auth Refactor
+		const markdown = `# Walkthrough - Refactor Auth Subsystem
 
 ## Changes Made
-- Migrated token storage to encrypted SQLite
-- Added token rotation middleware
+- Updated token signing logic in src/auth.ts
+- Removed legacy authentication helpers
 
 ## Verification Results
-- 15 unit tests passed
-- Manual token refresh verified
+- All unit tests passed (12/12)
+- Manual login verified against staging server
 `;
 
 		const walkthrough = parseWalkthrough(markdown);
 		expect(walkthrough).not.toBeNull();
-		expect(walkthrough?.title).toBe("Walkthrough - Auth Refactor");
-		expect(walkthrough?.changesMade.length).toBe(2);
-		expect(walkthrough?.changesMade[0]).toContain("Migrated token storage");
-		expect(walkthrough?.verificationResults.length).toBe(2);
-		expect(walkthrough?.verificationResults[0]).toContain(
-			"15 unit tests passed",
-		);
+		expect(walkthrough?.title).toBe("Walkthrough - Refactor Auth Subsystem");
+		expect(walkthrough?.changesMade).toHaveLength(2);
+		expect(walkthrough?.verificationResults).toHaveLength(2);
 	});
 
 	it("returns null for non-walkthrough markdown", () => {
-		expect(parseWalkthrough("Just some notes")).toBeNull();
-		expect(parseWalkthrough("# Notes on project\nDetail here")).toBeNull();
+		expect(parseWalkthrough("Random markdown text")).toBeNull();
+		expect(parseWalkthrough("# Regular Title\n\nParagraph text")).toBeNull();
 	});
 });
 
-describe("createPlanGateExtension", () => {
+describe("createPlanGateExtension & isMutatingTool", () => {
 	it("registers with hooks capability", () => {
 		const extension = createPlanGateExtension({ mode: "plan" });
 		expect(extension.name).toBe(PLAN_GATE_EXTENSION_NAME);
 		expect(extension.manifest?.capabilities).toContain("hooks");
 		expect(extension.hooks?.beforeTool).toBeTypeOf("function");
+	});
+
+	it("correctly identifies mutating vs read-only tools", () => {
+		expect(isMutatingTool("editor")).toBe(true);
+		expect(isMutatingTool("apply_patch")).toBe(true);
+		expect(isMutatingTool("write_file")).toBe(true);
+		expect(isMutatingTool("mcp_fs_delete_file")).toBe(true);
+
+		expect(isMutatingTool("read_files")).toBe(false);
+		expect(isMutatingTool("grep_search")).toBe(false);
+		expect(isMutatingTool("mcp_fs_read_file")).toBe(false);
+		expect(isMutatingTool("mcp_server_list_tables")).toBe(false);
+		expect(isMutatingTool("switch_to_act_mode")).toBe(false);
 	});
 
 	it("blocks editor in plan mode", async () => {
@@ -195,10 +236,10 @@ describe("createPlanGateExtension", () => {
 		);
 	});
 
-	it("blocks apply_patch in plan mode", async () => {
+	it("blocks mutating MCP tools in plan mode", async () => {
 		const extension = createPlanGateExtension({ mode: "plan" });
 		const result = await extension.hooks?.beforeTool?.(
-			makeBeforeToolContext("apply_patch", { input: "patch" }),
+			makeBeforeToolContext("mcp_server_write_data", { path: "test.ts" }),
 		);
 		expect(result && "skip" in result ? result.skip : false).toBe(true);
 		expect(result && "reason" in result ? result.reason : undefined).toBe(
@@ -206,12 +247,17 @@ describe("createPlanGateExtension", () => {
 		);
 	});
 
-	it("allows read_files in plan mode", async () => {
+	it("allows read_files and read-only MCP tools in plan mode", async () => {
 		const extension = createPlanGateExtension({ mode: "plan" });
-		const result = await extension.hooks?.beforeTool?.(
+		const result1 = await extension.hooks?.beforeTool?.(
 			makeBeforeToolContext("read_files", { paths: ["test.ts"] }),
 		);
-		expect(result).toBeUndefined();
+		expect(result1).toBeUndefined();
+
+		const result2 = await extension.hooks?.beforeTool?.(
+			makeBeforeToolContext("mcp_server_read_data", { path: "test.ts" }),
+		);
+		expect(result2).toBeUndefined();
 	});
 
 	it("allows editor in act mode", async () => {

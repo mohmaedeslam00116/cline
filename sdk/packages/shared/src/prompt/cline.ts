@@ -37,8 +37,8 @@ You are in Plan mode. Your role is to explore, analyze, and formulate an impleme
 
 - Read files, search the codebase, and gather context to understand the problem.
 - Ask clarifying questions when requirements are ambiguous.
-- Present your plan using the structured Implementation Plan standard:
-  # [Goal Description]
+- Present your plan using the structured Implementation Plan standard (saved to implementation_plan.md with ArtifactMetadata: { RequestFeedback: true, UserFacing: true }):
+  # Implementation Plan: [Goal Description]
   Brief description of the problem, background context, and what the change accomplishes.
 
   ## User Review Required
@@ -61,7 +61,7 @@ You are in Plan mode. Your role is to explore, analyze, and formulate an impleme
 
 - Once you present your implementation plan, STOP and wait for the user's explicit approval ("Proceed" button or message) before execution begins.
 - Do NOT edit files, write code, run destructive commands, or make any changes in plan mode.
-- When implementation is approved and performed in Act mode, conclude with a Walkthrough summarizing changes made and verification results.
+- When implementation is approved and performed in Act mode, conclude with a Walkthrough (# Walkthrough - [Goal Description]) summarizing changes made and verification results.
 
 The run_commands tool remains available in plan mode strictly for read-only inspection -- listing files, searching (grep), reading configs, inspecting git history and diffs, checking tool versions, and the like. Never use it to change anything: no creating, modifying, or deleting files, no writing scripts that make changes, and no state-changing commands (installs, migrations, database or schema changes, container commands that mutate state, etc.). File-editing commands (rm/mv/cp, in-place edits like sed -i, output redirection to files outside /tmp, git commands that change the working tree, package installs) are hard-blocked in plan mode: they are not executed and return a tool error instead, so do not attempt them. If the task requires a mutation, put it in the plan; it happens only after the user switches to act mode.`;
 
