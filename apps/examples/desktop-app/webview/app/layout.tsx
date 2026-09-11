@@ -7,8 +7,9 @@ import { HUB_THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
 export const metadata: Metadata = {
-	title: "Cline",
-	description: "Build software with Cline.",
+	title: "LENS Workstation",
+	description:
+		"Autonomous developer research and coding agent harness. Research, in focus.",
 	icons: {
 		icon: [
 			{

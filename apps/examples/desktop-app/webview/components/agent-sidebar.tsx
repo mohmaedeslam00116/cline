@@ -287,7 +287,7 @@ export function AgentSidebar({
 	const { user, activeOrganization } = useAccount();
 	const { displayName, email } = user || {};
 	const username = displayName?.split(" ")?.[0] || email?.split("@")?.[0];
-	const accountName = username?.trim() || "Cline Desktop";
+	const accountName = username?.trim() || "LENS Workstation";
 	const accountScope = user
 		? (activeOrganization?.name ?? "Personal")
 		: undefined;
@@ -828,7 +828,7 @@ export function AgentSidebar({
 						>
 							<HoverCardTrigger asChild>
 								<button
-									aria-label="Cline home"
+									aria-label="LENS Workstation home"
 									className={cn(
 										"flex size-8 shrink-0 items-center justify-center rounded-md text-sidebar-foreground hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
 										isCollapsed && "size-9",
@@ -948,7 +948,7 @@ export function AgentSidebar({
 									"bg-surface-hover-lighter text-sidebar-foreground",
 							)}
 							onClick={() => openSettingsSection("Customize")}
-							title="Customize Cline with plugins, rules, and more"
+							title="Customize LENS Workstation with plugins, rules, and more"
 							type="button"
 							variant="sidebarItem"
 						>

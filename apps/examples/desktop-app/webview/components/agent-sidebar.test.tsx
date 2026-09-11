@@ -961,7 +961,9 @@ describe("AgentSidebar session organization", () => {
 			);
 		});
 
-		const logoButton = container.querySelector('[aria-label="Cline home"]');
+		const logoButton = container.querySelector(
+			'[aria-label="LENS Workstation home"]',
+		);
 		expect(logoButton).not.toBeNull();
 		expect(document.body.textContent).not.toContain("Version 1.2.3");
 
@@ -1009,7 +1011,9 @@ describe("AgentSidebar session organization", () => {
 			);
 		});
 
-		const logoButton = container.querySelector('[aria-label="Cline home"]');
+		const logoButton = container.querySelector(
+			'[aria-label="LENS Workstation home"]',
+		);
 		expect(logoButton).not.toBeNull();
 		await hover(logoButton as Element);
 
@@ -1080,7 +1084,9 @@ describe("AgentSidebar session organization", () => {
 			);
 		});
 
-		const logo = container.querySelector('[aria-label="Cline home"]');
+		const logo = container.querySelector(
+			'[aria-label="LENS Workstation home"]',
+		);
 		const actionsNav = container.querySelector(
 			'[aria-label="Sidebar actions"]',
 		);
@@ -1095,6 +1101,7 @@ describe("AgentSidebar session organization", () => {
 			"New",
 			"Schedule",
 			"Customize",
+			"Evidence & Claims",
 		]);
 		for (const row of rows) {
 			expect(row.className).toContain("w-full");
@@ -1237,7 +1244,7 @@ describe("AgentSidebar session organization", () => {
 		expect(document.querySelector('[data-slot="command-input"]')).toBeNull();
 	});
 
-	it("uses only the Cline logo for home in the collapsed sidebar", async () => {
+	it("uses only the LENS logo for home in the collapsed sidebar", async () => {
 		await act(async () => {
 			root.render(
 				<AccountProvider>
@@ -1256,7 +1263,9 @@ describe("AgentSidebar session organization", () => {
 			);
 		});
 
-		expect(container.querySelector('[aria-label="Cline home"]')).not.toBeNull();
+		expect(
+			container.querySelector('[aria-label="LENS Workstation home"]'),
+		).not.toBeNull();
 		expect(
 			container.querySelector('[aria-label="Sidebar actions"]'),
 		).toBeNull();
@@ -1295,7 +1304,7 @@ describe("AgentSidebar session organization", () => {
 			container.querySelector('[aria-label="Settings sections"]'),
 		).not.toBeNull();
 		const leftAlignedButtons = [
-			"Cline home",
+			"LENS Workstation home",
 			"General",
 			"Account",
 			"Expand sidebar",
