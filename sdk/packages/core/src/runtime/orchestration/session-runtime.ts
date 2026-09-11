@@ -28,7 +28,10 @@ import type {
 	TeamEvent,
 } from "../../extensions/tools/team";
 import type { WorkspaceManager } from "../../services/workspace/workspace-manager";
-import type { CoreSessionConfig } from "../../types/config";
+import type {
+	CorePostEditValidationConfig,
+	CoreSessionConfig,
+} from "../../types/config";
 
 /**
  * Internal structural alias for the lead-agent handle that
@@ -82,6 +85,7 @@ export interface RuntimeBuilderInput {
 	runCommandExecutionController?: RunCommandExecutionController;
 	toolPolicies?: CoreSessionConfig["toolPolicies"];
 	workspaceManager?: WorkspaceManager;
+	postEditValidation?: CorePostEditValidationConfig;
 	logger?: BasicLogger;
 	telemetry?: ITelemetryService;
 	requestToolApproval?: (

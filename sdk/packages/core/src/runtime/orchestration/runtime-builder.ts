@@ -54,6 +54,7 @@ import {
 } from "../../services/global-settings";
 import { createLocalTeamStore } from "../../services/storage/team-store";
 import type { CoreAgentMode, CoreSessionConfig } from "../../types/config";
+import { createPostEditValidationExtension } from "../../validation";
 import type {
 	RuntimeBuilder,
 	RuntimeBuilderInput,
@@ -555,9 +556,21 @@ export class DefaultRuntimeBuilder implements RuntimeBuilder {
 						telemetry: telemetry ?? config.telemetry,
 					})
 				: undefined;
+		const effectivePostEditValidation =
+			input.postEditValidation ?? config.postEditValidation;
+		const postEditValidationExtension =
+			effectivePostEditValidation?.enabled === true && normalized.enableTools
+				? createPostEditValidationExtension({
+						cwd: config.cwd,
+						logger: logger ?? config.logger,
+						telemetry: telemetry ?? config.telemetry,
+						...effectivePostEditValidation,
+					})
+				: undefined;
 		const injectedExtensions = [
 			userInstructionPlugin,
 			planModeCommandGuard,
+			postEditValidationExtension,
 		].filter((extension) => extension !== undefined);
 		const runtimeExtensions =
 			injectedExtensions.length > 0

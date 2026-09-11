@@ -17,7 +17,10 @@ import type {
 } from "@cline/shared";
 import type { ToolRoutingRule } from "../extensions/tools/model-tool-routing";
 import type { TeamEvent } from "../extensions/tools/team";
+import type { CorePostEditValidationConfig } from "../validation";
 import type { ProviderConfig } from "./provider-settings";
+
+export type { CorePostEditValidationConfig };
 
 export type CoreAgentMode = AgentMode;
 
@@ -280,6 +283,7 @@ export interface CoreSessionConfig
 	execution?: AgentConfig["execution"];
 	compaction?: CoreCompactionConfig;
 	checkpoint?: CoreCheckpointConfig;
+	postEditValidation?: CorePostEditValidationConfig;
 	onTeamEvent?: (event: TeamEvent) => void;
 	onConsecutiveMistakeLimitReached?: (
 		context: ConsecutiveMistakeLimitContext,
