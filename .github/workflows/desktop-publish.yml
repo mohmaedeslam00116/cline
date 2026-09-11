@@ -31,7 +31,7 @@ jobs:
   validate:
     name: Validate release tag
     if: |
-      github.repository == 'cline/cline' &&
+      (github.repository == 'mohmaedeslam00116/cline' || github.repository == 'cline/cline') &&
       github.event.inputs.confirm_publish == 'publish' &&
       !endsWith(github.actor, '[bot]')
     runs-on: ubuntu-latest

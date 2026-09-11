@@ -5,7 +5,7 @@
 	"plugins": {
 		"updater": {
 			"endpoints": [
-				"https://github.com/cline/cline/releases/download/desktop-beta/latest.json"
+				"https://github.com/mohmaedeslam00116/cline/releases/download/desktop-beta/latest.json"
 			]
 		}
 	}
