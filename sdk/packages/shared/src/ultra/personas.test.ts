@@ -119,7 +119,7 @@ describe("buildUltraAgencyPrompt", () => {
 			"After Atlas complete deliverables and reach team alignment",
 		);
 		expect(prompt).toContain(
-			"After Cipher complete implementation and verification",
+			"After Cipher complete implementation and all required verification checks pass",
 		);
 		// Checkpoint 1 and Checkpoint 2 are both present because Atlas (planning) and Cipher (implementation) are active
 		expect(prompt).toContain(

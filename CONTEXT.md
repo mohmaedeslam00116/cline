@@ -49,9 +49,9 @@ A named, role-specific agent identity (e.g. Orion, Athena, Atlas, Cipher, Sentin
 _Avoid_: character, sub-prompt
 
 **Squad**:
-A configured group of specialist personas selected to collaborate on an Ultra Mode mission, coordinated by a Team Leader.
-_Avoid_: agent swarm, crew
+A configured group of specialist personas selected to collaborate on an Ultra Mode mission, coordinated by an Orchestrator (Orion).
+_Avoid_: agent swarm, crew, team leader
 
 **Checkpoint Gate**:
-A human-in-the-loop review point orchestrated by the Team Leader where execution pauses for user validation before advancing to the next engineering milestone.
-_Avoid_: breakpoint, prompt stop
+A human-in-the-loop review point orchestrated by the Orchestrator where execution pauses for user validation before advancing to the next engineering milestone.
+_Avoid_: breakpoint, prompt stop, team leader review

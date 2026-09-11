@@ -188,6 +188,12 @@ ${SAMPLE_METAGPT_OUTPUT}
 		expect(pipeline2?.checkpointStatus?.isAwaitingApproval).toBe(true);
 	});
 
+	it("ignores ordinary prose mentioning checkpoints without markdown headings", () => {
+		const textWithProse = `${SAMPLE_METAGPT_OUTPUT}\nCheckpoint 2 was approved in the last turn and we are now complete.\n`;
+		const pipeline = parseUltraPipeline(textWithProse);
+		expect(pipeline?.checkpointStatus).toBeUndefined();
+	});
+
 	it("parses specialist deliverables for Lyra and Vector", () => {
 		const textWithSpecialists = `
 ## Lyra: Technical Research

@@ -47,6 +47,8 @@ type PipelineTab =
 	| "vector"
 	| "echo";
 
+const PERSONA_INDICATOR_COLOR = "#161616";
+
 export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 	pipeline,
 	className,
@@ -74,9 +76,9 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 		if (pipeline.lyra) {
 			list.push({
 				key: "lyra",
-				label: tAgency.researchTabLabel || "Research",
+				label: tAgency.tabLyraLabel,
 				personaName: "Lyra",
-				personaColor: "#06b6d4",
+				personaColor: PERSONA_INDICATOR_COLOR,
 				icon: Compass,
 			});
 		}
@@ -84,16 +86,16 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 		list.push(
 			{
 				key: "prd",
-				label: "PRD",
+				label: tAgency.tabPrdLabel,
 				personaName: "Athena",
-				personaColor: "#a855f7",
+				personaColor: PERSONA_INDICATOR_COLOR,
 				icon: ListChecks,
 			},
 			{
 				key: "architect",
-				label: "Architecture",
+				label: tAgency.tabArchLabel,
 				personaName: "Atlas",
-				personaColor: "#10b981",
+				personaColor: PERSONA_INDICATOR_COLOR,
 				icon: Layers,
 			},
 		);
@@ -101,9 +103,9 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 		if (pipeline.vector) {
 			list.push({
 				key: "vector",
-				label: "Data Schema",
+				label: tAgency.tabVectorLabel,
 				personaName: "Vector",
-				personaColor: "#eab308",
+				personaColor: PERSONA_INDICATOR_COLOR,
 				icon: Database,
 			});
 		}
@@ -111,23 +113,23 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 		list.push(
 			{
 				key: "tasks",
-				label: "Task DAG",
+				label: tAgency.tabTasksLabel,
 				personaName: "Orion",
-				personaColor: "#3b82f6",
+				personaColor: PERSONA_INDICATOR_COLOR,
 				icon: GitBranch,
 			},
 			{
 				key: "code",
-				label: "Code",
+				label: tAgency.tabCodeLabel,
 				personaName: "Cipher",
-				personaColor: "#f97316",
+				personaColor: PERSONA_INDICATOR_COLOR,
 				icon: Code2,
 			},
 			{
 				key: "qa",
-				label: "QA Report",
+				label: tAgency.tabQaLabel,
 				personaName: "Sentinel",
-				personaColor: "#f43f5e",
+				personaColor: PERSONA_INDICATOR_COLOR,
 				icon: TestTube2,
 			},
 		);
@@ -135,15 +137,27 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 		if (pipeline.echo) {
 			list.push({
 				key: "echo",
-				label: "Docs",
+				label: tAgency.tabDocsLabel,
 				personaName: "Echo",
-				personaColor: "#8b5cf6",
+				personaColor: PERSONA_INDICATOR_COLOR,
 				icon: FileText,
 			});
 		}
 
 		return list;
-	}, [pipeline.lyra, pipeline.vector, pipeline.echo, tAgency.researchTabLabel]);
+	}, [
+		pipeline.lyra,
+		pipeline.vector,
+		pipeline.echo,
+		tAgency.tabLyraLabel,
+		tAgency.tabPrdLabel,
+		tAgency.tabArchLabel,
+		tAgency.tabVectorLabel,
+		tAgency.tabTasksLabel,
+		tAgency.tabCodeLabel,
+		tAgency.tabQaLabel,
+		tAgency.tabDocsLabel,
+	]);
 
 	const handleTabKeyDown = useCallback(
 		(event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -153,7 +167,8 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 			event.preventDefault();
 			const tabKeys = tabs.map((t) => t.key);
 			const currentIndex = tabKeys.indexOf(activeTab);
-			const delta = event.key === "ArrowRight" ? 1 : -1;
+			const delta =
+				(event.key === "ArrowRight" ? 1 : -1) * (dir === "rtl" ? -1 : 1);
 			const nextIndex =
 				(currentIndex + delta + tabKeys.length) % tabKeys.length;
 			const nextTab = tabKeys[nextIndex];
@@ -161,7 +176,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 			const nextButton = document.getElementById(`ultra-tab-${nextTab}`);
 			nextButton?.focus();
 		},
-		[activeTab, tabs],
+		[activeTab, dir, tabs],
 	);
 
 	const handleCopy = useCallback(
@@ -180,11 +195,18 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 
 	const checkpointGate = pipeline.checkpointStatus?.gate;
 	const checkpointTitle = pipeline.checkpointStatus?.title;
+	const isAwaitingApproval = Boolean(
+		pipeline.checkpointStatus?.isAwaitingApproval,
+	);
 	useEffect(() => {
-		if (checkpointGate !== undefined || checkpointTitle !== undefined) {
+		if (
+			checkpointGate !== undefined ||
+			checkpointTitle !== undefined ||
+			isAwaitingApproval
+		) {
 			setIsProceeding(false);
 		}
-	}, [checkpointGate, checkpointTitle]);
+	}, [checkpointGate, checkpointTitle, isAwaitingApproval]);
 
 	const handleProceed = useCallback(() => {
 		if (onProceedCheckpoint) {
@@ -243,8 +265,8 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 			{
 				id: "orion",
 				name: "Orion",
-				role: "Orchestrator",
-				color: "#3b82f6",
+				role: tAgency.roleOrchestrator,
+				color: PERSONA_INDICATOR_COLOR,
 				done: Boolean(pipeline.tasks),
 			},
 			...(pipeline.lyra
@@ -252,8 +274,8 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 						{
 							id: "lyra",
 							name: "Lyra",
-							role: "Researcher",
-							color: "#06b6d4",
+							role: tAgency.roleResearcher,
+							color: PERSONA_INDICATOR_COLOR,
 							done: true,
 						},
 					]
@@ -261,15 +283,15 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 			{
 				id: "athena",
 				name: "Athena",
-				role: "Product Lead",
-				color: "#a855f7",
+				role: tAgency.roleProductLead,
+				color: PERSONA_INDICATOR_COLOR,
 				done: Boolean(pipeline.prd),
 			},
 			{
 				id: "atlas",
 				name: "Atlas",
-				role: "Architect",
-				color: "#10b981",
+				role: tAgency.roleArchitect,
+				color: PERSONA_INDICATOR_COLOR,
 				done: Boolean(pipeline.architect),
 			},
 			...(pipeline.vector
@@ -277,8 +299,8 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 						{
 							id: "vector",
 							name: "Vector",
-							role: "Data Architect",
-							color: "#eab308",
+							role: tAgency.roleDataArchitect,
+							color: PERSONA_INDICATOR_COLOR,
 							done: true,
 						},
 					]
@@ -286,15 +308,15 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 			{
 				id: "cipher",
 				name: "Cipher",
-				role: "Engineer",
-				color: "#f97316",
+				role: tAgency.roleEngineer,
+				color: PERSONA_INDICATOR_COLOR,
 				done: Boolean(pipeline.engineer),
 			},
 			{
 				id: "sentinel",
 				name: "Sentinel",
-				role: "QA Lead",
-				color: "#f43f5e",
+				role: tAgency.roleQaLead,
+				color: PERSONA_INDICATOR_COLOR,
 				done: pipeline.qa?.status === "passed",
 			},
 			...(pipeline.echo
@@ -302,14 +324,24 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 						{
 							id: "echo",
 							name: "Echo",
-							role: "Docs",
-							color: "#8b5cf6",
+							role: tAgency.roleDocs,
+							color: PERSONA_INDICATOR_COLOR,
 							done: true,
 						},
 					]
 				: []),
 		];
-	}, [pipeline]);
+	}, [
+		pipeline,
+		tAgency.roleOrchestrator,
+		tAgency.roleResearcher,
+		tAgency.roleProductLead,
+		tAgency.roleArchitect,
+		tAgency.roleDataArchitect,
+		tAgency.roleEngineer,
+		tAgency.roleQaLead,
+		tAgency.roleDocs,
+	]);
 
 	return (
 		<section

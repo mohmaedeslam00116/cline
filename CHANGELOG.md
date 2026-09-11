@@ -10,6 +10,13 @@
 - **The 2 Golden Checkpoint Gates**: Human-in-the-loop review points orchestrated by Orion (Checkpoint 1: Strategy & Blueprint Gate, Checkpoint 2: Pre-Ship Verification Gate) with interactive "Approve & Proceed" and "Add Guidance" action controls.
 - **Squad Configurator & Presets**: In-chat popover attached to the Ultra Mode selector with 3 curated presets (Core Software Squad, Full Product Agency, Rapid Prototyper) and individual specialist toggles.
 - **Agency Collaboration Board**: Interactive webview board featuring a Squad Lineup bar with glowing active states, live collaboration feed, and specialist deliverable tabs.
+- **ADR 0005**: Recorded architectural decision for the Ultra Mode Agency Framework covering Atoms.dev persona evolution, cognitive isolation, squad presets, and dual checkpoint gates.
+
+### Changed
+
+- **Lyra Untrusted Evidence Security Boundary**: Hardened prompt instructions to guarantee external research is treated strictly as passive untrusted data, forbidding prompt injection execution and workspace secrets exfiltration.
+- **Checkpoint Alignment & Gating Precision**: Pre-aligned Lyra research and Vector data schemas into Atlas architecture before Checkpoint 1, and enforced explicit Passed/Verified requirements with failure tracebacks for Checkpoint 2.
+- **Bilingual Tab & Role Parity**: Localized all deliverable tabs and squad roles across English and Arabic dictionaries, added RTL keyboard navigation, and unified indicator dots to monochrome tokens.
 
 ## [4.1.17]
 

@@ -157,6 +157,15 @@ export interface LensTranslations {
 		readonly presetRapid: string;
 		readonly checkpointGates: string;
 		readonly checkpointGatesDesc: string;
+		readonly squadLabel: string;
+		readonly squadPresetsLabel: string;
+		readonly specialistPersonasLabel: string;
+		readonly agentsSuffix: string;
+		readonly deliverablesAriaLabel: string;
+		readonly researchTabLabel: string;
+		readonly untrustedBadgeExact: string;
+		readonly qaStatusFailed: string;
+		readonly proceedingButton: string;
 		readonly tabOrion: string;
 		readonly tabLyra: string;
 		readonly tabAthena: string;
@@ -165,6 +174,22 @@ export interface LensTranslations {
 		readonly tabCipher: string;
 		readonly tabSentinel: string;
 		readonly tabEcho: string;
+		readonly tabPrdLabel: string;
+		readonly tabArchLabel: string;
+		readonly tabTasksLabel: string;
+		readonly tabCodeLabel: string;
+		readonly tabQaLabel: string;
+		readonly tabDocsLabel: string;
+		readonly tabVectorLabel: string;
+		readonly tabLyraLabel: string;
+		readonly roleOrchestrator: string;
+		readonly roleResearcher: string;
+		readonly roleProductLead: string;
+		readonly roleArchitect: string;
+		readonly roleDataArchitect: string;
+		readonly roleEngineer: string;
+		readonly roleQaLead: string;
+		readonly roleDocs: string;
 	};
 }
 
@@ -358,6 +383,22 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			tabCipher: "Cipher (Code)",
 			tabSentinel: "Sentinel (QA & Verification)",
 			tabEcho: "Echo (Docs)",
+			tabPrdLabel: "PRD",
+			tabArchLabel: "Architecture",
+			tabTasksLabel: "Task DAG",
+			tabCodeLabel: "Code",
+			tabQaLabel: "QA Report",
+			tabDocsLabel: "Docs",
+			tabVectorLabel: "Data Schema",
+			tabLyraLabel: "Research",
+			roleOrchestrator: "Orchestrator",
+			roleResearcher: "Researcher",
+			roleProductLead: "Product Lead",
+			roleArchitect: "Architect",
+			roleDataArchitect: "Data Architect",
+			roleEngineer: "Engineer",
+			roleQaLead: "QA Lead",
+			roleDocs: "Docs",
 		},
 	},
 	ar: {
@@ -547,6 +588,22 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			tabCipher: "Cipher (الكود)",
 			tabSentinel: "Sentinel (الجودة والتحقق)",
 			tabEcho: "Echo (التوثيق)",
+			tabPrdLabel: "المتطلبات (PRD)",
+			tabArchLabel: "المعمارية",
+			tabTasksLabel: "قائمة المهام",
+			tabCodeLabel: "الكود",
+			tabQaLabel: "تقرير الجودة",
+			tabDocsLabel: "التوثيق",
+			tabVectorLabel: "مخطط البيانات",
+			tabLyraLabel: "الأبحاث",
+			roleOrchestrator: "منسق الفريق",
+			roleResearcher: "باحث تقني",
+			roleProductLead: "مسؤول المنتج",
+			roleArchitect: "مهندس المعمارية",
+			roleDataArchitect: "مهندس البيانات",
+			roleEngineer: "مهندس البرمجيات",
+			roleQaLead: "مسؤول الجودة",
+			roleDocs: "التوثيق",
 		},
 	},
 };

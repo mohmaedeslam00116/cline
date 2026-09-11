@@ -135,15 +135,33 @@ describe("UltraPipelinePanel component", () => {
 		expect(onProceed).toHaveBeenCalledTimes(1);
 	});
 
+	it("keeps approve button enabled when rendered without onProceedCheckpoint", async () => {
+		await act(async () => {
+			root.render(<UltraPipelinePanel pipeline={mockPipeline} />);
+		});
+
+		const approveBtn = Array.from(container.querySelectorAll("button")).find(
+			(b) => b.textContent?.includes("Approve & Proceed"),
+		);
+		expect(approveBtn).toBeDefined();
+
+		await act(async () => {
+			approveBtn?.click();
+		});
+
+		expect(approveBtn?.textContent).toContain("Approve & Proceed");
+		expect(approveBtn?.hasAttribute("disabled")).toBe(false);
+	});
+
 	it("switches tabs when clicked", async () => {
 		await act(async () => {
 			root.render(<UltraPipelinePanel pipeline={mockPipeline} />);
 		});
 
-		const architectTab = container.querySelector<HTMLButtonElement>(
-			'button[role="tab"]:nth-child(2)',
-		);
-		expect(architectTab).not.toBeNull();
+		const architectTab = Array.from(
+			container.querySelectorAll<HTMLButtonElement>('button[role="tab"]'),
+		).find((tab) => tab.textContent?.includes("Atlas (Architecture)"));
+		expect(architectTab).toBeDefined();
 
 		await act(async () => {
 			architectTab?.click();
@@ -164,12 +182,12 @@ describe("UltraPipelinePanel component", () => {
 		);
 		expect(tablist).not.toBeNull();
 
-		const firstTab = container.querySelector<HTMLButtonElement>(
-			'button[role="tab"]:nth-child(1)',
+		const tabs = Array.from(
+			container.querySelectorAll<HTMLButtonElement>('button[role="tab"]'),
 		);
-		const secondTab = container.querySelector<HTMLButtonElement>(
-			'button[role="tab"]:nth-child(2)',
-		);
+		const firstTab = tabs[0];
+		const secondTab = tabs[1];
+		const lastTab = tabs[tabs.length - 1];
 
 		expect(firstTab?.getAttribute("tabindex")).toBe("0");
 		expect(secondTab?.getAttribute("tabindex")).toBe("-1");
@@ -186,6 +204,29 @@ describe("UltraPipelinePanel component", () => {
 
 		expect(firstTab?.getAttribute("tabindex")).toBe("-1");
 		expect(secondTab?.getAttribute("tabindex")).toBe("0");
+
+		await act(async () => {
+			tablist?.dispatchEvent(
+				new KeyboardEvent("keydown", {
+					key: "ArrowLeft",
+					bubbles: true,
+					cancelable: true,
+				}),
+			);
+		});
+		expect(firstTab?.getAttribute("tabindex")).toBe("0");
+
+		await act(async () => {
+			tablist?.dispatchEvent(
+				new KeyboardEvent("keydown", {
+					key: "ArrowLeft",
+					bubbles: true,
+					cancelable: true,
+				}),
+			);
+		});
+		expect(lastTab?.getAttribute("tabindex")).toBe("0");
+		expect(firstTab?.getAttribute("tabindex")).toBe("-1");
 	});
 
 	it("renders Engineer code implementation tab when selected", async () => {
