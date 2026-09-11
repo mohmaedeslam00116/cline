@@ -120,9 +120,7 @@ describe("UltraPipelinePanel component", () => {
 			);
 		});
 
-		expect(container.textContent).toContain(
-			"Checkpoint 1: Strategy & Blueprint Gate",
-		);
+		expect(container.textContent).toContain("Strategy & Blueprint Gate");
 		expect(container.textContent).toContain("Approve & Proceed");
 
 		const approveBtn = Array.from(container.querySelectorAll("button")).find(

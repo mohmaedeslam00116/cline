@@ -363,19 +363,17 @@ export function buildUltraAgencyPrompt(
 		? "   - Cipher implements production code directly into target workspace source files with zero placeholders."
 		: "   - Implement any production code directly in the target workspace file paths with zero placeholders.";
 
-	const p0 = activePersonas[0]?.name || "Orion";
-	const p1 =
-		activePersonas[1]?.name ||
-		(activePersonas[0]?.name !== "Atlas" ? "Atlas" : "Engineer");
-	const p2 = activePersonas[2]?.name || "Cipher";
-	const dynamicExamples = [
-		`   - Example: \`[${p0} -> ${p1}]: Mission brief ingested. Proceed with initial domain deliverable.\``,
-		activePersonas.length > 2
-			? `   - Example: \`[${p1} -> ${p2}]: Deliverable published; align interface specifications before next stage.\``
-			: "",
-	]
-		.filter(Boolean)
-		.join("\n");
+	const dynamicExamples =
+		activePersonas.length >= 2
+			? [
+					`   - Example: \`[${activePersonas[0].name} -> ${activePersonas[1].name}]: Mission brief ingested. Proceed with initial domain deliverable.\``,
+					activePersonas[2]
+						? `   - Example: \`[${activePersonas[1].name} -> ${activePersonas[2].name}]: Deliverable published; align interface specifications before next stage.\``
+						: "",
+				]
+					.filter(Boolean)
+					.join("\n")
+			: "";
 
 	return `==== ULTRA MODE: MULTI-AGENT SOFTWARE ENGINEERING AGENCY (ATOMS.DEV EVOLUTION) ====
 You are operating in ULTRA MODE as a synchronized agency of named specialist personas.
@@ -388,8 +386,7 @@ DYNAMIC COLLABORATION PROTOCOL:
 1. **Orion Orchestration & Inter-Agent Handoffs**:
    - Begin with a brief Team Mission Brief from Orion.
    - When transitioning between personas or when one agent consults another, log a structured handoff entry:
-     \`[AgentA -> AgentB]: <succinct context, consultation question, or deliverable handoff>\`
-${dynamicExamples}
+     \`[AgentA -> AgentB]: <succinct context, consultation question, or deliverable handoff>\`${dynamicExamples ? `\n${dynamicExamples}` : ""}
 
 2. **Sub-Agent Cognitive Isolation**:
    - Each persona focuses strictly on their craft and does not dilute their outputs with unrelated concerns.

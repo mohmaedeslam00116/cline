@@ -23,7 +23,7 @@ import {
 	Workflow,
 } from "lucide-react";
 import type React from "react";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getLensDirection, getLensTranslations } from "@/lib/lens-i18n";
@@ -178,9 +178,19 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 		[activeTab],
 	);
 
+	const checkpointGate = pipeline.checkpointStatus?.gate;
+	const checkpointTitle = pipeline.checkpointStatus?.title;
+	useEffect(() => {
+		if (checkpointGate !== undefined || checkpointTitle !== undefined) {
+			setIsProceeding(false);
+		}
+	}, [checkpointGate, checkpointTitle]);
+
 	const handleProceed = useCallback(() => {
-		setIsProceeding(true);
-		onProceedCheckpoint?.(feedbackText.trim() || undefined);
+		if (onProceedCheckpoint) {
+			setIsProceeding(true);
+			onProceedCheckpoint(feedbackText.trim() || undefined);
+		}
 	}, [feedbackText, onProceedCheckpoint]);
 
 	const qaStatus = pipeline.qa?.status ?? "in_progress";
@@ -201,8 +211,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 		}
 		return {
 			label: t.statusInProgress,
-			className:
-				"bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/30",
+			className: "bg-primary/10 text-primary border-primary/20",
 		};
 	}, [qaStatus, pipeline.qa?.retries, t]);
 
@@ -820,19 +829,21 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 
 					{/* Interactive Checkpoint Action Bar */}
 					{pipeline.checkpointStatus?.isAwaitingApproval && (
-						<div className="border-t border-indigo-500/40 bg-indigo-950/20 p-3 text-xs space-y-2.5">
+						<div className="border-t border-border/80 bg-muted/30 p-3 text-xs space-y-2.5">
 							<div className="flex items-start gap-2">
-								<ShieldCheck className="size-4 text-indigo-400 shrink-0 mt-0.5" />
+								<ShieldCheck className="size-4 text-primary shrink-0 mt-0.5" />
 								<div className="space-y-0.5">
-									<span className="font-semibold text-indigo-300 block">
-										{pipeline.checkpointStatus.gate === 1
-											? tAgency.checkpoint1Title
-											: tAgency.checkpoint2Title}
+									<span className="font-semibold text-foreground block">
+										{pipeline.checkpointStatus.title ||
+											(pipeline.checkpointStatus.gate === 1
+												? tAgency.checkpoint1Title
+												: tAgency.checkpoint2Title)}
 									</span>
 									<p className="text-[11px] text-muted-foreground leading-snug">
-										{pipeline.checkpointStatus.gate === 1
-											? tAgency.checkpoint1Desc
-											: tAgency.checkpoint2Desc}
+										{pipeline.checkpointStatus.summary ||
+											(pipeline.checkpointStatus.gate === 1
+												? tAgency.checkpoint1Desc
+												: tAgency.checkpoint2Desc)}
 									</p>
 								</div>
 							</div>
@@ -846,12 +857,12 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 								/>
 								<Button
 									size="sm"
-									className="h-8 gap-1.5 px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium shrink-0"
+									className="h-8 gap-1.5 px-3 font-medium shrink-0"
 									onClick={handleProceed}
 									disabled={isProceeding}
 								>
 									{isProceeding ? (
-										<span>Proceeding...</span>
+										<span>{tAgency.proceedingButton || "Proceeding..."}</span>
 									) : (
 										<>
 											<span>{tAgency.approveAndProceed}</span>
