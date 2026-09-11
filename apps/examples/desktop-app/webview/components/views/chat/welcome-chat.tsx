@@ -9,6 +9,7 @@ import {
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AgendaTaskReviewDialog } from "@/components/agenda-task-review-dialog";
+import { LensLogo } from "@/components/cline-logo";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { isAgendaTaskExpired, useAgendaTasks } from "@/hooks/use-agenda-tasks";
 import { AGENDA_UI_ENABLED } from "@/lib/feature-flags";
@@ -133,8 +134,20 @@ export function WelcomeScreen({
 				>
 					{active ? (
 						<div className="cline-view-enter">
-							<h1 className="sr-only">What would you like to build?</h1>
-							<AgentWelcomeHero />
+							<div className="relative flex items-center justify-center">
+								<AgentWelcomeHero variant="grid-only" />
+								<div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center select-none text-center">
+									<div className="flex items-center justify-center rounded-2xl border border-primary/20 bg-card/80 p-3.5 shadow-2xl backdrop-blur-md">
+										<LensLogo className="size-14 text-primary" />
+									</div>
+									<h1 className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+										LENS Workstation
+									</h1>
+									<p className="mt-1 text-sm font-medium text-muted-foreground">
+										Research, in focus.
+									</p>
+								</div>
+							</div>
 
 							<div className="mt-11 flex min-w-0 items-center">
 								<WelcomeWorkspaceControls
