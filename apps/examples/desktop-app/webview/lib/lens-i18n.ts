@@ -133,6 +133,39 @@ export interface LensTranslations {
 		readonly expand: string;
 		readonly collapse: string;
 	};
+	readonly ultraAgency: {
+		readonly badge: string;
+		readonly subtitle: string;
+		readonly squadBarTitle: string;
+		readonly collaborationFeedTitle: string;
+		readonly checkpoint1Title: string;
+		readonly checkpoint1Desc: string;
+		readonly checkpoint2Title: string;
+		readonly checkpoint2Desc: string;
+		readonly approveAndProceed: string;
+		readonly addFeedback: string;
+		readonly sendFeedback: string;
+		readonly feedbackPlaceholder: string;
+		readonly feedbackSent: string;
+		readonly statusActive: string;
+		readonly statusConsulting: string;
+		readonly statusWaiting: string;
+		readonly statusDone: string;
+		readonly configureSquad: string;
+		readonly presetCore: string;
+		readonly presetFull: string;
+		readonly presetRapid: string;
+		readonly checkpointGates: string;
+		readonly checkpointGatesDesc: string;
+		readonly tabOrion: string;
+		readonly tabLyra: string;
+		readonly tabAthena: string;
+		readonly tabAtlas: string;
+		readonly tabVector: string;
+		readonly tabCipher: string;
+		readonly tabSentinel: string;
+		readonly tabEcho: string;
+	};
 }
 
 export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
@@ -280,6 +313,43 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			errorTracebacksTitle: "Captured Error Tracebacks",
 			footerPhase: "Ultra Mode • SOP Phase:",
 		},
+		ultraAgency: {
+			badge: "Ultra Mode Agency",
+			subtitle: "Multi-Agent Software Engineering Squad (Atoms.dev Evolution)",
+			squadBarTitle: "Active Squad Lineup",
+			collaborationFeedTitle: "Team Collaboration & Handoffs",
+			checkpoint1Title: "Checkpoint 1: Strategy & Blueprint Gate",
+			checkpoint1Desc:
+				"Orion has paused execution. Review Athena's PRD and Atlas's Architecture before code generation.",
+			checkpoint2Title: "Checkpoint 2: Pre-Ship Verification Gate",
+			checkpoint2Desc:
+				"Cipher has implemented the code and Sentinel has completed automated test verification.",
+			approveAndProceed: "Approve & Proceed",
+			addFeedback: "Add Guidance / Adjustments",
+			sendFeedback: "Send Guidance",
+			feedbackPlaceholder:
+				"Instruct Orion or any specialist (e.g. 'Adjust auth to Supabase')...",
+			feedbackSent: "Guidance sent to squad",
+			statusActive: "Active: Writing...",
+			statusConsulting: "Consulting",
+			statusWaiting: "Waiting",
+			statusDone: "Completed",
+			configureSquad: "Configure Squad",
+			presetCore: "Core Software Squad",
+			presetFull: "Full Product Agency",
+			presetRapid: "Rapid Prototyper",
+			checkpointGates: "Interactive Checkpoint Gates",
+			checkpointGatesDesc:
+				"Orion pauses at Checkpoints 1 & 2 for human direction",
+			tabOrion: "Orion (Strategy & Tasks)",
+			tabLyra: "Lyra (Research)",
+			tabAthena: "Athena (PRD)",
+			tabAtlas: "Atlas (Architecture)",
+			tabVector: "Vector (Data Schema)",
+			tabCipher: "Cipher (Code)",
+			tabSentinel: "Sentinel (QA & Verification)",
+			tabEcho: "Echo (Docs)",
+		},
 	},
 	ar: {
 		brand: {
@@ -424,6 +494,41 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 				"ملفات التنفيذ البرمجي الملتزمة بواجهات المعمار وقائمة المهام:",
 			errorTracebacksTitle: "سجلات أخطاء التنفيذ الملتقطة",
 			footerPhase: "الوضع المتطور • مرحلة إجراءات التشغيل القياسية:",
+		},
+		ultraAgency: {
+			badge: "وكالة الوضع المتطور",
+			subtitle: "فريق هندسة برمجيات متعدد الوكلاء (تطور Atoms.dev)",
+			squadBarTitle: "طاقم الفريق النشط",
+			collaborationFeedTitle: "سجل التشاور والتسليم المتبادل",
+			checkpoint1Title: "المحطة 1: بوابة مراجعة التخطيط والمعمارية",
+			checkpoint1Desc:
+				"أوقف Orion التنفيذ لمراجعة وثيقة PRD والمخطط المعماري قبل بدء كتابة الكود.",
+			checkpoint2Title: "المحطة 2: بوابة مراجعة الجودة قبل الشحن",
+			checkpoint2Desc:
+				"أكمل Cipher كتابة الكود وأنجز Sentinel كافة الاختبارات المؤتمتة بنجاح.",
+			approveAndProceed: "موافقة ومتابعة",
+			addFeedback: "إضافة توجيهات / تعديلات",
+			sendFeedback: "إرسال التوجيهات",
+			feedbackPlaceholder: "وجه Orion أو أي متخصص بتعديل مطلوب...",
+			feedbackSent: "تم إرسال التوجيهات للفريق",
+			statusActive: "نشط: يكتب...",
+			statusConsulting: "يتشاور",
+			statusWaiting: "ينتظر",
+			statusDone: "مكتمل",
+			configureSquad: "تخصيص الفريق",
+			presetCore: "فريق البرمجيات الأساسي",
+			presetFull: "وكالة المنتج المتكاملة",
+			presetRapid: "فريق النماذج الأولية السريع",
+			checkpointGates: "بوابات الموافقة التفاعلية",
+			checkpointGatesDesc: "يتوقف Orion عند المحطتين 1 و 2 لأخذ توجيه المستخدم",
+			tabOrion: "Orion (الاستراتيجية والمهام)",
+			tabLyra: "Lyra (الأبحاث)",
+			tabAthena: "Athena (المتطلبات PRD)",
+			tabAtlas: "Atlas (المعمارية)",
+			tabVector: "Vector (قواعد البيانات)",
+			tabCipher: "Cipher (الكود)",
+			tabSentinel: "Sentinel (الجودة والتحقق)",
+			tabEcho: "Echo (التوثيق)",
 		},
 	},
 };

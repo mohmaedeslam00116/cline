@@ -35,3 +35,23 @@ _Avoid_: evidence summary, digest
 **On-Demand Claim Detail**:
 The read-only retrieval of a single claim's full excerpt (`get_evidence_detail(claimId)`) during a coding turn, keeping context stratified.
 _Avoid_: evidence dump, full-context injection
+
+**Ultra Mode**:
+The autonomous multi-agent software engineering agency mode within LENS Workstation, executing structured SOP assembly lines with named specialist personas.
+_Avoid_: super mode, dev mode
+
+**Persona Studio**:
+The workstation configuration environment for creating, editing, testing, and managing specialized AI agent personas.
+_Avoid_: bot creator, prompt manager
+
+**Specialist Persona**:
+A named, role-specific agent identity (e.g. Orion, Athena, Atlas, Cipher, Sentinel) with a distinct system prompt, avatar, domain responsibilities, and tool privileges.
+_Avoid_: character, sub-prompt
+
+**Squad**:
+A configured group of specialist personas selected to collaborate on an Ultra Mode mission, coordinated by a Team Leader.
+_Avoid_: agent swarm, crew
+
+**Checkpoint Gate**:
+A human-in-the-loop review point orchestrated by the Team Leader where execution pauses for user validation before advancing to the next engineering milestone.
+_Avoid_: breakpoint, prompt stop

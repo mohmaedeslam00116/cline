@@ -23,6 +23,7 @@ import {
 	SpeechInput,
 	type SpeechTranscriptionSource,
 } from "@/components/ai-elements/speech-input";
+import { SquadConfigPopover } from "./squad-config-popover";
 import { Button } from "@/components/ui/button";
 import {
 	Popover,
@@ -331,96 +332,101 @@ export const ModeSwitcher = memo(function ModeSwitcher({
 	);
 
 	return (
-		<div
-			aria-label={t.modeGroupLabel}
-			className="inline-flex shrink-0 items-center rounded-md bg-muted/70 p-0.5 border border-border/50 text-xs shadow-2xs"
-			onKeyDown={handleKeyDown}
-			role="radiogroup"
-		>
-			{/* biome-ignore lint/a11y/useSemanticElements: the mode switcher is a styled radiogroup of buttons; aria-checked + role convey the semantics. */}
-			<button
-				aria-checked={mode === "act"}
-				aria-label={t.actTitle}
-				className={cn(
-					"inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-					mode === "act"
-						? "bg-background text-foreground shadow-2xs font-semibold"
-						: "text-muted-foreground hover:text-foreground",
-				)}
-				data-mode="act"
-				disabled={disabled}
-				onClick={() => onModeChange("act")}
-				role="radio"
-				tabIndex={mode === "act" ? 0 : -1}
-				title={t.actDesc}
-				type="button"
+		<div className="inline-flex items-center gap-1.5 shrink-0">
+			<div
+				aria-label={t.modeGroupLabel}
+				className="inline-flex shrink-0 items-center rounded-md bg-muted/70 p-0.5 border border-border/50 text-xs shadow-2xs"
+				onKeyDown={handleKeyDown}
+				role="radiogroup"
 			>
-				<Code2 className="size-3.5" />
-				<span className="max-[560px]:sr-only">{t.actName}</span>
-			</button>
-			{/* biome-ignore lint/a11y/useSemanticElements: the mode switcher is a styled radiogroup of buttons; aria-checked + role convey the semantics. */}
-			<button
-				aria-checked={mode === "plan"}
-				aria-label={t.planTitle}
-				className={cn(
-					"inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-					mode === "plan"
-						? "bg-background text-primary shadow-2xs font-semibold"
-						: "text-muted-foreground hover:text-foreground",
-				)}
-				data-mode="plan"
-				disabled={disabled}
-				onClick={() => onModeChange("plan")}
-				role="radio"
-				tabIndex={mode === "plan" ? 0 : -1}
-				title={t.planDesc}
-				type="button"
-			>
-				<Compass className="size-3.5" />
-				<span className="max-[560px]:sr-only">{t.planName}</span>
-			</button>
-			{/* biome-ignore lint/a11y/useSemanticElements: the mode switcher is a styled radiogroup of buttons; aria-checked + role convey the semantics. */}
-			<button
-				aria-checked={mode === "yolo"}
-				aria-label={t.yoloTitle}
-				className={cn(
-					"inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-					mode === "yolo"
-						? "bg-background text-foreground shadow-2xs font-semibold"
-						: "text-muted-foreground hover:text-foreground",
-				)}
-				data-mode="yolo"
-				disabled={disabled}
-				onClick={() => onModeChange("yolo")}
-				role="radio"
-				tabIndex={mode === "yolo" ? 0 : -1}
-				title={t.yoloDesc}
-				type="button"
-			>
-				<Zap className="size-3.5" />
-				<span className="max-[560px]:sr-only">{t.yoloName}</span>
-			</button>
-			{/* biome-ignore lint/a11y/useSemanticElements: the mode switcher is a styled radiogroup of buttons; aria-checked + role convey the semantics. */}
-			<button
-				aria-checked={mode === "ultra"}
-				aria-label={t.ultraTitle}
-				className={cn(
-					"inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-					mode === "ultra"
-						? "bg-background text-indigo-500 shadow-2xs font-semibold"
-						: "text-muted-foreground hover:text-foreground",
-				)}
-				data-mode="ultra"
-				disabled={disabled}
-				onClick={() => onModeChange("ultra")}
-				role="radio"
-				tabIndex={mode === "ultra" ? 0 : -1}
-				title={t.ultraDesc}
-				type="button"
-			>
-				<Workflow className="size-3.5" />
-				<span className="max-[560px]:sr-only">{t.ultraName}</span>
-			</button>
+				{/* biome-ignore lint/a11y/useSemanticElements: the mode switcher is a styled radiogroup of buttons; aria-checked + role convey the semantics. */}
+				<button
+					aria-checked={mode === "act"}
+					aria-label={t.actTitle}
+					className={cn(
+						"inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+						mode === "act"
+							? "bg-background text-foreground shadow-2xs font-semibold"
+							: "text-muted-foreground hover:text-foreground",
+					)}
+					data-mode="act"
+					disabled={disabled}
+					onClick={() => onModeChange("act")}
+					role="radio"
+					tabIndex={mode === "act" ? 0 : -1}
+					title={t.actDesc}
+					type="button"
+				>
+					<Code2 className="size-3.5" />
+					<span className="max-[560px]:sr-only">{t.actName}</span>
+				</button>
+				{/* biome-ignore lint/a11y/useSemanticElements: the mode switcher is a styled radiogroup of buttons; aria-checked + role convey the semantics. */}
+				<button
+					aria-checked={mode === "plan"}
+					aria-label={t.planTitle}
+					className={cn(
+						"inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+						mode === "plan"
+							? "bg-background text-primary shadow-2xs font-semibold"
+							: "text-muted-foreground hover:text-foreground",
+					)}
+					data-mode="plan"
+					disabled={disabled}
+					onClick={() => onModeChange("plan")}
+					role="radio"
+					tabIndex={mode === "plan" ? 0 : -1}
+					title={t.planDesc}
+					type="button"
+				>
+					<Compass className="size-3.5" />
+					<span className="max-[560px]:sr-only">{t.planName}</span>
+				</button>
+				{/* biome-ignore lint/a11y/useSemanticElements: the mode switcher is a styled radiogroup of buttons; aria-checked + role convey the semantics. */}
+				<button
+					aria-checked={mode === "yolo"}
+					aria-label={t.yoloTitle}
+					className={cn(
+						"inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+						mode === "yolo"
+							? "bg-background text-foreground shadow-2xs font-semibold"
+							: "text-muted-foreground hover:text-foreground",
+					)}
+					data-mode="yolo"
+					disabled={disabled}
+					onClick={() => onModeChange("yolo")}
+					role="radio"
+					tabIndex={mode === "yolo" ? 0 : -1}
+					title={t.yoloDesc}
+					type="button"
+				>
+					<Zap className="size-3.5" />
+					<span className="max-[560px]:sr-only">{t.yoloName}</span>
+				</button>
+				{/* biome-ignore lint/a11y/useSemanticElements: the mode switcher is a styled radiogroup of buttons; aria-checked + role convey the semantics. */}
+				<button
+					aria-checked={mode === "ultra"}
+					aria-label={t.ultraTitle}
+					className={cn(
+						"inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+						mode === "ultra"
+							? "bg-background text-indigo-500 shadow-2xs font-semibold"
+							: "text-muted-foreground hover:text-foreground",
+					)}
+					data-mode="ultra"
+					disabled={disabled}
+					onClick={() => onModeChange("ultra")}
+					role="radio"
+					tabIndex={mode === "ultra" ? 0 : -1}
+					title={t.ultraDesc}
+					type="button"
+				>
+					<Workflow className="size-3.5" />
+					<span className="max-[560px]:sr-only">{t.ultraName}</span>
+				</button>
+			</div>
+			{mode === "ultra" && !disabled && (
+				<SquadConfigPopover />
+			)}
 		</div>
 	);
 });

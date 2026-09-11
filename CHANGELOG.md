@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- **Ultra Mode Agency Framework (Atoms.dev Evolution)**: Evolved Ultra Mode from a sequential pipeline into a synchronized multi-agent software engineering agency powered by 8 named specialist personas (Orion, Lyra, Athena, Atlas, Vector, Cipher, Sentinel, Echo).
+- **Sub-Agent Cognitive Isolation**: Each specialist persona operates with dedicated cognitive instructions and specialized system prompts to eliminate context pollution while sharing deliverables through a synchronized message pool.
+- **Dynamic Inter-Agent Consultation & Handoffs**: Structured message logging between agents (`[AgentA -> AgentB]`) streamed directly into the interactive collaboration feed.
+- **The 2 Golden Checkpoint Gates**: Human-in-the-loop review points orchestrated by Orion (Checkpoint 1: Strategy & Blueprint Gate, Checkpoint 2: Pre-Ship Verification Gate) with interactive "Approve & Proceed" and "Add Guidance" action controls.
+- **Squad Configurator & Presets**: In-chat popover attached to the Ultra Mode selector with 3 curated presets (Core Software Squad, Full Product Agency, Rapid Prototyper) and individual specialist toggles.
+- **Agency Collaboration Board**: Interactive webview board featuring a Squad Lineup bar with glowing active states, live collaboration feed, and specialist deliverable tabs.
+
 ## [4.1.17]
 
 Everything here lands through the SDK bundle, so it applies to windows running that bundle.

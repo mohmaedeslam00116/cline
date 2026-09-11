@@ -153,4 +153,57 @@ describe("ultra-pipeline-parser", () => {
 		expect(parseUltraPipeline("Hello, how can I help you today?")).toBeNull();
 		expect(parseUltraPipeline("")).toBeNull();
 	});
+
+	it("parses inter-agent collaboration feed entries", () => {
+		const textWithFeed = `
+[Orion -> Athena]: Requirements ingested. Draft the PRD focusing on P0 items.
+[Atlas -> Athena]: System design proposes Supabase; confirm auth scope.
+[Orion -> Cipher]: Blueprint approved by human director. Implement core files.
+${SAMPLE_METAGPT_OUTPUT}
+`;
+		const pipeline = parseUltraPipeline(textWithFeed);
+		expect(pipeline).not.toBeNull();
+		expect(pipeline?.collaborationFeed).toHaveLength(3);
+		expect(pipeline?.collaborationFeed[0]).toEqual({
+			from: "Orion",
+			to: "Athena",
+			message: "Requirements ingested. Draft the PRD focusing on P0 items.",
+		});
+		expect(pipeline?.collaborationFeed[1].from).toBe("Atlas");
+		expect(pipeline?.collaborationFeed[2].to).toBe("Cipher");
+	});
+
+	it("parses Checkpoint 1 and Checkpoint 2 gates awaiting approval", () => {
+		const textWithCp1 = `${SAMPLE_METAGPT_OUTPUT}\n### CHECKPOINT 1: STRATEGY & BLUEPRINT AWAITING APPROVAL\n`;
+		const pipeline1 = parseUltraPipeline(textWithCp1);
+		expect(pipeline1?.checkpointStatus).toBeDefined();
+		expect(pipeline1?.checkpointStatus?.gate).toBe(1);
+		expect(pipeline1?.checkpointStatus?.isAwaitingApproval).toBe(true);
+
+		const textWithCp2 = `${SAMPLE_METAGPT_OUTPUT}\n### CHECKPOINT 2: PRE-SHIP VERIFICATION COMPLETE\n`;
+		const pipeline2 = parseUltraPipeline(textWithCp2);
+		expect(pipeline2?.checkpointStatus).toBeDefined();
+		expect(pipeline2?.checkpointStatus?.gate).toBe(2);
+		expect(pipeline2?.checkpointStatus?.isAwaitingApproval).toBe(true);
+	});
+
+	it("parses specialist deliverables for Lyra and Vector", () => {
+		const textWithSpecialists = `
+## Lyra: Technical Research
+### Research Findings
+Benchmarked Prisma vs Drizzle for SQLite; selected Drizzle for zero overhead.
+
+## Vector: Data Schemas
+### Database Schema
+CREATE TABLE users (id TEXT PRIMARY KEY, email TEXT NOT NULL);
+
+${SAMPLE_METAGPT_OUTPUT}
+`;
+		const pipeline = parseUltraPipeline(textWithSpecialists);
+		expect(pipeline).not.toBeNull();
+		expect(pipeline?.lyra).toBeDefined();
+		expect(pipeline?.lyra?.findings).toContain("Benchmarked Prisma vs Drizzle");
+		expect(pipeline?.vector).toBeDefined();
+		expect(pipeline?.vector?.schemas).toContain("CREATE TABLE users");
+	});
 });
