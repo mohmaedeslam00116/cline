@@ -1,9 +1,9 @@
 export const MODE_SELECTION_STORAGE_KEY = "cline.code.mode-selection.v1";
 
-export type DesktopMode = "act" | "plan" | "yolo";
+export type DesktopMode = "act" | "plan" | "yolo" | "ultra";
 
 export function parseModeSelection(raw: string | null): DesktopMode {
-	if (raw === "plan" || raw === "yolo" || raw === "act") {
+	if (raw === "plan" || raw === "yolo" || raw === "act" || raw === "ultra") {
 		return raw;
 	}
 	return "act";

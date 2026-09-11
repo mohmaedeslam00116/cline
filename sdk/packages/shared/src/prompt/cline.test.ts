@@ -5,6 +5,7 @@ import {
 	PLAN_MODE_INSTRUCTIONS,
 	PLAN_MODE_INSTRUCTIONS_MANUAL_SWITCH,
 	processWorkspaceInfo,
+	ULTRA_MODE_INSTRUCTIONS,
 } from "./cline";
 
 const BASE_OPTIONS = {
@@ -128,5 +129,24 @@ describe("buildClineSystemPrompt mode instructions", () => {
 			overridePrompt: "You are a custom agent.",
 		});
 		expect(prompt).toBe("You are a custom agent.");
+	});
+
+	it("injects MetaGPT SOP instructions when mode is ultra", () => {
+		const prompt = buildClineSystemPrompt({
+			...BASE_OPTIONS,
+			mode: "ultra",
+		});
+		expect(prompt).toContain(ULTRA_MODE_INSTRUCTIONS);
+		expect(prompt).toContain("Product Manager (PRD Generation)");
+		expect(prompt).toContain("Architect (System Design & Interface Contracts)");
+		expect(prompt).toContain("Project Manager (Tasks Breakdown & DAG)");
+		expect(prompt).toContain("Engineer (Iterative Implementation)");
+		expect(prompt).toContain(
+			"QA Engineer (Executable Feedback & Self-Correction)",
+		);
+		expect(prompt).toContain("Mermaid classDiagram");
+		expect(prompt).toContain("Mermaid sequenceDiagram");
+		expect(prompt).toContain("Requirement Pool");
+		expect(prompt).toContain("up to 3 retries");
 	});
 });

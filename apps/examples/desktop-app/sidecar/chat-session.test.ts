@@ -44,6 +44,7 @@ describe("resolveDesktopSessionMode", () => {
 	it("preserves explicit Plan and Yolo modes", () => {
 		expect(resolveDesktopSessionMode({ mode: "plan" })).toBe("plan");
 		expect(resolveDesktopSessionMode({ mode: "yolo" })).toBe("yolo");
+		expect(resolveDesktopSessionMode({ mode: "ultra" })).toBe("ultra");
 	});
 });
 

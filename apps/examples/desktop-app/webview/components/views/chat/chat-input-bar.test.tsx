@@ -2249,7 +2249,7 @@ describe("ChatInputBar token ring", () => {
 });
 
 describe("ModeSwitcher component", () => {
-	it("renders all three modes with correct aria-checked and roving tabIndex", async () => {
+	it("renders all four modes with correct aria-checked and roving tabIndex", async () => {
 		await act(async () => {
 			root.render(<ModeSwitcher mode="plan" onModeChange={vi.fn()} />);
 		});
@@ -2267,14 +2267,19 @@ describe("ModeSwitcher component", () => {
 		const yoloBtn = container.querySelector(
 			'button[aria-label="Autonomous (YOLO)"]',
 		);
+		const ultraBtn = container.querySelector(
+			'button[aria-label="Ultra (MetaGPT Multi-Agent Pipeline)"]',
+		);
 
 		expect(actBtn?.getAttribute("aria-checked")).toBe("false");
 		expect(planBtn?.getAttribute("aria-checked")).toBe("true");
 		expect(yoloBtn?.getAttribute("aria-checked")).toBe("false");
+		expect(ultraBtn?.getAttribute("aria-checked")).toBe("false");
 
 		expect(actBtn?.getAttribute("tabindex")).toBe("-1");
 		expect(planBtn?.getAttribute("tabindex")).toBe("0");
 		expect(yoloBtn?.getAttribute("tabindex")).toBe("-1");
+		expect(ultraBtn?.getAttribute("tabindex")).toBe("-1");
 	});
 
 	it("uses monochrome neutral styling for YOLO mode", async () => {
@@ -2306,13 +2311,13 @@ describe("ModeSwitcher component", () => {
 		});
 		expect(onModeChange).toHaveBeenCalledWith("plan");
 
-		// ArrowLeft from act -> yolo (wraparound)
+		// ArrowLeft from act -> ultra (wraparound)
 		await act(async () => {
 			radiogroup?.dispatchEvent(
 				new KeyboardEvent("keydown", { bubbles: true, key: "ArrowLeft" }),
 			);
 		});
-		expect(onModeChange).toHaveBeenCalledWith("yolo");
+		expect(onModeChange).toHaveBeenCalledWith("ultra");
 	});
 
 	it("invokes onModeChange when clicking mode buttons", async () => {
@@ -2327,6 +2332,9 @@ describe("ModeSwitcher component", () => {
 		const yoloBtn = container.querySelector(
 			'button[aria-label="Autonomous (YOLO)"]',
 		) as HTMLButtonElement;
+		const ultraBtn = container.querySelector(
+			'button[aria-label="Ultra (MetaGPT Multi-Agent Pipeline)"]',
+		) as HTMLButtonElement;
 
 		await act(async () => {
 			planBtn.click();
@@ -2337,6 +2345,11 @@ describe("ModeSwitcher component", () => {
 			yoloBtn.click();
 		});
 		expect(onModeChange).toHaveBeenCalledWith("yolo");
+
+		await act(async () => {
+			ultraBtn.click();
+		});
+		expect(onModeChange).toHaveBeenCalledWith("ultra");
 	});
 
 	it("disables all mode buttons when disabled prop is true", async () => {
@@ -2349,7 +2362,7 @@ describe("ModeSwitcher component", () => {
 
 		const buttons =
 			container.querySelectorAll<HTMLButtonElement>('[role="radio"]');
-		expect(buttons.length).toBe(3);
+		expect(buttons.length).toBe(4);
 		for (const btn of buttons) {
 			expect(btn.disabled).toBe(true);
 		}

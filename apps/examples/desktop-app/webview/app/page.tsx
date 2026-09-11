@@ -1371,7 +1371,7 @@ function ChatThreadPane({
 		[setConfig],
 	);
 	const handleModeChange = useCallback(
-		(nextMode: "act" | "plan" | "yolo") => {
+		(nextMode: "act" | "plan" | "yolo" | "ultra") => {
 			writeModeSelectionToWindow(nextMode);
 			setConfig((prev) =>
 				prev.mode === nextMode ? prev : { ...prev, mode: nextMode },
@@ -1391,14 +1391,18 @@ function ChatThreadPane({
 	const handleModeToggle = useCallback(
 		() =>
 			setConfig((prev) => {
-				const cycle: Record<"act" | "plan" | "yolo", "act" | "plan" | "yolo"> =
-					{
-						act: "plan",
-						plan: "yolo",
-						yolo: "act",
-					};
+				const cycle: Record<
+					"act" | "plan" | "yolo" | "ultra",
+					"act" | "plan" | "yolo" | "ultra"
+				> = {
+					act: "plan",
+					plan: "yolo",
+					yolo: "ultra",
+					ultra: "act",
+				};
 				const nextMode =
-					cycle[(prev.mode as "act" | "plan" | "yolo") ?? "act"] ?? "act";
+					cycle[(prev.mode as "act" | "plan" | "yolo" | "ultra") ?? "act"] ??
+					"act";
 				writeModeSelectionToWindow(nextMode);
 				return {
 					...prev,

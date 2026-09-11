@@ -85,7 +85,9 @@ type ChatMessagesProps = {
 		toolCallId?: string,
 	) => void | Promise<void>;
 	onApprovePlan?: (planMarkdown: string) => void | Promise<void>;
-	onModeChange?: (mode: "act" | "plan" | "yolo") => void | Promise<void>;
+	onModeChange?: (
+		mode: "act" | "plan" | "yolo" | "ultra",
+	) => void | Promise<void>;
 };
 
 type AskQuestionRequestItem = {
