@@ -9,28 +9,24 @@ import {
 import path from "node:path";
 import { $ } from "bun";
 
-type DesktopPlatform = "mac" | "windows" | "linux";
+export type DesktopPlatform = "mac" | "windows" | "linux";
 
-const BOOLEAN_FLAGS = new Set(["--allow-unsigned-mac", "--skip-build"]);
-const VALUE_FLAGS = new Set(["--platform", "--target"]);
-const VALID_FLAGS = [...BOOLEAN_FLAGS, ...VALUE_FLAGS];
+export const BOOLEAN_FLAGS = new Set(["--allow-unsigned-mac", "--skip-build"]);
+export const VALUE_FLAGS = new Set(["--platform", "--target"]);
+export const VALID_FLAGS = [...BOOLEAN_FLAGS, ...VALUE_FLAGS];
 
-const APP_NAME = "LENS Workstation";
-const APP_ROOT = path.resolve(import.meta.dir, "..");
-const BUNDLE_ROOT = path.join(
+export const APP_NAME = "LENS Workstation";
+export const APP_ROOT = path.resolve(import.meta.dir, "..");
+export const BUNDLE_ROOT = path.join(
 	APP_ROOT,
 	"src-tauri",
 	"target",
 	"release",
 	"bundle",
 );
-const PACKAGE_ROOT = path.join(APP_ROOT, "dist", "desktop");
+export const PACKAGE_ROOT = path.join(APP_ROOT, "dist", "desktop");
 
-process.chdir(APP_ROOT);
-
-const validateArgs = (): void => {
-	const args = process.argv.slice(2);
-
+export const validateArgs = (args: string[] = process.argv.slice(2)): void => {
 	for (let index = 0; index < args.length; index++) {
 		const arg = args[index];
 		if (BOOLEAN_FLAGS.has(arg)) {
@@ -63,24 +59,28 @@ const validateArgs = (): void => {
 	}
 };
 
-const getArgValue = (name: string): string | undefined => {
+export const getArgValue = (
+	name: string,
+	args: string[] = process.argv,
+): string | undefined => {
 	const prefix = `${name}=`;
-	const inline = process.argv.find((arg) => arg.startsWith(prefix));
+	const inline = args.find((arg) => arg.startsWith(prefix));
 	if (inline) {
 		return inline.slice(prefix.length);
 	}
 
-	const index = process.argv.indexOf(name);
+	const index = args.indexOf(name);
 	if (index >= 0) {
-		return process.argv[index + 1];
+		return args[index + 1];
 	}
 
 	return undefined;
 };
 
-const hasArg = (name: string): boolean => process.argv.includes(name);
+export const hasArg = (name: string, args: string[] = process.argv): boolean =>
+	args.includes(name);
 
-const hostPlatform = (): DesktopPlatform => {
+export const hostPlatform = (): DesktopPlatform => {
 	if (process.platform === "darwin") {
 		return "mac";
 	}
@@ -93,9 +93,13 @@ const hostPlatform = (): DesktopPlatform => {
 	throw new Error(`unsupported desktop packaging host: ${process.platform}`);
 };
 
-const resolveRequestedPlatform = (): DesktopPlatform => {
+export const resolveRequestedPlatform = (
+	args: string[] = process.argv,
+): DesktopPlatform => {
 	const platform =
-		getArgValue("--platform") ?? getArgValue("--target") ?? "current";
+		getArgValue("--platform", args) ??
+		getArgValue("--target", args) ??
+		"current";
 	if (platform === "current") {
 		return hostPlatform();
 	}
@@ -107,10 +111,10 @@ const resolveRequestedPlatform = (): DesktopPlatform => {
 	);
 };
 
-const sanitizeName = (value: string): string =>
+export const sanitizeName = (value: string): string =>
 	value.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-|-$/g, "");
 
-const packageVersion = async (): Promise<string> => {
+export const packageVersion = async (): Promise<string> => {
 	const packageJson = await Bun.file(
 		path.join(APP_ROOT, "package.json"),
 	).json();
@@ -166,7 +170,7 @@ const assertMacDistributionReady = (allowUnsignedMac: boolean): void => {
 	);
 };
 
-const walkFiles = (root: string): string[] => {
+export const walkFiles = (root: string): string[] => {
 	if (!existsSync(root)) {
 		return [];
 	}
@@ -184,8 +188,12 @@ const walkFiles = (root: string): string[] => {
 	return paths;
 };
 
-const copyArtifact = (source: string, outputName: string): string => {
-	const destination = path.join(PACKAGE_ROOT, outputName);
+export const copyArtifact = (
+	source: string,
+	outputName: string,
+	packageRoot: string = PACKAGE_ROOT,
+): string => {
+	const destination = path.join(packageRoot, outputName);
 	rmSync(destination, { force: true, recursive: true });
 	cpSync(source, destination, { recursive: true });
 	return destination;
@@ -243,22 +251,28 @@ const collectMacArtifacts = async (
 	return artifacts;
 };
 
-const collectWindowsArtifacts = (): string[] =>
-	walkFiles(BUNDLE_ROOT)
+export const collectWindowsArtifacts = (
+	bundleRoot: string = BUNDLE_ROOT,
+	packageRoot: string = PACKAGE_ROOT,
+): string[] =>
+	walkFiles(bundleRoot)
 		.filter((file) => file.endsWith(".msi") || file.endsWith(".exe"))
-		.map((file) => copyArtifact(file, path.basename(file)));
+		.map((file) => copyArtifact(file, path.basename(file), packageRoot));
 
-const collectLinuxArtifacts = (): string[] =>
-	walkFiles(BUNDLE_ROOT)
+export const collectLinuxArtifacts = (
+	bundleRoot: string = BUNDLE_ROOT,
+	packageRoot: string = PACKAGE_ROOT,
+): string[] =>
+	walkFiles(bundleRoot)
 		.filter(
 			(file) =>
 				file.endsWith(".AppImage") ||
 				file.endsWith(".deb") ||
 				file.endsWith(".rpm"),
 		)
-		.map((file) => copyArtifact(file, path.basename(file)));
+		.map((file) => copyArtifact(file, path.basename(file), packageRoot));
 
-const collectArtifacts = async (
+export const collectArtifacts = async (
 	platform: DesktopPlatform,
 	allowUnsignedMac: boolean,
 ): Promise<string[]> => {
@@ -275,7 +289,7 @@ const collectArtifacts = async (
 	return collectLinuxArtifacts();
 };
 
-const main = async () => {
+export const main = async () => {
 	validateArgs();
 
 	const platform = resolveRequestedPlatform();
@@ -305,7 +319,10 @@ const main = async () => {
 	}
 };
 
-main().catch((error: unknown) => {
-	console.error(error instanceof Error ? error.message : error);
-	process.exitCode = 1;
-});
+if (import.meta.main) {
+	process.chdir(APP_ROOT);
+	main().catch((error: unknown) => {
+		console.error(error instanceof Error ? error.message : error);
+		process.exitCode = 1;
+	});
+}
