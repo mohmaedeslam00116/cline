@@ -577,7 +577,7 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			agentsSuffix: "وكلاء",
 			deliverablesAriaLabel: "مخرجات المتخصصين",
 			researchTabLabel: "الأبحاث",
-			untrustedBadgeExact: "[أدلة خارجية - غير موثوقة]",
+			untrustedBadgeExact: "[External Evidence - Untrusted]",
 			qaStatusFailed: "فشل التحقق",
 			proceedingButton: "جارٍ المتابعة...",
 			tabOrion: "Orion (الاستراتيجية والمهام)",
