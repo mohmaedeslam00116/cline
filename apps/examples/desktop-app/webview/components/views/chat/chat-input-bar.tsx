@@ -8,12 +8,12 @@ import { AgentPromptQueue, SearchCombobox } from "@cline/ui";
 import {
 	ArrowUp,
 	Brain,
-	CircleCheck,
 	CircleStop,
 	Code2,
 	Compass,
 	Cpu,
 	Paperclip,
+	Plus,
 	Workflow,
 	X,
 	Zap,
@@ -49,6 +49,7 @@ import {
 	buildModelPickerData,
 	type ModelPickerData,
 } from "@/lib/featured-models";
+import { imageAttachmentMediaType } from "@/lib/image-attachments";
 import { getLensTranslations } from "@/lib/lens-i18n";
 import {
 	readModelSelectionStorageFromWindow,
@@ -59,7 +60,6 @@ import { normalizeProviderId } from "@/lib/provider-id";
 import {
 	loadProviderModelCatalog,
 	loadProviderModels,
-	subscribeToProviderCatalogInvalidation,
 	subscribeToProviderModels,
 	type TranscriptionModelTarget,
 	VOICE_INPUT_SETTINGS_CHANGED_EVENT,
@@ -466,7 +466,7 @@ type ChatInputBarProps = {
 		prompt: string,
 	) => Promise<void> | void;
 	onRemovePromptInQueue: (promptId: string) => Promise<void> | void;
-	onOpenVoiceInputSettings?: () => void;
+	onOpenModelSettings?: () => void;
 	summary: {
 		toolCalls: number;
 		tokensIn: number;
@@ -505,7 +505,7 @@ function ChatInputBarImpl({
 	onSteerPromptInQueue,
 	onEditPromptInQueue,
 	onRemovePromptInQueue,
-	onOpenVoiceInputSettings,
+	onOpenModelSettings,
 	summary,
 }: ChatInputBarProps) {
 	const {
@@ -608,6 +608,41 @@ function ChatInputBarImpl({
 		},
 		[model, provider],
 	);
+	const [imageCapability, setImageCapability] = useState<{
+		provider: string;
+		model: string;
+		supported: boolean | null;
+	} | null>(null);
+	const imagesUnsupported =
+		imageCapability?.provider === provider &&
+		imageCapability.model === model &&
+		imageCapability.supported === false;
+	const handleModelSupportsImagesChange = useCallback(
+		(supported: boolean | null) => {
+			setImageCapability({ provider, model, supported });
+		},
+		[provider, model],
+	);
+	const reportUnsupportedImages = useCallback(() => {
+		toast({
+			title: "This model doesn’t support image input",
+			description:
+				"Choose a model that supports images or remove the images before sending. Other files can still be attached.",
+		});
+	}, []);
+	const handleAttachFiles = useCallback(
+		(files: File[]) => {
+			const allowed = imagesUnsupported
+				? files.filter((file) => !imageAttachmentMediaType(file))
+				: files;
+			if (allowed.length !== files.length) reportUnsupportedImages();
+			if (allowed.length > 0) onAttachFiles(allowed);
+		},
+		[imagesUnsupported, onAttachFiles, reportUnsupportedImages],
+	);
+	const unsupportedDraftImageCount = imagesUnsupported
+		? attachments.filter((attachment) => attachment.isImage).length
+		: 0;
 	const canSend = hasDraft && !speechInputActive;
 	const handleModeSelect = useCallback(
 		(nextMode: "act" | "plan" | "yolo" | "ultra") => {
@@ -621,10 +656,29 @@ function ChatInputBarImpl({
 	);
 	const handleSend = useCallback(() => {
 		if (speechInputActive) return;
+		if (unsupportedDraftImageCount > 0) {
+			reportUnsupportedImages();
+			return;
+		}
 		const prompt = promptInput.trim();
+		if (!prompt) {
+			toast({
+				title: "Add a message to go with your attachments",
+				description:
+					"Describe what you want LENS to do with the attached files before sending.",
+			});
+			return;
+		}
 		setPromptInput("");
 		onSend(prompt);
-	}, [onSend, promptInput, setPromptInput, speechInputActive]);
+	}, [
+		onSend,
+		promptInput,
+		setPromptInput,
+		speechInputActive,
+		unsupportedDraftImageCount,
+		reportUnsupportedImages,
+	]);
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const [transcriptionTarget, setTranscriptionTarget] =
 		useState<TranscriptionModelTarget | null>(null);
@@ -920,38 +974,30 @@ function ChatInputBarImpl({
 		[transcriptionTarget],
 	);
 
-	const handleSpeechInputError = useCallback(
-		(error: unknown) => {
-			// Microphone failures surface as DOMExceptions (getUserMedia) or
-			// capture-layer events; provider failures (credentials, transcription
-			// setup) as plain Errors, and are fixed in Settings → Voice.
-			const isMicrophoneError =
-				error instanceof DOMException || error instanceof Event;
-			const message =
-				error instanceof Error
-					? error.message
-					: "Check microphone permission and audio provider settings.";
-			writeDesktopDebugLog({
-				scope: "voice-input",
-				level: "error",
-				message: "Speech input failed in the webview",
-				timestamp: new Date().toISOString(),
-				metadata: { failure: message },
-			});
-			if (!isMicrophoneError && onOpenVoiceInputSettings) {
-				onOpenVoiceInputSettings();
-				return;
-			}
-			toast({
-				variant: "destructive",
-				title: "Speech input failed",
-				description: isMicrophoneError
-					? "Check the microphone permission for Cline and try again."
-					: message,
-			});
-		},
-		[onOpenVoiceInputSettings],
-	);
+	const handleSpeechInputError = useCallback((error: unknown) => {
+		// Keep recording and provider failures in chat so the user can see
+		// the actual error and retry with their configured voice model.
+		const isMicrophoneError =
+			error instanceof DOMException || error instanceof Event;
+		const message =
+			error instanceof Error
+				? error.message
+				: "Check microphone permission and audio provider settings.";
+		writeDesktopDebugLog({
+			scope: "voice-input",
+			level: "error",
+			message: "Speech input failed in the webview",
+			timestamp: new Date().toISOString(),
+			metadata: { failure: message },
+		});
+		toast({
+			variant: "destructive",
+			title: "Speech input failed",
+			description: isMicrophoneError
+				? "Check the microphone permission for Cline and try again."
+				: message,
+		});
+	}, []);
 
 	const effortIndex = useMemo(
 		() => resolveEffortIndex(thinking, reasoningEffort),
@@ -1370,7 +1416,7 @@ function ChatInputBarImpl({
 									// Attach the image instead of pasting its fallback
 									// text representation (e.g. a file path or URL).
 									e.preventDefault();
-									onAttachFiles(images);
+									handleAttachFiles(images);
 								}
 							}}
 							onKeyDown={(e) => {
@@ -1558,6 +1604,12 @@ function ChatInputBarImpl({
 						</div>
 					</div>
 				</div>
+				{unsupportedDraftImageCount > 0 && (
+					<output className="block px-2 text-sm text-destructive">
+						This model doesn’t support the attached images. Remove them or
+						choose a model that supports images before sending.
+					</output>
+				)}
 				{attachments.length > 0 && (
 					<div className="mt-2 flex flex-wrap gap-1.5">
 						{attachments.map((attachment) => (
@@ -1585,6 +1637,11 @@ function ChatInputBarImpl({
 				<div className="flex min-w-0 flex-auto flex-wrap items-center gap-2 max-[560px]:flex-nowrap">
 					<button
 						aria-label="Attach files"
+						title={
+							imagesUnsupported
+								? "Attach files (this model doesn’t support images)"
+								: "Attach files"
+						}
 						className="rounded-md p-2 text-muted-foreground hover:bg-surface-hover"
 						onClick={() => fileInputRef.current?.click()}
 						type="button"
@@ -1597,7 +1654,7 @@ function ChatInputBarImpl({
 						multiple
 						onChange={(event) => {
 							const files = Array.from(event.target.files ?? []);
-							if (files.length > 0) onAttachFiles(files);
+							if (files.length > 0) handleAttachFiles(files);
 							event.currentTarget.value = "";
 						}}
 						ref={fileInputRef}
@@ -1613,9 +1670,11 @@ function ChatInputBarImpl({
 							isBusy={isBusy}
 							model={model}
 							onModelChange={onModelChange}
+							onModelSupportsImagesChange={handleModelSupportsImagesChange}
 							onModelSupportsReasoningChange={
 								handleModelSupportsReasoningChange
 							}
+							onOpenModelSettings={onOpenModelSettings}
 							onProviderChange={onProviderChange}
 							provider={provider}
 						/>
@@ -1690,6 +1749,9 @@ export const ChatInputBar = memo(ChatInputBarImpl);
 
 // Memoized: the selectors load/hold the full provider-model catalog, so they
 // should not re-render for every keystroke in the composer textarea.
+/** Sentinel provider-picker row that opens Settings → Models instead of selecting. */
+const ADD_PROVIDER_OPTION_VALUE = "__add-provider__";
+
 const ModelSelector = memo(function ModelSelector({
 	provider,
 	model,
@@ -1697,6 +1759,8 @@ const ModelSelector = memo(function ModelSelector({
 	onProviderChange,
 	onModelChange,
 	onModelSupportsReasoningChange,
+	onModelSupportsImagesChange,
+	onOpenModelSettings,
 }: {
 	provider: string;
 	model: string;
@@ -1704,6 +1768,9 @@ const ModelSelector = memo(function ModelSelector({
 	onProviderChange: (provider: string) => void;
 	onModelChange: (model: string) => void;
 	onModelSupportsReasoningChange: (supportsReasoning: boolean | null) => void;
+	onModelSupportsImagesChange: (supported: boolean | null) => void;
+	/** Opens Settings → Models; adds a "set up another provider" row when set. */
+	onOpenModelSettings?: () => void;
 }) {
 	const normalizedProvider = normalizeProviderId(provider);
 	const [providerModels, setProviderModels] = useState<
@@ -1716,9 +1783,6 @@ const ModelSelector = memo(function ModelSelector({
 		"loading" | "catalog" | "fallback"
 	>("loading");
 	const [enabledProviderIds, setEnabledProviderIds] = useState<string[]>([]);
-	const [configuredProviderIds, setConfiguredProviderIds] = useState<string[]>(
-		[],
-	);
 	const [providerNames, setProviderNames] = useState<Record<string, string>>(
 		{},
 	);
@@ -1774,6 +1838,17 @@ const ModelSelector = memo(function ModelSelector({
 		},
 		[modelDetails, visibleProviderModels],
 	);
+	useEffect(() => {
+		const selected = modelDetails[normalizedProvider]?.find(
+			(entry) => entry.id === model,
+		);
+		onModelSupportsImagesChange(
+			selected?.inputModalities !== undefined
+				? selected.inputModalities.includes("image")
+				: (selected?.supportsVision ?? null),
+		);
+	}, [modelDetails, normalizedProvider, model, onModelSupportsImagesChange]);
+
 	const modelPicker = useMemo(
 		() => pickerDataForProvider(resolvedProvider),
 		[pickerDataForProvider, resolvedProvider],
@@ -1882,7 +1957,6 @@ const ModelSelector = memo(function ModelSelector({
 					...(payload.providerModelDetails ?? {}),
 				}));
 				setReasoningCapabilitySource("catalog");
-				setConfiguredProviderIds(payload.configuredProviderIds);
 				setEnabledProviderIds((current) => {
 					const nextProviderIds = new Set(payload.enabledProviderIds);
 					if (normalizedProvider) {
@@ -1961,26 +2035,6 @@ const ModelSelector = memo(function ModelSelector({
 				current.includes(normalizedId) ? current : [...current, normalizedId],
 			);
 		});
-	}, []);
-
-	// Credentials saved or removed in settings (or OAuth completing) invalidate
-	// the shared catalog; refetch so the readiness indicators don't go stale
-	// while the composer stays mounted.
-	useEffect(() => {
-		let cancelled = false;
-		const unsubscribe = subscribeToProviderCatalogInvalidation(() => {
-			loadProviderModelCatalog()
-				.then((payload) => {
-					if (!cancelled) {
-						setConfiguredProviderIds(payload.configuredProviderIds);
-					}
-				})
-				.catch(() => {});
-		});
-		return () => {
-			cancelled = true;
-			unsubscribe();
-		};
 	}, []);
 
 	// The remembered selection (what new sessions default to) is only written
@@ -2072,6 +2126,11 @@ const ModelSelector = memo(function ModelSelector({
 
 	const handleProviderSelect = useCallback(
 		(value: string) => {
+			if (value === ADD_PROVIDER_OPTION_VALUE) {
+				setMobileOpen(false);
+				onOpenModelSettings?.();
+				return;
+			}
 			onProviderChange(value);
 			const rememberedModel = lastSelection.lastModelByProvider[value];
 			const providerModelIds = visibleProviderModels[value] ?? [];
@@ -2096,6 +2155,7 @@ const ModelSelector = memo(function ModelSelector({
 			lastSelection.lastModelByProvider,
 			model,
 			onModelChange,
+			onOpenModelSettings,
 			onProviderChange,
 			pickerDataForProvider,
 			rememberSelection,
@@ -2109,25 +2169,25 @@ const ModelSelector = memo(function ModelSelector({
 		},
 		[onModelChange, rememberSelection, resolvedProvider],
 	);
-	// Enabled providers can lack usable credentials (e.g. entries seeded by
-	// legacy migration), so mark the ones that are actually ready for a turn.
+	// The picker only lists providers with saved settings, so it is also the
+	// natural place to reach the rest of the catalog.
 	const providerOptions = useMemo(
-		() =>
-			providers.map((value) => ({
-				...(configuredProviderIds.includes(value)
-					? {
-							indicator: (
-								<CircleCheck
-									aria-label="Configured"
-									className="size-3 shrink-0 text-emerald-500"
-								/>
-							),
-						}
-					: {}),
+		() => [
+			...providers.map((value) => ({
 				label: providerNames[value]?.trim() || value,
 				value,
 			})),
-		[configuredProviderIds, providerNames, providers],
+			...(onOpenModelSettings
+				? [
+						{
+							icon: <Plus className="size-3 shrink-0 text-muted-foreground" />,
+							label: "Set up another provider",
+							value: ADD_PROVIDER_OPTION_VALUE,
+						},
+					]
+				: []),
+		],
+		[onOpenModelSettings, providerNames, providers],
 	);
 	const selectedModelLabel =
 		visibleModelPicker.options.find((option) => option.value === resolvedModel)

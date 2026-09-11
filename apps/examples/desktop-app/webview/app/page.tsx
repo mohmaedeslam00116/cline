@@ -66,6 +66,10 @@ import {
 	watchDesktopTrayStatus,
 } from "@/lib/desktop-tray";
 import { syncDesktopWindowTitle } from "@/lib/desktop-window-title";
+import {
+	imageAttachmentMediaType,
+	isUnsupportedImageAttachment,
+} from "@/lib/image-attachments";
 import { createLatestSuccessfulRequestGate } from "@/lib/latest-successful-request";
 import { writeModeSelectionToWindow } from "@/lib/mode-selection";
 import {
@@ -524,9 +528,6 @@ export default function Home() {
 												handleSettingsSectionChange("Models")
 											}
 											parentSession={activeParentSession}
-											onOpenVoiceInputSettings={() =>
-												handleSettingsSectionChange("Voice")
-											}
 											onThreadStarted={handleThreadStarted}
 											onActiveSessionChange={setActiveLiveSessionId}
 										/>
@@ -603,7 +604,6 @@ function ChatThreadPane({
 	onOpenSetup,
 	onOpenModelSettings,
 	parentSession,
-	onOpenVoiceInputSettings,
 	onThreadStarted,
 	onActiveSessionChange,
 }: {
@@ -626,7 +626,6 @@ function ChatThreadPane({
 	onOpenSetup?: () => void;
 	onOpenModelSettings?: () => void;
 	parentSession?: { sessionId: string; title?: string };
-	onOpenVoiceInputSettings?: () => void;
 	onThreadStarted?: (threadId: string) => void;
 	onActiveSessionChange?: (sessionId: string | null) => void;
 }) {
@@ -1123,12 +1122,22 @@ function ChatThreadPane({
 	]);
 
 	const handleAttachFiles = useCallback((files: File[]) => {
+		const supportedFiles = files.filter(
+			(file) => !isUnsupportedImageAttachment(file),
+		);
+		if (supportedFiles.length !== files.length) {
+			toast({
+				title: "Unsupported image format",
+				description:
+					"Convert the image to PNG, JPEG, GIF, or WebP before attaching it.",
+			});
+		}
 		setPendingAttachments((prev) => {
 			const existing = new Set(
 				prev.map((file) => `${file.name}:${file.size}:${file.lastModified}`),
 			);
 			const next = [...prev];
-			for (const file of files) {
+			for (const file of supportedFiles) {
 				const key = `${file.name}:${file.size}:${file.lastModified}`;
 				if (!existing.has(key)) {
 					existing.add(key);
@@ -1348,7 +1357,7 @@ function ChatThreadPane({
 			pendingAttachments.map((file, index) => ({
 				id: `${file.name}:${file.size}:${file.lastModified}:${index}`,
 				name: file.name,
-				isImage: file.type.startsWith("image/"),
+				isImage: imageAttachmentMediaType(file) !== undefined,
 			})),
 		[pendingAttachments],
 	);
@@ -1612,7 +1621,7 @@ function ChatThreadPane({
 			onModeToggle={handleModeToggle}
 			onModeChange={handleModeChange}
 			onPromptInputChange={handlePromptInputChange}
-			onOpenVoiceInputSettings={onOpenVoiceInputSettings}
+			onOpenModelSettings={onOpenModelSettings}
 			onReasoningChange={handleReasoningChange}
 			onSteerPromptInQueue={steerPromptInQueue}
 			onEditPromptInQueue={updatePromptInQueue}
