@@ -159,6 +159,13 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 		tAgency.tabDocsLabel,
 	]);
 
+	useEffect(() => {
+		const tabKeys = tabs.map((t) => t.key);
+		if (!tabKeys.includes(activeTab) && tabKeys.length > 0) {
+			setActiveTab(tabKeys[0]);
+		}
+	}, [activeTab, tabs]);
+
 	const handleTabKeyDown = useCallback(
 		(event: React.KeyboardEvent<HTMLDivElement>) => {
 			if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
@@ -214,6 +221,12 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 			onProceedCheckpoint(feedbackText.trim() || undefined);
 		}
 	}, [feedbackText, onProceedCheckpoint]);
+
+	useEffect(() => {
+		if (!isProceeding) return;
+		const timer = setTimeout(() => setIsProceeding(false), 15000);
+		return () => clearTimeout(timer);
+	}, [isProceeding]);
 
 	const qaStatus = pipeline.qa?.status ?? "in_progress";
 	const statusBadge = useMemo(() => {
@@ -394,7 +407,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 				<div>
 					{/* Squad Lineup Bar */}
 					<div className="flex flex-wrap items-center gap-2 border-b border-border/30 bg-muted/20 px-3 py-2 text-xs overflow-x-auto">
-						<span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground shrink-0 mr-1 flex items-center gap-1">
+						<span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground shrink-0 me-1 flex items-center gap-1">
 							<Users className="size-3 text-muted-foreground" />
 							{tAgency.squadBarTitle}:
 						</span>
@@ -426,6 +439,8 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 						<div className="border-b border-border/30 bg-muted/10 px-3 py-2 text-xs">
 							<button
 								type="button"
+								aria-expanded={showFeed}
+								aria-controls="ultra-collaboration-feed"
 								className="flex w-full items-center justify-between cursor-pointer select-none text-[11px] font-medium text-foreground mb-1 focus-visible:outline-none"
 								onClick={() => setShowFeed((prev) => !prev)}
 							>
@@ -440,7 +455,10 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 							</button>
 
 							{showFeed && (
-								<div className="space-y-1.5 max-h-36 overflow-y-auto pr-1 mt-1.5">
+								<div
+									id="ultra-collaboration-feed"
+									className="space-y-1.5 max-h-36 overflow-y-auto pe-1 mt-1.5"
+								>
 									{pipeline.collaborationFeed.map((entry, idx) => (
 										<div
 											// biome-ignore lint/suspicious/noArrayIndexKey: feed is static per parse
@@ -894,7 +912,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 									disabled={isProceeding}
 								>
 									{isProceeding ? (
-										<span>{tAgency.proceedingButton || "Proceeding..."}</span>
+										<span>{tAgency.proceedingButton}</span>
 									) : (
 										<>
 											<span>{tAgency.approveAndProceed}</span>
