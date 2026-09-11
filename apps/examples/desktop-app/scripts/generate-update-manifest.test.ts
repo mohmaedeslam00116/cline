@@ -105,6 +105,32 @@ describe("buildUpdateManifest", () => {
 		]);
 	});
 
+	test("maps LENS Workstation updater setup artifacts and uses default notes", () => {
+		const dir = mkdtempSync(path.join(tmpdir(), "update-manifest-lens-"));
+		writeFileSync(
+			path.join(dir, "LENS-Workstation_0.0.25_x64-setup.exe"),
+			"nsis",
+		);
+		writeFileSync(
+			path.join(dir, "LENS-Workstation_0.0.25_x64-setup.exe.sig"),
+			"sig-lens-x64\n",
+		);
+		const manifest = buildUpdateManifest({
+			version: "0.0.25",
+			tag: "desktop-v0.0.25",
+			dir,
+			repo: "mohmaedeslam00116/cline",
+			notes: "LENS Workstation v0.0.25",
+			pubDate: "2026-09-11T00:00:00.000Z",
+		});
+
+		expect(manifest.version).toBe("0.0.25");
+		expect(manifest.platforms["windows-x86_64"]).toEqual({
+			signature: "sig-lens-x64",
+			url: "https://github.com/mohmaedeslam00116/cline/releases/download/desktop-v0.0.25/LENS-Workstation_0.0.25_x64-setup.exe",
+		});
+	});
+
 	test("ignores non-updater exe files without a setup arch suffix", () => {
 		const dir = makeUniversalArtifactDir();
 		writeFileSync(path.join(dir, "Cline-Code_0.1.0_x64.exe"), "exe");

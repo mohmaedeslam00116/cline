@@ -138,7 +138,7 @@ const main = () => {
 
 	const notes = notesFile
 		? readFileSync(notesFile, "utf8").trim()
-		: `Cline v${version}`;
+		: `LENS Workstation v${version}`;
 
 	const manifest = buildUpdateManifest({
 		version,
