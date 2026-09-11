@@ -1,8 +1,8 @@
 {
 	"$schema": "https://schema.tauri.app/config/2",
-	"productName": "Cline",
+	"productName": "LENS Workstation",
 	"version": "0.0.25",
-	"identifier": "bot.cline.app",
+	"identifier": "app.lens.workstation",
 	"build": {
 		"beforeDevCommand": "bun run build:sidecar:bin && bun run dev:web",
 		"devUrl": "http://localhost:3125",
@@ -21,7 +21,7 @@
 		"windows": [
 			{
 				"label": "main",
-				"title": "Cline",
+				"title": "LENS Workstation",
 				"width": 1500,
 				"height": 980,
 				"resizable": true,
