@@ -1,20 +1,31 @@
 "use client";
 
 import {
+	AlertCircle,
 	Check,
+	CheckCircle2,
 	ChevronDown,
 	ChevronUp,
 	Code2,
 	Compass,
 	Copy,
+	Database,
 	FileCode2,
+	FileText,
 	GitBranch,
+	Layers,
 	ListChecks,
+	ShieldAlert,
+	ShieldCheck,
 	Sparkles,
 	TestTube2,
+	Users,
 	Workflow,
 } from "lucide-react";
-import { memo, useCallback, useMemo, useState } from "react";
+import type React from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { getLensDirection, getLensTranslations } from "@/lib/lens-i18n";
 import { cn } from "@/lib/utils";
 import { MemoizedMarkdown } from "../../../ui/markdown";
@@ -23,34 +34,146 @@ import type { UltraPipeline } from "./ultra-pipeline-parser";
 export type UltraPipelinePanelProps = {
 	pipeline: UltraPipeline;
 	className?: string;
+	onProceedCheckpoint?: (feedback?: string) => void;
 };
 
-type PipelineTab = "prd" | "architect" | "tasks" | "code" | "qa";
+type PipelineTab =
+	| "prd"
+	| "architect"
+	| "tasks"
+	| "code"
+	| "qa"
+	| "lyra"
+	| "vector"
+	| "echo";
+
+const PERSONA_DOT_CLASSES: Record<string, string> = {
+	orion: "bg-blue-500",
+	lyra: "bg-cyan-500",
+	athena: "bg-purple-500",
+	atlas: "bg-emerald-500",
+	vector: "bg-amber-500",
+	cipher: "bg-orange-500",
+	sentinel: "bg-rose-500",
+	echo: "bg-violet-500",
+};
 
 export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 	pipeline,
 	className,
+	onProceedCheckpoint,
 }: UltraPipelinePanelProps) {
 	const t = getLensTranslations().ultraPipeline;
+	const tAgency = getLensTranslations().ultraAgency;
 	const dir = getLensDirection();
 	const [isExpanded, setIsExpanded] = useState(true);
+	const [showFeed, setShowFeed] = useState(true);
 	const [activeTab, setActiveTab] = useState<PipelineTab>("prd");
 	const [copiedTab, setCopiedTab] = useState<string | null>(null);
+	const [feedbackText, setFeedbackText] = useState("");
+	const [isProceeding, setIsProceeding] = useState(false);
 
-	const tabs: Array<{
-		key: PipelineTab;
-		label: string;
-		icon: typeof ListChecks;
-	}> = useMemo(
-		() => [
-			{ key: "prd", label: t.tabPrd, icon: ListChecks },
-			{ key: "architect", label: t.tabArchitect, icon: Compass },
-			{ key: "tasks", label: t.tabTasks, icon: GitBranch },
-			{ key: "code", label: t.tabCode, icon: Code2 },
-			{ key: "qa", label: t.tabQa, icon: TestTube2 },
-		],
-		[t],
-	);
+	const tabs = useMemo(() => {
+		const list: Array<{
+			key: PipelineTab;
+			label: string;
+			personaName: string;
+			personaDotClass: string;
+			icon: React.ComponentType<{ className?: string }>;
+		}> = [];
+
+		if (pipeline.lyra) {
+			list.push({
+				key: "lyra",
+				label: tAgency.tabLyraLabel,
+				personaName: "Lyra",
+				personaDotClass: PERSONA_DOT_CLASSES.lyra,
+				icon: Compass,
+			});
+		}
+
+		list.push(
+			{
+				key: "prd",
+				label: tAgency.tabPrdLabel,
+				personaName: "Athena",
+				personaDotClass: PERSONA_DOT_CLASSES.athena,
+				icon: ListChecks,
+			},
+			{
+				key: "architect",
+				label: tAgency.tabArchLabel,
+				personaName: "Atlas",
+				personaDotClass: PERSONA_DOT_CLASSES.atlas,
+				icon: Layers,
+			},
+		);
+
+		if (pipeline.vector) {
+			list.push({
+				key: "vector",
+				label: tAgency.tabVectorLabel,
+				personaName: "Vector",
+				personaDotClass: PERSONA_DOT_CLASSES.vector,
+				icon: Database,
+			});
+		}
+
+		list.push(
+			{
+				key: "tasks",
+				label: tAgency.tabTasksLabel,
+				personaName: "Orion",
+				personaDotClass: PERSONA_DOT_CLASSES.orion,
+				icon: GitBranch,
+			},
+			{
+				key: "code",
+				label: tAgency.tabCodeLabel,
+				personaName: "Cipher",
+				personaDotClass: PERSONA_DOT_CLASSES.cipher,
+				icon: Code2,
+			},
+			{
+				key: "qa",
+				label: tAgency.tabQaLabel,
+				personaName: "Sentinel",
+				personaDotClass: PERSONA_DOT_CLASSES.sentinel,
+				icon: TestTube2,
+			},
+		);
+
+		if (pipeline.echo) {
+			list.push({
+				key: "echo",
+				label: tAgency.tabDocsLabel,
+				personaName: "Echo",
+				personaDotClass: PERSONA_DOT_CLASSES.echo,
+				icon: FileText,
+			});
+		}
+
+		return list;
+	}, [
+		pipeline.lyra,
+		pipeline.vector,
+		pipeline.echo,
+		tAgency.tabLyraLabel,
+		tAgency.tabPrdLabel,
+		tAgency.tabArchLabel,
+		tAgency.tabVectorLabel,
+		tAgency.tabTasksLabel,
+		tAgency.tabCodeLabel,
+		tAgency.tabQaLabel,
+		tAgency.tabDocsLabel,
+	]);
+
+	useEffect(() => {
+		const tabKeys = tabs.map((t) => t.key);
+		if (!tabKeys.includes(activeTab) && tabKeys.length > 0) {
+			setActiveTab(tabKeys[0]);
+		}
+	}, [activeTab, tabs]);
 
 	const handleTabKeyDown = useCallback(
 		(event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -58,15 +181,10 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 				return;
 			}
 			event.preventDefault();
-			const tabKeys: PipelineTab[] = [
-				"prd",
-				"architect",
-				"tasks",
-				"code",
-				"qa",
-			];
+			const tabKeys = tabs.map((t) => t.key);
 			const currentIndex = tabKeys.indexOf(activeTab);
-			const delta = event.key === "ArrowRight" ? 1 : -1;
+			const delta =
+				(event.key === "ArrowRight" ? 1 : -1) * (dir === "rtl" ? -1 : 1);
 			const nextIndex =
 				(currentIndex + delta + tabKeys.length) % tabKeys.length;
 			const nextTab = tabKeys[nextIndex];
@@ -74,7 +192,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 			const nextButton = document.getElementById(`ultra-tab-${nextTab}`);
 			nextButton?.focus();
 		},
-		[activeTab],
+		[activeTab, dir, tabs],
 	);
 
 	const handleCopy = useCallback(
@@ -90,6 +208,23 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 		},
 		[activeTab],
 	);
+
+	const checkpointIdentity = `${pipeline.checkpointStatus?.gate ?? ""}:${pipeline.checkpointStatus?.title ?? ""}:${pipeline.checkpointStatus?.isAwaitingApproval ? "awaiting" : "idle"}`;
+
+	// Reset proceeding state when the checkpoint identity changes or approval is no longer pending
+	useEffect(() => {
+		if (checkpointIdentity) {
+			setIsProceeding(false);
+		}
+	}, [checkpointIdentity]);
+
+	const handleProceed = useCallback(() => {
+		if (onProceedCheckpoint) {
+			setIsProceeding(true);
+			onProceedCheckpoint(feedbackText.trim() || undefined);
+			setFeedbackText("");
+		}
+	}, [feedbackText, onProceedCheckpoint]);
 
 	const qaStatus = pipeline.qa?.status ?? "in_progress";
 	const statusBadge = useMemo(() => {
@@ -109,29 +244,134 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 		}
 		return {
 			label: t.statusInProgress,
-			className:
-				"bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/30",
+			className: "bg-primary/10 text-primary border-primary/20",
 		};
 	}, [qaStatus, pipeline.qa?.retries, t]);
 
+	const activeContentForCopy = useMemo(() => {
+		switch (activeTab) {
+			case "prd":
+				return pipeline.prd?.rawMarkdown;
+			case "architect":
+				return pipeline.architect?.rawMarkdown;
+			case "tasks":
+				return pipeline.tasks?.rawMarkdown;
+			case "code":
+				return pipeline.engineer?.rawMarkdown;
+			case "qa":
+				return pipeline.qa?.rawMarkdown;
+			case "lyra":
+				return pipeline.lyra?.rawMarkdown;
+			case "vector":
+				return pipeline.vector?.rawMarkdown;
+			case "echo":
+				return pipeline.echo?.rawMarkdown;
+			default:
+				return undefined;
+		}
+	}, [activeTab, pipeline]);
+
+	const squadMembers = useMemo(() => {
+		return [
+			{
+				id: "orion",
+				name: "Orion",
+				role: tAgency.roleOrchestrator,
+				dotClass: PERSONA_DOT_CLASSES.orion,
+				done: Boolean(pipeline.tasks),
+			},
+			...(pipeline.lyra
+				? [
+						{
+							id: "lyra",
+							name: "Lyra",
+							role: tAgency.roleResearcher,
+							dotClass: PERSONA_DOT_CLASSES.lyra,
+							done: true,
+						},
+					]
+				: []),
+			{
+				id: "athena",
+				name: "Athena",
+				role: tAgency.roleProductLead,
+				dotClass: PERSONA_DOT_CLASSES.athena,
+				done: Boolean(pipeline.prd),
+			},
+			{
+				id: "atlas",
+				name: "Atlas",
+				role: tAgency.roleArchitect,
+				dotClass: PERSONA_DOT_CLASSES.atlas,
+				done: Boolean(pipeline.architect),
+			},
+			...(pipeline.vector
+				? [
+						{
+							id: "vector",
+							name: "Vector",
+							role: tAgency.roleDataArchitect,
+							dotClass: PERSONA_DOT_CLASSES.vector,
+							done: true,
+						},
+					]
+				: []),
+			{
+				id: "cipher",
+				name: "Cipher",
+				role: tAgency.roleEngineer,
+				dotClass: PERSONA_DOT_CLASSES.cipher,
+				done: Boolean(pipeline.engineer),
+			},
+			{
+				id: "sentinel",
+				name: "Sentinel",
+				role: tAgency.roleQaLead,
+				dotClass: PERSONA_DOT_CLASSES.sentinel,
+				done: pipeline.qa?.status === "passed",
+			},
+			...(pipeline.echo
+				? [
+						{
+							id: "echo",
+							name: "Echo",
+							role: tAgency.roleDocs,
+							dotClass: PERSONA_DOT_CLASSES.echo,
+							done: true,
+						},
+					]
+				: []),
+		];
+	}, [
+		pipeline,
+		tAgency.roleOrchestrator,
+		tAgency.roleResearcher,
+		tAgency.roleProductLead,
+		tAgency.roleArchitect,
+		tAgency.roleDataArchitect,
+		tAgency.roleEngineer,
+		tAgency.roleQaLead,
+		tAgency.roleDocs,
+	]);
+
 	return (
 		<section
-			aria-label={t.badge}
+			aria-label={tAgency.badge}
 			className={cn(
-				"my-3 overflow-hidden rounded-lg border border-indigo-500/30 bg-gradient-to-b from-indigo-950/10 to-background shadow-xs transition-colors",
+				"my-3 overflow-hidden rounded-xl border border-border/80 bg-card shadow-md transition-colors",
 				className,
 			)}
 			dir={dir}
 		>
-			{/* Header */}
+			{/* Top Header */}
 			<div className="flex items-center justify-between border-b border-border/50 bg-muted/40 px-3 py-2 text-xs">
 				<div className="flex items-center gap-2">
-					<div className="flex size-5 items-center justify-center rounded bg-indigo-500/10 text-indigo-500">
+					<div className="flex size-5 items-center justify-center rounded bg-primary/10 text-primary">
 						<Workflow className="size-3.5" />
 					</div>
-					<span className="font-semibold text-foreground">{t.badge}</span>
+					<span className="font-semibold text-foreground">{tAgency.badge}</span>
 					<span className="text-muted-foreground hidden sm:inline">
-						• {t.subtitle}
+						• {tAgency.subtitle}
 					</span>
 				</div>
 
@@ -163,9 +403,87 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 
 			{isExpanded && (
 				<div>
-					{/* Tabs Navigation */}
+					{/* Squad Lineup Bar */}
+					<div className="flex flex-wrap items-center gap-2 border-b border-border/30 bg-muted/20 px-3 py-2 text-xs overflow-x-auto">
+						<span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground shrink-0 me-1 flex items-center gap-1">
+							<Users className="size-3 text-muted-foreground" />
+							{tAgency.squadBarTitle}:
+						</span>
+						{squadMembers.map((member) => (
+							<div
+								key={member.id}
+								className={cn(
+									"inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 border text-[11px] font-medium transition-all shrink-0",
+									member.done
+										? "border-emerald-500/40 bg-emerald-500/10 text-emerald-500 dark:text-emerald-400"
+										: "border-border/60 bg-background/50 text-foreground",
+								)}
+							>
+								<div
+									className={cn(
+										"size-2 rounded-full shrink-0",
+										member.dotClass,
+									)}
+								/>
+								<span className="font-semibold">{member.name}</span>
+								<span className="text-[9px] opacity-70">({member.role})</span>
+								{member.done && (
+									<Check className="size-3 text-emerald-500 shrink-0" />
+								)}
+							</div>
+						))}
+					</div>
+
+					{/* Inter-Agent Collaboration Feed */}
+					{pipeline.collaborationFeed.length > 0 && (
+						<div className="border-b border-border/30 bg-muted/10 px-3 py-2 text-xs">
+							<button
+								type="button"
+								aria-expanded={showFeed}
+								aria-controls="ultra-collaboration-feed"
+								className="flex w-full items-center justify-between cursor-pointer select-none text-[11px] font-medium text-foreground mb-1 focus-visible:outline-none"
+								onClick={() => setShowFeed((prev) => !prev)}
+							>
+								<span className="flex items-center gap-1.5">
+									<Sparkles className="size-3 text-primary" />
+									{tAgency.collaborationFeedTitle} (
+									{pipeline.collaborationFeed.length})
+								</span>
+								<span className="text-[10px] text-muted-foreground opacity-80">
+									{showFeed ? t.collapse : t.expand}
+								</span>
+							</button>
+
+							{showFeed && (
+								<div
+									id="ultra-collaboration-feed"
+									className="space-y-1.5 max-h-36 overflow-y-auto pe-1 mt-1.5"
+								>
+									{pipeline.collaborationFeed.map((entry, idx) => (
+										<div
+											// biome-ignore lint/suspicious/noArrayIndexKey: feed is static per parse
+											key={idx}
+											className="flex items-start gap-1.5 rounded bg-background/80 border border-border/40 p-1.5 text-[11px] leading-relaxed shadow-2xs"
+										>
+											<div className="inline-flex items-center gap-1 shrink-0 font-semibold font-mono text-[10px] text-primary">
+												<span>{entry.from}</span>
+												<span>→</span>
+												<span>{entry.to}</span>
+												<span>:</span>
+											</div>
+											<span className="text-foreground/90">
+												{entry.message}
+											</span>
+										</div>
+									))}
+								</div>
+							)}
+						</div>
+					)}
+
+					{/* Specialist Deliverable Tabs Navigation */}
 					<div
-						aria-label="MetaGPT Assembly Line Roles"
+						aria-label={tAgency.deliverablesAriaLabel}
 						className="flex overflow-x-auto border-b border-border/40 bg-muted/20 px-2 py-1 text-xs"
 						onKeyDown={handleTabKeyDown}
 						role="tablist"
@@ -179,9 +497,9 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 									aria-controls={`ultra-tabpanel-${tab.key}`}
 									aria-selected={isSelected}
 									className={cn(
-										"inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+										"inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring shrink-0",
 										isSelected
-											? "bg-background text-indigo-500 shadow-2xs font-semibold"
+											? "bg-background text-primary shadow-2xs font-semibold"
 											: "text-muted-foreground hover:text-foreground",
 									)}
 									id={`ultra-tab-${tab.key}`}
@@ -190,8 +508,16 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 									tabIndex={isSelected ? 0 : -1}
 									type="button"
 								>
+									<div
+										className={cn(
+											"size-2 rounded-full shrink-0",
+											tab.personaDotClass,
+										)}
+									/>
 									<Icon className="size-3.5" />
-									<span>{tab.label}</span>
+									<span>
+										{tab.personaName} ({tab.label})
+									</span>
 								</button>
 							);
 						})}
@@ -199,7 +525,31 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 
 					{/* Tab Panels */}
 					<div className="p-3 text-xs">
-						{/* Tab 1: PRD */}
+						{/* Tab: Lyra Research */}
+						{activeTab === "lyra" && pipeline.lyra && (
+							<div
+								aria-labelledby="ultra-tab-lyra"
+								className="space-y-3"
+								id="ultra-tabpanel-lyra"
+								role="tabpanel"
+							>
+								<div className="flex items-center justify-between gap-2">
+									<h4 className="font-semibold text-foreground flex items-center gap-1.5">
+										<Compass className="size-3.5 text-cyan-500" />
+										<span>{tAgency.tabLyra}</span>
+									</h4>
+									<span className="inline-flex items-center gap-1 font-mono text-[11px] rounded border border-border/80 bg-muted/60 px-2 py-0.5 text-foreground">
+										<ShieldAlert className="size-3 text-amber-500" />
+										{tAgency.untrustedBadgeExact}
+									</span>
+								</div>
+								<div className="rounded border border-border/40 bg-muted/20 p-2.5">
+									<MemoizedMarkdown content={pipeline.lyra.findings} />
+								</div>
+							</div>
+						)}
+
+						{/* Tab: Athena PRD */}
 						{activeTab === "prd" && (
 							<div
 								aria-labelledby="ultra-tab-prd"
@@ -248,38 +598,32 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 											</h4>
 											<div className="overflow-hidden rounded border border-border/40">
 												<table className="w-full text-left text-xs">
-													<thead className="bg-muted/60 text-muted-foreground">
+													<thead className="bg-muted/50 text-muted-foreground border-b border-border/30">
 														<tr>
-															<th className="px-2 py-1 w-16">
-																{t.priorityLabel}
-															</th>
-															<th className="px-2 py-1">
+															<th className="p-1.5 font-medium">
 																{t.requirementLabel}
+															</th>
+															<th className="p-1.5 font-medium w-20">
+																{t.priorityLabel}
 															</th>
 														</tr>
 													</thead>
-													<tbody className="divide-y divide-border/20">
-														{pipeline.prd.requirementPool.map((item) => (
-															<tr
-																key={`${item.priority}-${item.requirement}`}
-																className="hover:bg-muted/20"
-															>
-																<td className="px-2 py-1">
+													<tbody className="divide-y divide-border/30">
+														{pipeline.prd.requirementPool.map((req, idx) => (
+															// biome-ignore lint/suspicious/noArrayIndexKey: requirement list is static
+															<tr key={idx} className="hover:bg-muted/30">
+																<td className="p-1.5">{req.requirement}</td>
+																<td className="p-1.5">
 																	<span
 																		className={cn(
-																			"rounded px-1.5 py-0.5 text-[10px] font-semibold",
-																			item.priority === "P0"
-																				? "bg-rose-500/15 text-rose-500"
-																				: item.priority === "P1"
-																					? "bg-amber-500/15 text-amber-500"
-																					: "bg-blue-500/15 text-blue-500",
+																			"rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold",
+																			req.priority.toUpperCase() === "P0"
+																				? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30"
+																				: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30",
 																		)}
 																	>
-																		{item.priority}
+																		{req.priority}
 																	</span>
-																</td>
-																<td className="px-2 py-1 text-foreground">
-																	{item.requirement}
 																</td>
 															</tr>
 														))}
@@ -294,15 +638,15 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 										<h4 className="font-semibold text-foreground mb-1">
 											{t.uiDraftTitle}
 										</h4>
-										<p className="text-muted-foreground bg-muted/40 rounded p-2 border border-border/30">
+										<div className="rounded border border-border/30 bg-muted/30 p-2 text-muted-foreground whitespace-pre-wrap">
 											{pipeline.prd.uiDesignDraft}
-										</p>
+										</div>
 									</div>
 								)}
 							</div>
 						)}
 
-						{/* Tab 2: Architect */}
+						{/* Tab: Atlas Architecture */}
 						{activeTab === "architect" && (
 							<div
 								aria-labelledby="ultra-tab-architect"
@@ -315,9 +659,9 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 										<h4 className="font-semibold text-foreground mb-1">
 											{t.techStackTitle}
 										</h4>
-										<div className="rounded bg-muted/40 p-2 text-muted-foreground border border-border/30 whitespace-pre-wrap">
+										<p className="text-muted-foreground leading-relaxed">
 											{pipeline.architect.implementationApproach}
-										</div>
+										</p>
 									</div>
 								)}
 
@@ -332,7 +676,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 												{pipeline.architect.fileList.map((file) => (
 													<span
 														key={file}
-														className="rounded bg-muted px-2 py-0.5 font-mono text-[11px] text-foreground border border-border/40"
+														className="rounded border border-border/40 bg-muted/40 px-2 py-0.5 font-mono text-[11px]"
 													>
 														{file}
 													</span>
@@ -346,7 +690,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 										<h4 className="font-semibold text-foreground mb-1">
 											{t.classDiagramTitle}
 										</h4>
-										<div className="rounded border border-border/40 bg-muted/20 p-2 overflow-x-auto">
+										<div className="overflow-x-auto rounded border border-border/40 bg-muted/20 p-2 font-mono text-[11px]">
 											<MemoizedMarkdown
 												content={`\`\`\`mermaid\n${pipeline.architect.classDiagram}\n\`\`\``}
 											/>
@@ -359,7 +703,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 										<h4 className="font-semibold text-foreground mb-1">
 											{t.sequenceDiagramTitle}
 										</h4>
-										<div className="rounded border border-border/40 bg-muted/20 p-2 overflow-x-auto">
+										<div className="overflow-x-auto rounded border border-border/40 bg-muted/20 p-2 font-mono text-[11px]">
 											<MemoizedMarkdown
 												content={`\`\`\`mermaid\n${pipeline.architect.sequenceDiagram}\n\`\`\``}
 											/>
@@ -369,7 +713,21 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 							</div>
 						)}
 
-						{/* Tab 3: Tasks */}
+						{/* Tab: Vector Data Schemas */}
+						{activeTab === "vector" && pipeline.vector && (
+							<div
+								aria-labelledby="ultra-tab-vector"
+								className="space-y-3"
+								id="ultra-tabpanel-vector"
+								role="tabpanel"
+							>
+								<div className="rounded border border-border/40 bg-muted/20 p-2.5">
+									<MemoizedMarkdown content={pipeline.vector.schemas} />
+								</div>
+							</div>
+						)}
+
+						{/* Tab: Orion Tasks */}
 						{activeTab === "tasks" && (
 							<div
 								aria-labelledby="ultra-tab-tasks"
@@ -387,7 +745,7 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 												{pipeline.tasks.packages.map((pkg) => (
 													<span
 														key={pkg}
-														className="rounded bg-indigo-500/10 px-2 py-0.5 font-mono text-[11px] text-indigo-500 border border-indigo-500/20"
+														className="rounded border border-border/40 bg-muted/40 px-2 py-0.5 font-mono text-[11px]"
 													>
 														{pkg}
 													</span>
@@ -404,41 +762,15 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 											</h4>
 											<ol className="list-inside list-decimal space-y-1 text-muted-foreground pl-1">
 												{pipeline.tasks.taskList.map((task) => (
-													<li key={task} className="font-mono text-[11px]">
-														{task}
-													</li>
+													<li key={task}>{task}</li>
 												))}
 											</ol>
-										</div>
-									)}
-
-								{pipeline.tasks?.logicAnalysis &&
-									pipeline.tasks.logicAnalysis.length > 0 && (
-										<div>
-											<h4 className="font-semibold text-foreground mb-1">
-												{t.logicAnalysisTitle}
-											</h4>
-											<div className="space-y-1">
-												{pipeline.tasks.logicAnalysis.map((item) => (
-													<div
-														key={item.file}
-														className="rounded bg-muted/40 p-1.5 border border-border/30 text-xs"
-													>
-														<span className="font-mono font-semibold text-foreground">
-															{item.file}:{" "}
-														</span>
-														<span className="text-muted-foreground">
-															{item.description}
-														</span>
-													</div>
-												))}
-											</div>
 										</div>
 									)}
 							</div>
 						)}
 
-						{/* Tab 4: Code */}
+						{/* Tab: Cipher Code */}
 						{activeTab === "code" && (
 							<div
 								aria-labelledby="ultra-tab-code"
@@ -446,49 +778,34 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 								id="ultra-tabpanel-code"
 								role="tabpanel"
 							>
-								<h4 className="font-semibold text-foreground">
-									{t.engineerTitle}
-								</h4>
-								<p className="text-muted-foreground text-xs">
-									{t.engineerDesc}
-								</p>
-								{pipeline.engineer?.filesImplemented &&
-								pipeline.engineer.filesImplemented.length > 0 ? (
-									<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2">
-										{pipeline.engineer.filesImplemented.map((file) => (
-											<div
-												key={`code-${file}`}
-												className="flex items-center gap-2 rounded bg-muted/50 p-2 border border-border/40 font-mono text-xs text-foreground"
-											>
-												<FileCode2 className="size-3.5 text-indigo-500" />
-												<span>{file}</span>
+								<div>
+									<h4 className="font-semibold text-foreground mb-1">
+										{t.engineerTitle}
+									</h4>
+									<p className="text-muted-foreground mb-2">{t.engineerDesc}</p>
+									{pipeline.engineer?.filesImplemented &&
+										pipeline.engineer.filesImplemented.length > 0 && (
+											<div className="flex flex-wrap gap-1.5 mb-2">
+												{pipeline.engineer.filesImplemented.map((file) => (
+													<span
+														key={file}
+														className="rounded border border-border/40 bg-muted/40 px-2 py-0.5 font-mono text-[11px]"
+													>
+														{file}
+													</span>
+												))}
 											</div>
-										))}
-									</div>
-								) : pipeline.architect?.fileList &&
-									pipeline.architect.fileList.length > 0 ? (
-									<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2">
-										{pipeline.architect.fileList.map((file) => (
-											<div
-												key={`code-${file}`}
-												className="flex items-center gap-2 rounded bg-muted/50 p-2 border border-border/40 font-mono text-xs text-foreground"
-											>
-												<FileCode2 className="size-3.5 text-indigo-500" />
-												<span>{file}</span>
-											</div>
-										))}
-									</div>
-								) : null}
-
-								{pipeline.engineer?.summary && (
-									<div className="rounded bg-muted/40 p-2.5 text-xs text-muted-foreground overflow-x-auto border border-border/30">
-										<MemoizedMarkdown content={pipeline.engineer.summary} />
-									</div>
-								)}
+										)}
+									{pipeline.engineer?.summary && (
+										<div className="rounded border border-border/30 bg-muted/30 p-2 text-muted-foreground">
+											{pipeline.engineer.summary}
+										</div>
+									)}
+								</div>
 							</div>
 						)}
 
-						{/* Tab 5: QA & Verification */}
+						{/* Tab: Sentinel QA */}
 						{activeTab === "qa" && (
 							<div
 								aria-labelledby="ultra-tab-qa"
@@ -496,73 +813,149 @@ export const UltraPipelinePanel = memo(function UltraPipelinePanel({
 								id="ultra-tabpanel-qa"
 								role="tabpanel"
 							>
-								<div>
-									<h4 className="font-semibold text-foreground mb-1 flex items-center gap-1.5">
-										<TestTube2 className="size-3.5 text-indigo-500" />
-										{t.testExecutionTitle}
-									</h4>
-									<div
-										className={cn(
-											"rounded p-2.5 border font-mono text-xs whitespace-pre-wrap",
-											qaStatus === "passed"
-												? "bg-emerald-950/20 text-emerald-400 border-emerald-500/30"
-												: qaStatus === "self_correcting"
-													? "bg-amber-950/20 text-amber-400 border-amber-500/30"
-													: "bg-muted text-muted-foreground border-border/40",
-										)}
-									>
-										{pipeline.qa?.testExecutionSummary || t.verificationPassed}
-									</div>
-								</div>
-
-								<div className="flex items-center justify-between rounded bg-muted/40 p-2 border border-border/30">
-									<span className="text-muted-foreground">
-										{t.retriesTitle}:
-									</span>
-									<span className="font-semibold text-foreground">
-										{pipeline.qa?.retries ?? 0} / {pipeline.qa?.maxRetries ?? 3}
-									</span>
-								</div>
-
-								{pipeline.qa?.errors && pipeline.qa.errors.length > 0 && (
+								{pipeline.qa?.testExecutionSummary && (
 									<div>
-										<h4 className="font-semibold text-rose-500 mb-1">
-											{t.errorTracebacksTitle}
+										<h4 className="font-semibold text-foreground mb-1">
+											{t.testExecutionTitle}
 										</h4>
-										<div className="space-y-1">
-											{pipeline.qa.errors.map((err) => (
-												<pre
-													key={err}
-													className="rounded bg-rose-950/30 p-2 font-mono text-[10px] text-rose-300 overflow-x-auto border border-rose-500/30"
-												>
-													<code>{err}</code>
-												</pre>
-											))}
-										</div>
+										<p className="text-muted-foreground leading-relaxed">
+											{pipeline.qa.testExecutionSummary}
+										</p>
 									</div>
 								)}
+
+								<div className="rounded border border-border/40 bg-muted/20 p-2.5 space-y-2">
+									<div className="flex items-center justify-between">
+										<span className="font-semibold text-foreground">
+											{t.retriesTitle}
+										</span>
+										<span className="font-mono font-medium">
+											{pipeline.qa?.retries ?? 0} /{" "}
+											{pipeline.qa?.maxRetries ?? 3}
+										</span>
+									</div>
+
+									{pipeline.qa?.status === "passed" && (
+										<div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
+											<Check className="size-4" />
+											<span>{t.verificationPassed}</span>
+										</div>
+									)}
+
+									{pipeline.qa?.status === "failed" && (
+										<div className="space-y-2">
+											<div className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 font-medium">
+												<AlertCircle className="size-4" />
+												<span>{tAgency.qaStatusFailed}</span>
+											</div>
+											{pipeline.qa.errors && pipeline.qa.errors.length > 0 && (
+												<div className="space-y-1">
+													<span className="text-[11px] font-semibold text-muted-foreground">
+														{t.errorTracebacksTitle}:
+													</span>
+													<div className="rounded bg-background/80 border border-rose-500/30 p-2 font-mono text-[11px] text-rose-500 dark:text-rose-400 max-h-36 overflow-y-auto whitespace-pre-wrap">
+														{pipeline.qa.errors.join("\n")}
+													</div>
+												</div>
+											)}
+										</div>
+									)}
+								</div>
+							</div>
+						)}
+
+						{/* Tab: Echo Docs */}
+						{activeTab === "echo" && pipeline.echo && (
+							<div
+								aria-labelledby="ultra-tab-echo"
+								className="space-y-3"
+								id="ultra-tabpanel-echo"
+								role="tabpanel"
+							>
+								<div className="rounded border border-border/40 bg-muted/20 p-2.5">
+									<MemoizedMarkdown content={pipeline.echo.docs} />
+								</div>
 							</div>
 						)}
 					</div>
 
-					{/* Footer with copy deliverable button */}
-					<div className="flex items-center justify-between border-t border-border/40 bg-muted/20 px-3 py-1.5 text-[11px]">
-						<span className="text-muted-foreground">
-							{t.footerPhase} {activeTab.toUpperCase()}
+					{/* Interactive Checkpoint Action Bar */}
+					{pipeline.checkpointStatus?.isAwaitingApproval && (
+						<div className="border-t border-border/80 bg-muted/30 p-3 text-xs space-y-2.5">
+							<div className="flex items-start gap-2">
+								<ShieldCheck className="size-4 text-primary shrink-0 mt-0.5" />
+								<div className="space-y-0.5">
+									<span className="font-semibold text-foreground block">
+										{pipeline.checkpointStatus.title ||
+											(pipeline.checkpointStatus.gate === 1
+												? tAgency.checkpoint1Title
+												: tAgency.checkpoint2Title)}
+									</span>
+									<p className="text-[11px] text-muted-foreground leading-snug">
+										{pipeline.checkpointStatus.summary ||
+											(pipeline.checkpointStatus.gate === 1
+												? tAgency.checkpoint1Desc
+												: tAgency.checkpoint2Desc)}
+									</p>
+								</div>
+							</div>
+
+							<div className="flex items-center gap-2 pt-1">
+								<Input
+									aria-label={tAgency.addFeedback}
+									placeholder={tAgency.feedbackPlaceholder}
+									value={feedbackText}
+									onChange={(e) => setFeedbackText(e.target.value)}
+									className="h-8 text-xs bg-background/80"
+								/>
+								<Button
+									size="sm"
+									className="h-8 gap-1.5 px-3 font-medium shrink-0"
+									onClick={handleProceed}
+									disabled={isProceeding || !onProceedCheckpoint}
+								>
+									{isProceeding ? (
+										<span>{tAgency.proceedingButton}</span>
+									) : (
+										<>
+											<span>{tAgency.approveAndProceed}</span>
+											<CheckCircle2 className="size-3.5" />
+										</>
+									)}
+								</Button>
+							</div>
+						</div>
+					)}
+
+					{/* Footer Actions */}
+					<div className="flex items-center justify-between border-t border-border/40 bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground">
+						<span>
+							{t.footerPhase}{" "}
+							<span className="font-medium text-foreground">
+								{tabs.find((tab) => tab.key === activeTab)?.label ??
+									activeTab.toUpperCase()}
+							</span>
 						</span>
 
-						<button
-							className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none"
-							onClick={() => handleCopy(pipeline.rawMarkdown)}
-							type="button"
-						>
-							{copiedTab ? (
-								<Check className="size-3 text-emerald-500" />
-							) : (
-								<Copy className="size-3" />
-							)}
-							<span>{copiedTab ? t.copied : t.copyDeliverable}</span>
-						</button>
+						{activeContentForCopy && (
+							<button
+								className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground focus-visible:outline-none transition-colors"
+								onClick={() => handleCopy(activeContentForCopy)}
+								type="button"
+							>
+								{copiedTab === activeTab ? (
+									<>
+										<Check className="size-3 text-emerald-500" />
+										<span className="text-emerald-500">{t.copied}</span>
+									</>
+								) : (
+									<>
+										<Copy className="size-3" />
+										<span>{t.copyDeliverable}</span>
+									</>
+								)}
+							</button>
+						)}
 					</div>
 				</div>
 			)}

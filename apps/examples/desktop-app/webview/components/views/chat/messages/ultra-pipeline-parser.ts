@@ -50,12 +50,45 @@ export type QAFeedback = {
 	rawMarkdown?: string;
 };
 
+export type CollaborationFeedEntry = {
+	from: string;
+	to: string;
+	message: string;
+};
+
+export type CheckpointStatus = {
+	gate: 1 | 2;
+	title: string;
+	isAwaitingApproval: boolean;
+	summary?: string;
+};
+
+export type LyraResearch = {
+	findings: string;
+	rawMarkdown?: string;
+};
+
+export type VectorData = {
+	schemas: string;
+	rawMarkdown?: string;
+};
+
+export type EchoDocs = {
+	docs: string;
+	rawMarkdown?: string;
+};
+
 export type UltraPipeline = {
 	prd?: ProductManagerPRD;
 	architect?: ArchitectDesign;
 	tasks?: ProjectManagerTasks;
 	engineer?: EngineerCode;
 	qa?: QAFeedback;
+	lyra?: LyraResearch;
+	vector?: VectorData;
+	echo?: EchoDocs;
+	collaborationFeed: CollaborationFeedEntry[];
+	checkpointStatus?: CheckpointStatus;
 	rawMarkdown: string;
 };
 
@@ -400,22 +433,147 @@ export function parseEngineerCode(content: string): EngineerCode | undefined {
 }
 
 /**
- * Parses a full UltraPipeline from markdown text.
- * Returns null if the text does not contain sufficient hallmarks of a MetaGPT SOP pipeline.
+ * Parses inter-agent collaboration feed entries: [AgentA -> AgentB]: message
+ */
+export function parseCollaborationFeed(
+	content: string,
+): CollaborationFeedEntry[] {
+	const feed: CollaborationFeedEntry[] = [];
+	const regex =
+		/(?:^|\n)\s*\[\s*([A-Za-z0-9_-]+)\s*(?:->|→)\s*([A-Za-z0-9_-]+)\s*\]:\s*([^\n]+)/g;
+	let match: RegExpExecArray | null = regex.exec(content);
+	while (match !== null) {
+		feed.push({
+			from: match[1].trim(),
+			to: match[2].trim(),
+			message: match[3].trim(),
+		});
+		match = regex.exec(content);
+	}
+	return feed;
+}
+
+/**
+ * Parses Checkpoint 1 & 2 gate status from the content.
+ * Recognizes explicit awaiting-approval markers while ensuring
+ * completed/approved states do not reopen the gate.
+ */
+export function parseCheckpointStatus(
+	content: string,
+): CheckpointStatus | undefined {
+	const cpRegex = /(?:^|\n)\s*#{2,4}\s+CHECKPOINT\s*([12])(?::\s*([^\n]+))?/gi;
+	const matches = Array.from(content.matchAll(cpRegex));
+
+	if (matches.length === 0) {
+		return undefined;
+	}
+
+	const evaluated = matches.map((match) => {
+		const gate = parseInt(match[1], 10) as 1 | 2;
+		const rawTitle =
+			match[2]?.trim() ||
+			(gate === 2 ? "Pre-Ship Verification Gate" : "Strategy & Blueprint Gate");
+
+		// Context snippet following the checkpoint header (up to 250 characters)
+		const matchIndex = match.index ?? 0;
+		const contextSnippet = content.slice(matchIndex, matchIndex + 250);
+
+		// Determine if explicitly awaiting approval vs completed/approved
+		const hasApprovedOrComplete =
+			/approved|complete(?:d)?|passed|cleared/i.test(rawTitle) ||
+			/(?:status:\s*(?:approved|complete|passed)|has been approved|gate passed)/i.test(
+				contextSnippet,
+			);
+
+		const hasAwaitingMarker =
+			/awaiting(?:\s+user)?\s+approval|pending(?:\s+approval)?|requires?\s+approval|action\s+required/i.test(
+				rawTitle,
+			) ||
+			/awaiting(?:\s+user)?\s+approval|pending(?:\s+approval)?|please\s+review\s+and\s+approve/i.test(
+				contextSnippet,
+			);
+
+		const isAwaitingApproval = !hasApprovedOrComplete && hasAwaitingMarker;
+
+		return {
+			gate,
+			title: rawTitle,
+			isAwaitingApproval,
+			summary:
+				gate === 2
+					? "Cipher has implemented the code and Sentinel has completed automated test verification."
+					: "Athena's PRD and Atlas's Architecture are aligned. Awaiting user approval to proceed to code generation.",
+		};
+	});
+
+	const awaiting = evaluated.find((cp) => cp.isAwaitingApproval);
+	return awaiting ?? evaluated[evaluated.length - 1];
+}
+
+/**
+ * Parses Lyra's Deep Tech Research deliverable.
+ */
+export function parseLyraResearch(content: string): LyraResearch | undefined {
+	const sec = extractSection(content, [
+		"Technical Research",
+		"Research Findings",
+		"Feasibility",
+		"Lyra",
+	]);
+	if (!sec) return undefined;
+	return {
+		findings: sec,
+		rawMarkdown: sec,
+	};
+}
+
+/**
+ * Parses Vector's Data Architect deliverable.
+ */
+export function parseVectorData(content: string): VectorData | undefined {
+	const sec = extractSection(content, [
+		"Data Schemas",
+		"Database Schema",
+		"Data Architecture",
+		"Vector",
+	]);
+	if (!sec) return undefined;
+	return {
+		schemas: sec,
+		rawMarkdown: sec,
+	};
+}
+
+/**
+ * Parses Echo's Developer Documentation deliverable.
+ */
+export function parseEchoDocs(content: string): EchoDocs | undefined {
+	const sec = extractSection(content, [
+		"Developer Documentation",
+		"Documentation & Guides",
+		"Echo",
+	]);
+	if (!sec) return undefined;
+	return {
+		docs: sec,
+		rawMarkdown: sec,
+	};
+}
+
+/**
+ * Full parser: inspects a message's content and extracts an UltraPipeline
+ * structure if SOP / multi-agent hallmarks and at least two distinct deliverables are present.
  */
 export function parseUltraPipeline(content: string): UltraPipeline | null {
-	if (!content || typeof content !== "string") {
+	if (!content || content.length < 50) {
 		return null;
 	}
 
-	// Check for MetaGPT hallmarks
+	// Must have hallmarks of MetaGPT or Atoms specialist personas
 	const hasMetaGPTHallmark =
-		/metagpt/i.test(content) ||
-		/ultra mode/i.test(content) ||
-		/product manager/i.test(content) ||
-		/product requirement document/i.test(content) ||
-		/requirement pool/i.test(content) ||
-		/executable feedback/i.test(content);
+		/product manager|prd|system design|requirement pool|executable feedback|orion|athena|atlas|cipher|sentinel/i.test(
+			content,
+		);
 
 	if (!hasMetaGPTHallmark) {
 		return null;
@@ -426,21 +584,30 @@ export function parseUltraPipeline(content: string): UltraPipeline | null {
 	const tasks = parseProjectManagerTasks(content);
 	const engineer = parseEngineerCode(content);
 	const qa = parseQAFeedback(content);
+	const lyra = parseLyraResearch(content);
+	const vector = parseVectorData(content);
+	const echo = parseEchoDocs(content);
+	const collaborationFeed = parseCollaborationFeed(content);
+	const checkpointStatus = parseCheckpointStatus(content);
 
-	// Need at least 2 distinct SOP sections to qualify as a structured Ultra Pipeline
+	// Need at least 2 distinct SOP sections or collaboration feed + deliverable
 	const stageCount = [
 		Boolean(prd),
 		Boolean(architect),
 		Boolean(tasks),
 		Boolean(engineer),
 		Boolean(qa),
+		Boolean(lyra),
+		Boolean(vector),
+		Boolean(echo),
 	].filter(Boolean).length;
 
-	if (stageCount < 2) {
+	const minStages = collaborationFeed.length > 0 ? 1 : 2;
+	if (stageCount < minStages) {
 		return null;
 	}
 
-	// Compute rawMarkdown starting from the first matched MetaGPT section header
+	// Compute rawMarkdown starting from the first matched section header
 	// and ending at the last matched stage's content, so conversational framing
 	// before and after the pipeline deliverables is preserved.
 	const METAGPT_SECTION_KEYWORDS = [
@@ -459,6 +626,16 @@ export function parseUltraPipeline(content: string): UltraPipeline | null {
 		"QA and Test",
 		"QA Feedback",
 		"Executable Feedback",
+		"Orion",
+		"Athena",
+		"Atlas",
+		"Cipher",
+		"Sentinel",
+		"Lyra",
+		"Vector",
+		"Echo",
+		"Checkpoint 1",
+		"Checkpoint 2",
 	];
 
 	let firstHeaderIndex = -1;
@@ -482,6 +659,9 @@ export function parseUltraPipeline(content: string): UltraPipeline | null {
 		tasks?.rawMarkdown,
 		engineer?.rawMarkdown,
 		qa?.rawMarkdown,
+		lyra?.rawMarkdown,
+		vector?.rawMarkdown,
+		echo?.rawMarkdown,
 	].filter((s): s is string => typeof s === "string" && s.length > 0);
 
 	let lastEndIndex = content.length;
@@ -510,6 +690,11 @@ export function parseUltraPipeline(content: string): UltraPipeline | null {
 		tasks,
 		engineer,
 		qa,
+		lyra,
+		vector,
+		echo,
+		collaborationFeed,
+		checkpointStatus,
 		rawMarkdown,
 	};
 }

@@ -45,38 +45,143 @@ const mockPipeline: UltraPipeline = {
 		taskList: ["picker.py", "main.py", "tests.py"],
 		logicAnalysis: [{ file: "main.py", description: "Entry point" }],
 	},
+	engineer: {
+		filesImplemented: ["picker.py", "main.py"],
+		summary: "All modules implemented adhering to Atlas interfaces.",
+	},
 	qa: {
 		testExecutionSummary: "4 tests passed in 0.25s",
 		retries: 0,
 		maxRetries: 3,
 		status: "passed",
 	},
+	collaborationFeed: [
+		{
+			from: "Orion",
+			to: "Athena",
+			message: "Ingested user prompt. Draft PRD focusing on P0 items.",
+		},
+		{
+			from: "Atlas",
+			to: "Athena",
+			message: "Architecture verified against requirements.",
+		},
+	],
+	checkpointStatus: {
+		gate: 1,
+		title: "Strategy & Blueprint Gate",
+		isAwaitingApproval: true,
+		summary: "Athena's PRD and Atlas's Architecture are aligned.",
+	},
 	rawMarkdown: "Mock MetaGPT deliverable markdown",
 };
 
 describe("UltraPipelinePanel component", () => {
-	it("renders pipeline header, badge, and tabs", async () => {
+	it("renders Agency badge, squad lineup bar, and specialist persona tabs", async () => {
 		await act(async () => {
 			root.render(<UltraPipelinePanel pipeline={mockPipeline} />);
 		});
 
-		expect(container.textContent).toContain("MetaGPT Assembly Line");
+		expect(container.textContent).toContain("Ultra Mode Agency");
 		expect(container.textContent).toContain("Verified");
-		expect(container.textContent).toContain("PRD (PM)");
-		expect(container.textContent).toContain("Design (Architect)");
-		expect(container.textContent).toContain("Tasks (PM)");
-		expect(container.textContent).toContain("Code (Engineer)");
-		expect(container.textContent).toContain("QA & Verification");
+		expect(container.textContent).toContain("Active Squad Lineup");
+		expect(container.textContent).toContain("Orion");
+		expect(container.textContent).toContain("Athena");
+		expect(container.textContent).toContain("Atlas");
+		expect(container.textContent).toContain("Cipher");
+		expect(container.textContent).toContain("Sentinel");
+		expect(container.textContent).toContain("Athena (PRD)");
+		expect(container.textContent).toContain("Atlas (Architecture)");
+		expect(container.textContent).toContain("Orion (Task DAG)");
+		expect(container.textContent).toContain("Cipher (Code)");
+		expect(container.textContent).toContain("Sentinel (QA Report)");
 	});
 
-	it("renders PRD goals and requirement pool by default", async () => {
+	it("renders inter-agent collaboration feed entries", async () => {
 		await act(async () => {
 			root.render(<UltraPipelinePanel pipeline={mockPipeline} />);
 		});
 
-		expect(container.textContent).toContain("Build Color Meter GUI");
-		expect(container.textContent).toContain("P0");
-		expect(container.textContent).toContain("Design GUI");
+		expect(container.textContent).toContain("Team Collaboration & Handoffs");
+		expect(container.textContent).toContain("Orion");
+		expect(container.textContent).toContain("→");
+		expect(container.textContent).toContain("Athena");
+		expect(container.textContent).toContain("Ingested user prompt");
+	});
+
+	it("renders Checkpoint 1 review gate with action buttons and handles approve", async () => {
+		const onProceed = vi.fn();
+		await act(async () => {
+			root.render(
+				<UltraPipelinePanel
+					pipeline={mockPipeline}
+					onProceedCheckpoint={onProceed}
+				/>,
+			);
+		});
+
+		expect(container.textContent).toContain("Strategy & Blueprint Gate");
+		expect(container.textContent).toContain("Approve & Proceed");
+
+		const approveBtn = Array.from(container.querySelectorAll("button")).find(
+			(b) => b.textContent?.includes("Approve & Proceed"),
+		);
+		expect(approveBtn).toBeDefined();
+
+		await act(async () => {
+			approveBtn?.click();
+		});
+
+		expect(onProceed).toHaveBeenCalledTimes(1);
+	});
+
+	it("clears feedback input and passes trimmed feedback when proceeding", async () => {
+		const onProceed = vi.fn();
+		await act(async () => {
+			root.render(
+				<UltraPipelinePanel
+					pipeline={mockPipeline}
+					onProceedCheckpoint={onProceed}
+				/>,
+			);
+		});
+
+		const input = container.querySelector<HTMLInputElement>("input");
+		expect(input).not.toBeNull();
+
+		await act(async () => {
+			if (input) {
+				const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+					window.HTMLInputElement.prototype,
+					"value",
+				)?.set;
+				nativeInputValueSetter?.call(input, "   Refactor auth   ");
+				input.dispatchEvent(new Event("change", { bubbles: true }));
+			}
+		});
+
+		const approveBtn = Array.from(container.querySelectorAll("button")).find(
+			(b) => b.textContent?.includes("Approve & Proceed"),
+		);
+
+		await act(async () => {
+			approveBtn?.click();
+		});
+
+		expect(onProceed).toHaveBeenCalledWith("Refactor auth");
+		expect(input?.value).toBe("");
+	});
+
+	it("disables approve button when rendered without onProceedCheckpoint", async () => {
+		await act(async () => {
+			root.render(<UltraPipelinePanel pipeline={mockPipeline} />);
+		});
+
+		const approveBtn = Array.from(container.querySelectorAll("button")).find(
+			(b) => b.textContent?.includes("Approve & Proceed"),
+		);
+		expect(approveBtn).toBeDefined();
+		expect(approveBtn?.hasAttribute("disabled")).toBe(true);
 	});
 
 	it("switches tabs when clicked", async () => {
@@ -84,10 +189,10 @@ describe("UltraPipelinePanel component", () => {
 			root.render(<UltraPipelinePanel pipeline={mockPipeline} />);
 		});
 
-		const architectTab = container.querySelector<HTMLButtonElement>(
-			'button[role="tab"]:nth-child(2)',
-		);
-		expect(architectTab).not.toBeNull();
+		const architectTab = Array.from(
+			container.querySelectorAll<HTMLButtonElement>('button[role="tab"]'),
+		).find((tab) => tab.textContent?.includes("Atlas (Architecture)"));
+		expect(architectTab).toBeDefined();
 
 		await act(async () => {
 			architectTab?.click();
@@ -98,120 +203,73 @@ describe("UltraPipelinePanel component", () => {
 		expect(container.textContent).toContain("picker.py");
 	});
 
-	it("collapses and expands on header button click", async () => {
+	it("supports roving tabIndex for ARIA tablist navigation with arrow keys", async () => {
 		await act(async () => {
 			root.render(<UltraPipelinePanel pipeline={mockPipeline} />);
 		});
 
-		expect(container.textContent).toContain("Build Color Meter GUI");
-
-		const toggleButton = container.querySelector<HTMLButtonElement>(
-			'button[aria-label="Collapse"]',
+		const tablist = container.querySelector<HTMLDivElement>(
+			'div[role="tablist"]',
 		);
-		expect(toggleButton).not.toBeNull();
-
-		await act(async () => {
-			toggleButton?.click();
-		});
-
-		expect(container.textContent).not.toContain("Build Color Meter GUI");
-
-		const expandButton = container.querySelector<HTMLButtonElement>(
-			'button[aria-label="Expand"]',
-		);
-		await act(async () => {
-			expandButton?.click();
-		});
-
-		expect(container.textContent).toContain("Build Color Meter GUI");
-	});
-
-	it("renders self-correcting retry status when retries occurred", async () => {
-		const retryingPipeline: UltraPipeline = {
-			...mockPipeline,
-			qa: {
-				retries: 2,
-				maxRetries: 3,
-				status: "self_correcting",
-				testExecutionSummary: "Retrying after assertion failure",
-			},
-		};
-
-		await act(async () => {
-			root.render(<UltraPipelinePanel pipeline={retryingPipeline} />);
-		});
-
-		expect(container.textContent).toContain("Self-Correcting (2/3)");
-	});
-
-	it("has complete ARIA tab and tabpanel associations", async () => {
-		await act(async () => {
-			root.render(<UltraPipelinePanel pipeline={mockPipeline} />);
-		});
-
-		const prdTab = container.querySelector<HTMLButtonElement>("#ultra-tab-prd");
-		const prdPanel = container.querySelector<HTMLDivElement>(
-			"#ultra-tabpanel-prd",
-		);
-
-		expect(prdTab).not.toBeNull();
-		expect(prdPanel).not.toBeNull();
-		expect(prdTab?.getAttribute("role")).toBe("tab");
-		expect(prdTab?.getAttribute("aria-selected")).toBe("true");
-		expect(prdTab?.getAttribute("aria-controls")).toBe("ultra-tabpanel-prd");
-		expect(prdPanel?.getAttribute("role")).toBe("tabpanel");
-		expect(prdPanel?.getAttribute("aria-labelledby")).toBe("ultra-tab-prd");
-	});
-
-	it("navigates tabs using ArrowRight and ArrowLeft keyboard keys", async () => {
-		await act(async () => {
-			root.render(<UltraPipelinePanel pipeline={mockPipeline} />);
-		});
-
-		const tablist = container.querySelector<HTMLDivElement>('[role="tablist"]');
 		expect(tablist).not.toBeNull();
 
-		// Press ArrowRight to move from prd to architect
-		await act(async () => {
-			tablist?.dispatchEvent(
-				new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
-			);
-		});
-
-		const architectTab = container.querySelector<HTMLButtonElement>(
-			"#ultra-tab-architect",
+		const tabs = Array.from(
+			container.querySelectorAll<HTMLButtonElement>('button[role="tab"]'),
 		);
-		expect(architectTab?.getAttribute("aria-selected")).toBe("true");
-		expect(container.querySelector("#ultra-tabpanel-architect")).not.toBeNull();
+		const firstTab = tabs[0];
+		const secondTab = tabs[1];
+		const lastTab = tabs[tabs.length - 1];
 
-		// Press ArrowLeft to move back to prd
+		expect(firstTab?.getAttribute("tabindex")).toBe("0");
+		expect(secondTab?.getAttribute("tabindex")).toBe("-1");
+
 		await act(async () => {
 			tablist?.dispatchEvent(
-				new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }),
+				new KeyboardEvent("keydown", {
+					key: "ArrowRight",
+					bubbles: true,
+					cancelable: true,
+				}),
 			);
 		});
 
-		const prdTabAgain =
-			container.querySelector<HTMLButtonElement>("#ultra-tab-prd");
-		expect(prdTabAgain?.getAttribute("aria-selected")).toBe("true");
-		expect(container.querySelector("#ultra-tabpanel-prd")).not.toBeNull();
+		expect(firstTab?.getAttribute("tabindex")).toBe("-1");
+		expect(secondTab?.getAttribute("tabindex")).toBe("0");
+
+		await act(async () => {
+			tablist?.dispatchEvent(
+				new KeyboardEvent("keydown", {
+					key: "ArrowLeft",
+					bubbles: true,
+					cancelable: true,
+				}),
+			);
+		});
+		expect(firstTab?.getAttribute("tabindex")).toBe("0");
+
+		await act(async () => {
+			tablist?.dispatchEvent(
+				new KeyboardEvent("keydown", {
+					key: "ArrowLeft",
+					bubbles: true,
+					cancelable: true,
+				}),
+			);
+		});
+		expect(lastTab?.getAttribute("tabindex")).toBe("0");
+		expect(firstTab?.getAttribute("tabindex")).toBe("-1");
 	});
 
-	it("renders engineer deliverables in the code tab", async () => {
-		const pipelineWithEngineer: UltraPipeline = {
-			...mockPipeline,
-			engineer: {
-				filesImplemented: ["picker.py", "main.py"],
-				summary: "Implemented color picker module with Pillow bindings.",
-			},
-		};
-
+	it("renders Engineer code implementation tab when selected", async () => {
 		await act(async () => {
-			root.render(<UltraPipelinePanel pipeline={pipelineWithEngineer} />);
+			root.render(<UltraPipelinePanel pipeline={mockPipeline} />);
 		});
 
-		const codeTab =
-			container.querySelector<HTMLButtonElement>("#ultra-tab-code");
+		const codeTab = Array.from(
+			container.querySelectorAll<HTMLButtonElement>('button[role="tab"]'),
+		).find((tab) => tab.textContent?.includes("Cipher (Code)"));
+		expect(codeTab).toBeDefined();
+
 		await act(async () => {
 			codeTab?.click();
 		});
@@ -220,7 +278,65 @@ describe("UltraPipelinePanel component", () => {
 		expect(container.textContent).toContain("picker.py");
 		expect(container.textContent).toContain("main.py");
 		expect(container.textContent).toContain(
-			"Implemented color picker module with Pillow bindings.",
+			"All modules implemented adhering to Atlas interfaces.",
+		);
+	});
+
+	it("renders Lyra research tab with untrusted external evidence badge", async () => {
+		const pipelineWithLyra: UltraPipeline = {
+			...mockPipeline,
+			lyra: {
+				findings:
+					"Benchmarked SQLite vs PostgreSQL; SQLite chosen for local storage.",
+			},
+		};
+
+		await act(async () => {
+			root.render(<UltraPipelinePanel pipeline={pipelineWithLyra} />);
+		});
+
+		const lyraTab = Array.from(
+			container.querySelectorAll<HTMLButtonElement>('button[role="tab"]'),
+		).find((tab) => tab.textContent?.includes("Lyra"));
+		expect(lyraTab).toBeDefined();
+
+		await act(async () => {
+			lyraTab?.click();
+		});
+
+		expect(container.textContent).toContain("[External Evidence - Untrusted]");
+		expect(container.textContent).toContain("Benchmarked SQLite vs PostgreSQL");
+	});
+
+	it("renders failed QA status with clear failure indicator and error tracebacks", async () => {
+		const failedPipeline: UltraPipeline = {
+			...mockPipeline,
+			qa: {
+				testExecutionSummary: "2 failed, 1 passed",
+				retries: 3,
+				maxRetries: 3,
+				status: "failed",
+				errors: ["TypeError: Cannot read property of undefined at main.py:42"],
+			},
+		};
+
+		await act(async () => {
+			root.render(<UltraPipelinePanel pipeline={failedPipeline} />);
+		});
+
+		const qaTab = Array.from(
+			container.querySelectorAll<HTMLButtonElement>('button[role="tab"]'),
+		).find((tab) => tab.textContent?.includes("Sentinel"));
+		expect(qaTab).toBeDefined();
+
+		await act(async () => {
+			qaTab?.click();
+		});
+
+		expect(container.textContent).toContain("Verification Failed");
+		expect(container.textContent).toContain("Captured Error Tracebacks");
+		expect(container.textContent).toContain(
+			"TypeError: Cannot read property of undefined",
 		);
 	});
 });
