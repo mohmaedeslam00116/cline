@@ -89,19 +89,54 @@ export interface TeamMemorySummaryOptions {
 
 /**
  * Cleans Markdown comments and empty placeholder sections from text.
+ * Returns empty string if content only contains default template scaffolding.
  */
 function cleanMemoryContent(content?: string): string {
 	if (!content) return "";
-	return content
+	const cleaned = content
 		.replace(/<!--[\s\S]*?-->/g, "")
 		.replace(/\r\n/g, "\n")
 		.trim();
+
+	// Check if there is any user content beyond default template scaffolding
+	const strippedOfScaffolding = cleaned
+		.replace(/# Architectural Decisions & ADR Notes/g, "")
+		.replace(
+			/Institutional record of architectural choices, trade-offs, and design constraints governing this repository\./g,
+			"",
+		)
+		.replace(/## Active Decisions/g, "")
+		.replace(/# Repository Conventions & Coding Guidelines/g, "")
+		.replace(
+			/Institutional standards for code style, directory structure, testing practices, and engineering idioms\./g,
+			"",
+		)
+		.replace(/## Active Conventions/g, "")
+		.replace(/# Operational Learnings & Historical Bug Resolutions/g, "")
+		.replace(
+			/Verified operational insights, environment workarounds, and debugging solutions accumulated across sessions\./g,
+			"",
+		)
+		.replace(/## Verified Learnings/g, "")
+		.trim();
+
+	if (!strippedOfScaffolding) {
+		return "";
+	}
+
+	return cleaned;
 }
+
+const FULL_TRUNCATION_NOTICE =
+	"\n\n[Full context truncated to preserve context budget. Call read_team_memory(category) for complete section text.]";
+const HARD_TRUNCATION_NOTICE =
+	"...\n\n[Truncated to preserve context budget. Call read_team_memory(category) for complete section text.]";
 
 /**
  * Generates a concise, token-budgeted stratified summary of active decisions and conventions.
  * If the content fits within the budget, it is returned intact.
- * If it exceeds the budget, it extracts headings and active bullet points with an truncation notice.
+ * If it exceeds the budget, it extracts headings and active bullet points with a truncation notice,
+ * strictly guaranteeing that the returned string never exceeds maxChars.
  */
 export function formatTeamMemorySummary(
 	options: TeamMemorySummaryOptions = {},
@@ -155,12 +190,17 @@ export function formatTeamMemorySummary(
 	}
 
 	const condensedCombined = condensedSections.join("\n\n");
-	if (condensedCombined.length <= maxChars) {
-		return `${condensedCombined}\n\n[Full context truncated to preserve context budget. Call read_team_memory(category) for complete section text.]`;
+	if (condensedCombined.length + FULL_TRUNCATION_NOTICE.length <= maxChars) {
+		return `${condensedCombined}${FULL_TRUNCATION_NOTICE}`;
 	}
 
-	// Hard bound if even index exceeds budget
-	return `${condensedCombined.slice(0, maxChars - 120).trimEnd()}...\n\n[Truncated to preserve context budget. Call read_team_memory(category) for complete section text.]`;
+	if (maxChars <= HARD_TRUNCATION_NOTICE.length) {
+		return HARD_TRUNCATION_NOTICE.slice(0, maxChars);
+	}
+
+	const sliceLen = maxChars - HARD_TRUNCATION_NOTICE.length;
+	const result = `${condensedCombined.slice(0, sliceLen).trimEnd()}${HARD_TRUNCATION_NOTICE}`;
+	return result.length > maxChars ? result.slice(0, maxChars) : result;
 }
 
 /**

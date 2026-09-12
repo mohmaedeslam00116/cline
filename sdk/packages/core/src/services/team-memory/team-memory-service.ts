@@ -113,14 +113,18 @@ export class TeamMemoryService {
 
 		try {
 			decisionsContent = await this.readCategory("decisions");
-		} catch {
-			// fallback to empty if missing
+		} catch (error: any) {
+			if (error?.code !== "ENOENT") {
+				throw error;
+			}
 		}
 
 		try {
 			conventionsContent = await this.readCategory("conventions");
-		} catch {
-			// fallback to empty if missing
+		} catch (error: any) {
+			if (error?.code !== "ENOENT") {
+				throw error;
+			}
 		}
 
 		return formatTeamMemorySummary({
@@ -175,8 +179,12 @@ export class TeamMemoryService {
 		let currentContent = "";
 		try {
 			currentContent = await this.readCategory("learnings");
-		} catch {
-			currentContent = TEAM_MEMORY_TEMPLATES.learnings;
+		} catch (error: any) {
+			if (error?.code === "ENOENT") {
+				currentContent = TEAM_MEMORY_TEMPLATES.learnings;
+			} else {
+				throw error;
+			}
 		}
 
 		const newEntries = this.stagedLearnings

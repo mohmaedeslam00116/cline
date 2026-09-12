@@ -1,13 +1,19 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { type AgentToolContext } from "@cline/shared";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TeamMemoryService } from "./team-memory-service";
 import {
 	createReadTeamMemoryTool,
 	createRecordTeamLearningTool,
 	createTeamMemoryTools,
 } from "./team-memory-tools";
+
+const mockToolContext: AgentToolContext = {
+	agentId: "test-agent",
+	iteration: 1,
+};
 
 describe("TeamMemoryService", () => {
 	let testDir: string;
@@ -162,6 +168,29 @@ describe("TeamMemoryService", () => {
 		);
 		expect(diskContent).not.toContain("Invalid Proposal");
 	});
+
+	it("propagates non-ENOENT read errors when generating stratified summary", async () => {
+		const permissionError = Object.assign(new Error("Permission denied"), {
+			code: "EACCES",
+		});
+		vi.spyOn(service, "readCategory").mockRejectedValueOnce(permissionError);
+
+		await expect(service.generateStratifiedSummary()).rejects.toThrow(
+			"Permission denied",
+		);
+	});
+
+	it("propagates non-ENOENT read errors when committing staged learnings", async () => {
+		service.stageLearning("Topic", "Learning");
+		const ioError = Object.assign(new Error("Disk I/O failure"), {
+			code: "EIO",
+		});
+		vi.spyOn(service, "readCategory").mockRejectedValueOnce(ioError);
+
+		await expect(service.commitStagedLearnings()).rejects.toThrow(
+			"Disk I/O failure",
+		);
+	});
 });
 
 describe("Team Memory Runtime Tools", () => {
@@ -189,7 +218,7 @@ describe("Team Memory Runtime Tools", () => {
 
 		const result = await readTool.execute(
 			{ category: "decisions" },
-			{} as any,
+			mockToolContext,
 		);
 
 		expect(result.ok).toBe(true);
@@ -206,7 +235,7 @@ describe("Team Memory Runtime Tools", () => {
 				topic: "Zod Schema Mismatch",
 				learning: "Export shared schemas from @cline/shared to avoid version conflicts",
 			},
-			{} as any,
+			mockToolContext,
 		);
 
 		expect(result.ok).toBe(true);

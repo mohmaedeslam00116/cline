@@ -105,23 +105,49 @@ describe("formatTeamMemorySummary", () => {
 		expect(summary).toContain("- Rule 1");
 	});
 
-	it("condenses content when exceeding maxChars and appends truncation note", () => {
+	it("recognizes untouched default templates as empty memory", () => {
+		const summary = formatTeamMemorySummary({
+			decisionsContent: TEAM_MEMORY_TEMPLATES.decisions,
+			conventionsContent: TEAM_MEMORY_TEMPLATES.conventions,
+		});
+		expect(summary).toBe(
+			"No institutional decisions or conventions recorded yet in .lens/memory/.",
+		);
+	});
+
+	it("strictly keeps the complete returned summary within maxChars in all truncation branches", () => {
 		const longDecisions = [
 			"# Header 1",
 			"- Bullet 1: Important architectural rule",
-			"Paragraph explaining something that takes up space without bullet point.",
+			"Paragraph explaining something that takes up space without bullet point in multiple sentences to easily exceed three hundred characters total.",
+			"Another long paragraph of explanatory narrative that takes up plenty of characters.",
 			"- Bullet 2: Another rule",
 			"# Header 2",
-			"More rambling explanation that should be compressed.",
+			"More rambling explanation that should be compressed and omitted during indexing.",
 			"- Bullet 3: Final rule",
 		].join("\n");
 
-		const summary = formatTeamMemorySummary({
+		// Branch 1: condensed fits with index notice
+		const summary1 = formatTeamMemorySummary({
+			decisionsContent: longDecisions,
+			maxChars: 300,
+		});
+		expect(summary1.length).toBeLessThanOrEqual(300);
+		expect(summary1).toContain("[Full context truncated");
+
+		// Branch 2: hard truncation with slice
+		const summary2 = formatTeamMemorySummary({
 			decisionsContent: longDecisions,
 			maxChars: 120,
 		});
+		expect(summary2.length).toBeLessThanOrEqual(120);
 
-		expect(summary).toContain("[Truncated to preserve context budget");
+		// Branch 3: very small budget
+		const summary3 = formatTeamMemorySummary({
+			decisionsContent: longDecisions,
+			maxChars: 40,
+		});
+		expect(summary3.length).toBeLessThanOrEqual(40);
 	});
 });
 

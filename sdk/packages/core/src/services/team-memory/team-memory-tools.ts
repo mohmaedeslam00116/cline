@@ -7,6 +7,7 @@ import {
 	RecordTeamLearningInputSchema,
 	type StagedTeamLearning,
 	type TeamMemoryCategory,
+	zodToJsonSchema,
 } from "@cline/shared";
 import type { TeamMemoryService } from "./team-memory-service";
 
@@ -32,11 +33,11 @@ export interface RecordTeamLearningToolResult {
 export function createReadTeamMemoryTool(
 	service: TeamMemoryService,
 ): AgentTool<ReadTeamMemoryInput, ReadTeamMemoryToolResult> {
-	return createTool<typeof ReadTeamMemoryInputSchema, ReadTeamMemoryToolResult>({
+	return createTool<ReadTeamMemoryInput, ReadTeamMemoryToolResult>({
 		name: "read_team_memory",
 		description:
 			"Retrieve the complete institutional memory section for a category ('decisions', 'conventions', or 'learnings') from .lens/memory/.",
-		inputSchema: ReadTeamMemoryInputSchema,
+		inputSchema: zodToJsonSchema(ReadTeamMemoryInputSchema),
 		execute: async (input) => {
 			try {
 				const content = await service.readCategory(input.category);
@@ -66,13 +67,13 @@ export function createRecordTeamLearningTool(
 	service: TeamMemoryService,
 ): AgentTool<RecordTeamLearningInput, RecordTeamLearningToolResult> {
 	return createTool<
-		typeof RecordTeamLearningInputSchema,
+		RecordTeamLearningInput,
 		RecordTeamLearningToolResult
 	>({
 		name: "record_team_learning",
 		description:
 			"Propose a newly discovered operational insight, bug resolution, or environment quirk. Stages the proposal in runtime memory for human review at Checkpoint Gates without directly mutating disk files.",
-		inputSchema: RecordTeamLearningInputSchema,
+		inputSchema: zodToJsonSchema(RecordTeamLearningInputSchema),
 		execute: async (input) => {
 			try {
 				const proposal = service.stageLearning(input.topic, input.learning);
