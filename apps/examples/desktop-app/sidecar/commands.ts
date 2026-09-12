@@ -1457,6 +1457,31 @@ export async function handleCommand(
 		const { deleteCustomPersona } = await import("./personas");
 		return await deleteCustomPersona(workspaceRoot, id, scope);
 	}
+	if (command === "lens_team_memory_commit") {
+		const workspaceRoot = ctx.workspaceRoot;
+		const { TeamMemoryService } = await import("@cline/core");
+		const service = new TeamMemoryService({ workspaceRoot });
+		const approvedLearnings = Array.isArray(args?.approvedLearnings)
+			? args.approvedLearnings
+			: undefined;
+		const count = await service.commitStagedLearnings(approvedLearnings);
+		return { ok: true, count };
+	}
+	if (command === "lens_team_memory_clear") {
+		const workspaceRoot = ctx.workspaceRoot;
+		const { TeamMemoryService } = await import("@cline/core");
+		const service = new TeamMemoryService({ workspaceRoot });
+		service.clearStagedLearnings();
+		return { ok: true };
+	}
+	if (command === "lens_team_memory_read") {
+		const workspaceRoot = ctx.workspaceRoot;
+		const category = args?.category as "decisions" | "conventions" | "learnings";
+		const { TeamMemoryService } = await import("@cline/core");
+		const service = new TeamMemoryService({ workspaceRoot });
+		const content = await service.readCategory(category);
+		return { ok: true, category, content };
+	}
 
 	// ── Session data reading ──────────────────────────────────────────
 	if (command === "read_session_messages") {

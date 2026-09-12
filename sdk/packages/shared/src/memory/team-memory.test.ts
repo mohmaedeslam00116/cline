@@ -42,6 +42,13 @@ describe("Team Memory Domain & Schemas", () => {
 		});
 		expect(valid.success).toBe(true);
 
+		const validWithPersona = RecordTeamLearningInputSchema.safeParse({
+			topic: "Vitest Configuration",
+			learning: "Use native ESM config in package.json to avoid warnings",
+			personaId: "sentinel",
+		});
+		expect(validWithPersona.success).toBe(true);
+
 		const emptyTopic = RecordTeamLearningInputSchema.safeParse({
 			topic: "",
 			learning: "Some learning",
@@ -56,13 +63,22 @@ describe("Team Memory Domain & Schemas", () => {
 		expect(extraField.success).toBe(false);
 	});
 
-	it("validates StagedTeamLearningSchema", () => {
+	it("validates StagedTeamLearningSchema with optional id and personaId", () => {
 		const valid = StagedTeamLearningSchema.safeParse({
+			id: "learning-123",
+			topic: "Cache Invalidation",
+			learning: "Clear cache before re-running test suites",
+			timestamp: "2026-09-13T00:00:00Z",
+			personaId: "atlas",
+		});
+		expect(valid.success).toBe(true);
+
+		const validWithoutOptionals = StagedTeamLearningSchema.safeParse({
 			topic: "Cache Invalidation",
 			learning: "Clear cache before re-running test suites",
 			timestamp: "2026-09-13T00:00:00Z",
 		});
-		expect(valid.success).toBe(true);
+		expect(validWithoutOptionals.success).toBe(true);
 	});
 
 	it("provides file mappings and default templates for all categories", () => {

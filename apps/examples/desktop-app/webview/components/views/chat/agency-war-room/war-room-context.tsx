@@ -17,6 +17,7 @@ import { getLensTranslations } from "@/lib/lens-i18n";
 import type {
 	AgencyWarRoomEventPayload,
 	WarRoomCheckpointGate,
+	WarRoomCheckpointMemoryProposal,
 	WarRoomMessage,
 	WarRoomStage,
 	WarRoomState,
@@ -71,6 +72,26 @@ export function createInitialCheckpointGates(
 					badge: "Atlas",
 				},
 			],
+			proposedLearnings: [
+				{
+					id: "prop-gate1-1",
+					personaId: "atlas",
+					topic: "Monorepo Package Resolution",
+					learning:
+						"SDK packages must be compiled via 'bun run build:sdk' before running client tests because export maps only point to dist/.",
+					timestamp: Date.now() - 1000 * 60 * 7,
+					approved: true,
+				},
+				{
+					id: "prop-gate1-2",
+					personaId: "athena",
+					topic: "Strict Zod Schemas",
+					learning:
+						"Use z.strictObject() rather than z.object() for agent tool input schemas to reject unexpected fields.",
+					timestamp: Date.now() - 1000 * 60 * 5,
+					approved: true,
+				},
+			],
 			timestamp: Date.now() - 1000 * 60 * 8,
 		},
 		{
@@ -92,6 +113,17 @@ export function createInitialCheckpointGates(
 					type: "Manifest",
 					summary: t.gate2Deliv2Summary,
 					badge: "Cipher",
+				},
+			],
+			proposedLearnings: [
+				{
+					id: "prop-gate2-1",
+					personaId: "sentinel",
+					topic: "Vitest DOM Setup",
+					learning:
+						"Component tests importing @pierre/diffs require a window.ResizeObserver polyfill in happy-dom environments.",
+					timestamp: Date.now() - 1000 * 60 * 1,
+					approved: true,
 				},
 			],
 			timestamp: Date.now() - 1000 * 60 * 2,
@@ -253,8 +285,15 @@ interface WarRoomContextValue extends WarRoomState {
 	toggleFullscreen: () => void;
 	setFilterPersona: (persona: SpecialistPersonaId | "all") => void;
 	addMessage: (message: Omit<WarRoomMessage, "id" | "timestamp">) => void;
-	approveCheckpoint: (gateId: string) => void;
-	rejectCheckpoint: (gateId: string, feedback: string) => void;
+	approveCheckpoint: (
+		gateId: string,
+		approvedLearnings?: WarRoomCheckpointMemoryProposal[],
+	) => void;
+	rejectCheckpoint: (
+		gateId: string,
+		feedback: string,
+		options?: { discardProposals?: boolean },
+	) => void;
 	stepSimulation: () => void;
 	playSimulation: () => void;
 	pauseSimulation: () => void;
@@ -490,15 +529,46 @@ export function WarRoomProvider({
 	);
 
 	const approveCheckpoint = useCallback(
-		(gateId: string) => {
+		async (
+			gateId: string,
+			approvedLearnings?: WarRoomCheckpointMemoryProposal[],
+		) => {
 			setCheckpointGates((prev) =>
 				prev.map((gate) =>
 					gate.id === gateId ? { ...gate, status: "approved" as const } : gate,
 				),
 			);
 
+			// Commit approved memory proposals to persistent disk memory via desktop sidecar
+			if (approvedLearnings && approvedLearnings.length > 0) {
+				try {
+					await desktopClient.invoke("lens_team_memory_commit", {
+						approvedLearnings: approvedLearnings.map((p) => ({
+							id: p.id,
+							topic: p.topic,
+							learning: p.learning,
+							timestamp:
+								typeof p.timestamp === "number"
+									? new Date(p.timestamp).toISOString()
+									: p.timestamp,
+							personaId: p.personaId,
+						})),
+					});
+				} catch (error) {
+					console.warn(
+						"[WarRoom] Failed to commit approved team memory proposals:",
+						error,
+					);
+				}
+			}
+
 			const gateTitle =
 				gateId === "gate-1" ? t.checkpointGate1Title : t.checkpointGate2Title;
+
+			const memoryNotice =
+				approvedLearnings && approvedLearnings.length > 0
+					? ` (${approvedLearnings.length} team memory learning${approvedLearnings.length > 1 ? "s" : ""} committed)`
+					: "";
 
 			const approvalMessage: WarRoomMessage = {
 				id: `msg-approval-${Date.now()}`,
@@ -506,7 +576,7 @@ export function WarRoomProvider({
 				recipientPersonaId: "all",
 				stage: "strategy",
 				type: "chat",
-				content: `${t.gateApprovedProceeding} ${gateTitle}. ${t.proceedingImmediately}`,
+				content: `${t.gateApprovedProceeding} ${gateTitle}${memoryNotice}. ${t.proceedingImmediately}`,
 				timestamp: Date.now(),
 			};
 
@@ -552,14 +622,34 @@ export function WarRoomProvider({
 	);
 
 	const rejectCheckpoint = useCallback(
-		(gateId: string, feedback: string) => {
+		async (
+			gateId: string,
+			feedback: string,
+			options?: { discardProposals?: boolean },
+		) => {
 			setCheckpointGates((prev) =>
 				prev.map((gate) =>
 					gate.id === gateId
-						? { ...gate, status: "rejected" as const, feedback }
+						? {
+								...gate,
+								status: "rejected" as const,
+								feedback,
+								...(options?.discardProposals ? { proposedLearnings: [] } : {}),
+							}
 						: gate,
 				),
 			);
+
+			if (options?.discardProposals) {
+				try {
+					await desktopClient.invoke("lens_team_memory_clear");
+				} catch (error) {
+					console.warn(
+						"[WarRoom] Failed to clear staged team memory proposals:",
+						error,
+					);
+				}
+			}
 
 			setMessages((prev) => [
 				...prev,

@@ -169,6 +169,50 @@ describe("TeamMemoryService", () => {
 		expect(diskContent).not.toContain("Invalid Proposal");
 	});
 
+	it("supports selective approval commit with persona attribution and edited content", async () => {
+		await service.initialize();
+
+		const prop1 = service.stageLearning(
+			"Monorepo Resolution",
+			"Run bun run build:sdk first",
+			{ personaId: "atlas" },
+		);
+		const prop2 = service.stageLearning(
+			"Hallucinated Rule",
+			"Never use TypeScript",
+			{ personaId: "vector" },
+		);
+
+		expect(prop1.id).toBeDefined();
+		expect(prop1.personaId).toBe("atlas");
+		expect(service.getStagedLearnings()).toHaveLength(2);
+
+		// Developer edits prop1 and excludes prop2
+		const approvedList = [
+			{
+				...prop1,
+				topic: "Monorepo Package Resolution (Edited)",
+				learning: "Run bun run build:sdk before running client tests.",
+			},
+		];
+
+		const count = await service.commitStagedLearnings(approvedList);
+		expect(count).toBe(1);
+		expect(service.getStagedLearnings()).toHaveLength(0);
+
+		const diskContent = await readFile(
+			join(testDir, ".lens", "memory", "learnings.md"),
+			"utf-8",
+		);
+		expect(diskContent).toContain(
+			"### Monorepo Package Resolution (Edited) [atlas]",
+		);
+		expect(diskContent).toContain(
+			"Run bun run build:sdk before running client tests.",
+		);
+		expect(diskContent).not.toContain("Hallucinated Rule");
+	});
+
 	it("propagates non-ENOENT read errors when generating stratified summary", async () => {
 		const permissionError = Object.assign(new Error("Permission denied"), {
 			code: "EACCES",
@@ -254,6 +298,36 @@ describe("Team Memory Runtime Tools", () => {
 			"utf-8",
 		);
 		expect(diskContent).not.toContain("Zod Schema Mismatch");
+	});
+
+	it("record_team_learning records personaId from input or context", async () => {
+		const recordTool = createRecordTeamLearningTool(service);
+
+		// With input.personaId
+		const res1 = await recordTool.execute(
+			{
+				topic: "AST Parser Quirk",
+				learning: "Always handle JSX fragments",
+				personaId: "lyra",
+			},
+			mockToolContext,
+		);
+		expect(res1.ok).toBe(true);
+		expect(res1.proposal?.personaId).toBe("lyra");
+
+		// With context.metadata.personaId
+		const res2 = await recordTool.execute(
+			{
+				topic: "Build Step",
+				learning: "Rebuild SDK dist files",
+			},
+			{
+				...mockToolContext,
+				metadata: { personaId: "athena" },
+			},
+		);
+		expect(res2.ok).toBe(true);
+		expect(res2.proposal?.personaId).toBe("athena");
 	});
 
 	it("createTeamMemoryTools returns both tools", () => {

@@ -74,9 +74,15 @@ export function createRecordTeamLearningTool(
 		description:
 			"Propose a newly discovered operational insight, bug resolution, or environment quirk. Stages the proposal in runtime memory for human review at Checkpoint Gates without directly mutating disk files.",
 		inputSchema: zodToJsonSchema(RecordTeamLearningInputSchema),
-		execute: async (input) => {
+		execute: async (input, context) => {
 			try {
-				const proposal = service.stageLearning(input.topic, input.learning);
+				const personaId =
+					input.personaId ||
+					(context?.metadata?.personaId as string) ||
+					context?.agentId;
+				const proposal = service.stageLearning(input.topic, input.learning, {
+					personaId,
+				});
 				return {
 					ok: true,
 					staged: true,

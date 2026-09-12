@@ -24,6 +24,7 @@ export type ReadTeamMemoryInput = z.infer<typeof ReadTeamMemoryInputSchema>;
 export const RecordTeamLearningInputSchema = z.strictObject({
 	topic: z.string().min(1, "topic cannot be empty"),
 	learning: z.string().min(1, "learning cannot be empty"),
+	personaId: z.string().optional(),
 });
 export type RecordTeamLearningInput = z.infer<
 	typeof RecordTeamLearningInputSchema
@@ -33,9 +34,11 @@ export type RecordTeamLearningInput = z.infer<
  * Schema for an in-memory staged learning awaiting human Checkpoint Gate approval.
  */
 export const StagedTeamLearningSchema = z.strictObject({
+	id: z.string().optional(),
 	topic: z.string(),
 	learning: z.string(),
 	timestamp: z.string(),
+	personaId: z.string().optional(),
 });
 export type StagedTeamLearning = z.infer<typeof StagedTeamLearningSchema>;
 
