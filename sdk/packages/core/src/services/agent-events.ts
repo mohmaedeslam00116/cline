@@ -47,6 +47,7 @@ export interface AgentTelemetryContextOverrides {
 	agentId?: string;
 	conversationId?: string;
 	parentAgentId?: string | null;
+	personaId?: string;
 	createdByAgentId?: string;
 	teamId?: string;
 	teamName?: string;
@@ -59,6 +60,7 @@ export function extractAgentEventMetadata(event: AgentEvent): {
 	agentId?: string;
 	conversationId?: string;
 	parentAgentId?: string;
+	personaId?: string;
 } {
 	if (!event || typeof event !== "object") {
 		return {};
@@ -74,6 +76,8 @@ export function extractAgentEventMetadata(event: AgentEvent): {
 			typeof record.parentAgentId === "string"
 				? record.parentAgentId
 				: undefined,
+		personaId:
+			typeof record.personaId === "string" ? record.personaId : undefined,
 	};
 }
 
@@ -317,6 +321,7 @@ export function handleAgentEvent(
 		payload: {
 			sessionId,
 			event,
+			isPrimaryAgentEvent,
 			teamAgentId: overrides?.teamAgentId,
 			teamRole:
 				overrides !== undefined

@@ -30,6 +30,7 @@ export interface WarRoomMessage {
 	};
 	toolCall?: {
 		toolName: string;
+		toolCallId?: string;
 		args?: Record<string, unknown>;
 		output?: string;
 		status: "running" | "completed" | "error";
@@ -77,4 +78,28 @@ export interface WarRoomState {
 	activePersonaStates: Record<SpecialistPersonaId, PersonaActivityState>;
 	isSimulating: boolean;
 	activeSimulationStep: number;
+}
+
+export interface AgencyWarRoomEventPayload {
+	sessionId: string;
+	subAgentId?: string;
+	parentAgentId?: string;
+	personaId?: SpecialistPersonaId;
+	stage?: WarRoomStage;
+	event: {
+		type: string;
+		contentType?: string;
+		text?: string;
+		accumulated?: string;
+		reasoning?: string;
+		toolName?: string;
+		toolCallId?: string;
+		input?: unknown;
+		output?: string;
+		error?: string;
+		durationMs?: number;
+		reason?: string;
+		[key: string]: unknown;
+	};
+	ts: number;
 }

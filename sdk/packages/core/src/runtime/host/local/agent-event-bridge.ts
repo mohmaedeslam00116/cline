@@ -72,6 +72,7 @@ export class AgentEventBridge {
 		const eventMetadata = extractAgentEventMetadata(event);
 		const isRootAgentEvent =
 			!!liveSession &&
+			!eventMetadata.parentAgentId &&
 			(!eventMetadata.agentId ||
 				eventMetadata.agentId === readAgentId(liveSession.agent));
 		if (isRootAgentEvent) {
@@ -97,6 +98,18 @@ export class AgentEventBridge {
 			// (sub-agent) event carrying its own metadata, so no fallback is
 			// applied.
 			...(liveSession ? {} : this.lastKnownIdentityBySession.get(sessionId)),
+			...(eventMetadata.agentId !== undefined
+				? { agentId: eventMetadata.agentId }
+				: {}),
+			...(eventMetadata.parentAgentId !== undefined
+				? { parentAgentId: eventMetadata.parentAgentId }
+				: {}),
+			...(eventMetadata.conversationId !== undefined
+				? { conversationId: eventMetadata.conversationId }
+				: {}),
+			...(eventMetadata.personaId !== undefined
+				? { personaId: eventMetadata.personaId }
+				: {}),
 			isPrimaryAgentEvent: false,
 		});
 	}

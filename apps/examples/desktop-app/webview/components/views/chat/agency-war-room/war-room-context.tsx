@@ -12,13 +12,39 @@ import {
 	useState,
 } from "react";
 import type { PersonaActivityState } from "@/components/personas";
+import { desktopClient } from "@/lib/desktop-client";
 import { getLensTranslations } from "@/lib/lens-i18n";
 import type {
+	AgencyWarRoomEventPayload,
 	WarRoomCheckpointGate,
 	WarRoomMessage,
+	WarRoomStage,
 	WarRoomState,
 	WarRoomViewMode,
 } from "./types";
+
+export function resolvePersonaStage(
+	personaId: SpecialistPersonaId,
+): WarRoomStage {
+	switch (personaId) {
+		case "orion":
+		case "athena":
+			return "strategy";
+		case "lyra":
+			return "research";
+		case "atlas":
+			return "architecture";
+		case "cipher":
+		case "vector":
+			return "development";
+		case "sentinel":
+			return "qa";
+		case "echo":
+			return "documentation";
+		default:
+			return "development";
+	}
+}
 
 export function createInitialCheckpointGates(
 	t: ReturnType<typeof getLensTranslations>["ultraAgency"],
@@ -233,6 +259,8 @@ interface WarRoomContextValue extends WarRoomState {
 	playSimulation: () => void;
 	pauseSimulation: () => void;
 	resetSimulation: () => void;
+	sessionId: string | null;
+	setSessionId: (sessionId: string | null) => void;
 }
 
 const WarRoomContext = createContext<WarRoomContextValue | null>(null);
@@ -240,9 +268,11 @@ const WarRoomContext = createContext<WarRoomContextValue | null>(null);
 export function WarRoomProvider({
 	children,
 	initialOpen = false,
+	sessionId: initialSessionId,
 }: {
 	children: React.ReactNode;
 	initialOpen?: boolean;
+	sessionId?: string | null;
 }) {
 	const t = getLensTranslations().ultraAgency;
 	const scenarioSteps = useMemo(() => createSimulationScenarioSteps(t), [t]);
@@ -268,6 +298,21 @@ export function WarRoomProvider({
 		})),
 	);
 
+	const [activeSessionId, setActiveSessionId] = useState<string | null>(
+		initialSessionId ?? null,
+	);
+	const activeSessionIdRef = useRef(activeSessionId);
+	activeSessionIdRef.current = activeSessionId;
+
+	useEffect(() => {
+		if (initialSessionId !== undefined) {
+			setActiveSessionId(initialSessionId);
+		}
+	}, [initialSessionId]);
+
+	// Map to correlate streaming text response IDs per subagent
+	const activeTextStreamsRef = useRef<Map<string, string>>(new Map());
+
 	const [isSimulating, setIsSimulating] = useState(false);
 	const [activeSimulationStep, setActiveSimulationStep] = useState(4);
 	const simTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -280,6 +325,149 @@ export function WarRoomProvider({
 
 	const scenarioStepsRef = useRef(scenarioSteps);
 	scenarioStepsRef.current = scenarioSteps;
+
+	// Subscribe to live subagent events from desktop sidecar WebSocket
+	useEffect(() => {
+		const unsubscribe = desktopClient.subscribe(
+			"agency_war_room_event",
+			(rawPayload: unknown) => {
+				const payload = rawPayload as AgencyWarRoomEventPayload;
+				if (!payload || !payload.event) return;
+
+				// Scope War Room events to the active session
+				if (
+					activeSessionIdRef.current &&
+					payload.sessionId &&
+					payload.sessionId !== activeSessionIdRef.current
+				) {
+					return;
+				}
+
+				const personaId: SpecialistPersonaId | undefined = payload.personaId;
+				const event = payload.event;
+				const ts = payload.ts || Date.now();
+				const streamKey = payload.subAgentId || personaId || "subagent";
+
+				if (event.type === "content_start") {
+					if (event.contentType === "text" && event.text) {
+						if (personaId) {
+							setActivePersonaStates((prev) => ({
+								...prev,
+								[personaId]: "speaking",
+							}));
+						}
+						const existingMsgId = activeTextStreamsRef.current.get(streamKey);
+						if (existingMsgId) {
+							setMessages((prev) =>
+								prev.map((msg) =>
+									msg.id === existingMsgId
+										? { ...msg, content: msg.content + event.text }
+										: msg,
+								),
+							);
+						} else {
+							const newMsgId = `live-msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+							activeTextStreamsRef.current.set(streamKey, newMsgId);
+							setMessages((prev) => [
+								...prev,
+								{
+									id: newMsgId,
+									senderPersonaId: personaId || "cipher",
+									recipientPersonaId: "all",
+									stage: personaId
+										? resolvePersonaStage(personaId)
+										: "development",
+									type: "chat",
+									content: event.text || "",
+									timestamp: ts,
+								},
+							]);
+						}
+					} else if (event.contentType === "tool") {
+						if (personaId) {
+							setActivePersonaStates((prev) => ({
+								...prev,
+								[personaId]: "working",
+							}));
+						}
+						const toolCallId = event.toolCallId || `tool-${Date.now()}`;
+						setMessages((prev) => [
+							...prev,
+							{
+								id: `live-tool-${toolCallId}`,
+								senderPersonaId: personaId || "cipher",
+								recipientPersonaId: "all",
+								stage: personaId
+									? resolvePersonaStage(personaId)
+									: "development",
+								type: "tool_call",
+								content: `Executing tool: ${event.toolName || "tool"}`,
+								toolCall: {
+									toolName: event.toolName || "unknown",
+									toolCallId,
+									args: event.input as Record<string, unknown>,
+									status: "running",
+								},
+								timestamp: ts,
+							},
+						]);
+					}
+				} else if (event.type === "content_end") {
+					if (event.contentType === "tool") {
+						if (personaId) {
+							setActivePersonaStates((prev) => ({
+								...prev,
+								[personaId]: "thinking",
+							}));
+						}
+						setMessages((prev) =>
+							prev.map((msg) => {
+								const matches =
+									msg.type === "tool_call" &&
+									msg.toolCall?.status === "running" &&
+									(event.toolCallId
+										? msg.toolCall.toolCallId === event.toolCallId ||
+											msg.id === `live-tool-${event.toolCallId}`
+										: msg.toolCall?.toolName === event.toolName);
+
+								if (matches && msg.toolCall) {
+									return {
+										...msg,
+										toolCall: {
+											...msg.toolCall,
+											output: event.output,
+											status: event.error ? "error" : "completed",
+										},
+									};
+								}
+								return msg;
+							}),
+						);
+					} else if (event.contentType === "text") {
+						activeTextStreamsRef.current.delete(streamKey);
+						if (personaId) {
+							setActivePersonaStates((prev) => ({
+								...prev,
+								[personaId]: "idle",
+							}));
+						}
+					}
+				} else if (event.type === "done") {
+					activeTextStreamsRef.current.delete(streamKey);
+					if (personaId) {
+						setActivePersonaStates((prev) => ({
+							...prev,
+							[personaId]: "idle",
+						}));
+					}
+				}
+			},
+		);
+
+		return () => {
+			unsubscribe();
+		};
+	}, []);
 
 	const openWarRoom = useCallback(() => setIsOpen(true), []);
 	const closeWarRoom = useCallback(() => setIsOpen(false), []);
@@ -512,6 +700,8 @@ export function WarRoomProvider({
 			playSimulation,
 			pauseSimulation,
 			resetSimulation,
+			sessionId: activeSessionId,
+			setSessionId: setActiveSessionId,
 		}),
 		[
 			isOpen,
@@ -522,6 +712,7 @@ export function WarRoomProvider({
 			activePersonaStates,
 			isSimulating,
 			activeSimulationStep,
+			activeSessionId,
 			openWarRoom,
 			closeWarRoom,
 			toggleWarRoom,
