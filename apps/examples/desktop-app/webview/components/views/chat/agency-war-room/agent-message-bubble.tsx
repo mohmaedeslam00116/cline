@@ -11,20 +11,18 @@ import {
 	Copy,
 	ExternalLink,
 	FileText,
-	Layers,
-	Radio,
 	Terminal,
 	Wrench,
 	Zap,
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
+import {
+	type PersonaActivityState,
+	PersonaAvatar,
+} from "@/components/personas";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	PersonaAvatar,
-	type PersonaActivityState,
-} from "@/components/personas";
 import { getLensTranslations } from "@/lib/lens-i18n";
 import { cn } from "@/lib/utils";
 import { CheckpointGateCard } from "./checkpoint-gate-card";
@@ -39,6 +37,7 @@ export interface AgentMessageBubbleProps {
 	associatedGate?: WarRoomCheckpointGate;
 	onApproveGate?: (gateId: string) => void;
 	onRejectGate?: (gateId: string, feedback: string) => void;
+	onOpenArtifact?: (uri: string) => void;
 	className?: string;
 }
 
@@ -89,6 +88,7 @@ export const AgentMessageBubble: React.FC<AgentMessageBubbleProps> = ({
 	associatedGate,
 	onApproveGate,
 	onRejectGate,
+	onOpenArtifact,
 	className,
 }) => {
 	const t = getLensTranslations().ultraAgency;
@@ -100,8 +100,18 @@ export const AgentMessageBubble: React.FC<AgentMessageBubbleProps> = ({
 			? BUILTIN_PERSONAS[message.recipientPersonaId as SpecialistPersonaId]
 			: null;
 
+	const stageLabelMap: Record<WarRoomStage, string> = {
+		strategy: t.stageStrategy,
+		research: t.stageResearch,
+		architecture: t.stageArchitecture,
+		development: t.stageDevelopment,
+		qa: t.stageQa,
+		documentation: t.stageDocumentation,
+	};
+
 	const stageConfig =
 		STAGE_BADGE_CLASSES[message.stage] || STAGE_BADGE_CLASSES.strategy;
+	const stageLabel = stageLabelMap[message.stage] || stageConfig.label;
 
 	const handleCopyCode = async (code: string) => {
 		try {
@@ -172,7 +182,7 @@ export const AgentMessageBubble: React.FC<AgentMessageBubbleProps> = ({
 				</div>
 
 				{/* Badges & Meta */}
-				<div className="flex items-center gap-1.5 shrink-0">
+				<div className="flex items-center gap-1.5 shrink-0 flex-wrap">
 					<Badge
 						variant="outline"
 						className={cn(
@@ -182,8 +192,17 @@ export const AgentMessageBubble: React.FC<AgentMessageBubbleProps> = ({
 							stageConfig.border,
 						)}
 					>
-						{stageConfig.label}
+						{stageLabel}
 					</Badge>
+
+					{(message.untrusted || message.artifact?.untrusted) && (
+						<Badge
+							variant="outline"
+							className="text-[9px] font-mono border-amber-500/50 text-amber-300 bg-amber-950/50 px-1.5 py-0.5"
+						>
+							{t.untrustedEvidenceBadge}
+						</Badge>
+					)}
 
 					{message.type === "handoff" && (
 						<Badge
@@ -191,7 +210,7 @@ export const AgentMessageBubble: React.FC<AgentMessageBubbleProps> = ({
 							className="text-[10px] font-mono border-purple-500/40 text-purple-400 bg-purple-950/40"
 						>
 							<Zap className="size-2.5 mr-1" />
-							Handoff
+							{t.handoffTo}
 						</Badge>
 					)}
 
@@ -201,7 +220,7 @@ export const AgentMessageBubble: React.FC<AgentMessageBubbleProps> = ({
 							className="text-[10px] font-mono border-blue-500/40 text-blue-400 bg-blue-950/40"
 						>
 							<Wrench className="size-2.5 mr-1" />
-							Tool Exec
+							{t.statusWorking}
 						</Badge>
 					)}
 
@@ -254,7 +273,7 @@ export const AgentMessageBubble: React.FC<AgentMessageBubbleProps> = ({
 
 					{message.toolCall.output && (
 						<div className="mt-2 pt-2 border-t border-slate-800/60 text-[11px] text-emerald-400/90">
-							<span className="text-slate-500">Output: </span>
+							<span className="text-slate-500">{t.outputLabel} </span>
 							{message.toolCall.output}
 						</div>
 					)}
@@ -277,7 +296,8 @@ export const AgentMessageBubble: React.FC<AgentMessageBubbleProps> = ({
 							variant="ghost"
 							onClick={() => handleCopyCode(message.codeSnippet?.code || "")}
 							className="h-6 w-6 text-slate-400 hover:text-slate-200"
-							aria-label="Copy code snippet"
+							aria-label={t.copyCodeSnippet}
+							title={copiedCode ? t.codeSnippetCopied : t.copyCodeSnippet}
 						>
 							{copiedCode ? (
 								<Check className="size-3 text-emerald-400" />
@@ -298,13 +318,21 @@ export const AgentMessageBubble: React.FC<AgentMessageBubbleProps> = ({
 					<div className="flex items-center gap-2.5 min-w-0">
 						<FileText className="size-4 text-cyan-400 shrink-0" />
 						<div className="min-w-0">
-							<div className="flex items-center gap-2">
+							<div className="flex items-center gap-2 flex-wrap">
 								<span className="font-semibold text-slate-100 truncate font-mono">
 									{message.artifact.title}
 								</span>
 								<span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-cyan-900/40 text-cyan-300 border border-cyan-700/40">
 									{message.artifact.type}
 								</span>
+								{(message.artifact.untrusted || message.untrusted) && (
+									<Badge
+										variant="outline"
+										className="text-[9px] font-mono border-amber-500/50 text-amber-300 bg-amber-950/50 px-1.5 py-0.2"
+									>
+										{t.untrustedEvidenceBadge}
+									</Badge>
+								)}
 							</div>
 							{message.artifact.summary && (
 								<p className="text-[11px] text-slate-300 truncate mt-0.5">
@@ -318,8 +346,12 @@ export const AgentMessageBubble: React.FC<AgentMessageBubbleProps> = ({
 							type="button"
 							size="icon-sm"
 							variant="ghost"
+							onClick={() =>
+								message.artifact?.uri && onOpenArtifact?.(message.artifact.uri)
+							}
 							className="h-7 w-7 text-cyan-400 hover:text-cyan-200"
-							aria-label="Open artifact"
+							aria-label={t.openArtifact}
+							title={t.openArtifact}
 						>
 							<ExternalLink className="size-3.5" />
 						</Button>

@@ -12,6 +12,7 @@ import {
 	useState,
 } from "react";
 import type { PersonaActivityState } from "@/components/personas";
+import { getLensTranslations } from "@/lib/lens-i18n";
 import type {
 	WarRoomCheckpointGate,
 	WarRoomMessage,
@@ -19,56 +20,58 @@ import type {
 	WarRoomViewMode,
 } from "./types";
 
-const INITIAL_CHECKPOINT_GATES: WarRoomCheckpointGate[] = [
-	{
-		id: "gate-1",
-		gateNumber: 1,
-		title: "Checkpoint 1: Architecture & PRD Sign-off",
-		description:
-			"Orion & Atlas paused the pipeline to review the Product PRD and System Architecture DAG before core code implementation begins.",
-		personaId: "atlas",
-		status: "pending",
-		deliverables: [
-			{
-				title: "PRD-001 Specification",
-				type: "PRD",
-				summary: "User stories (P0, P1, P2) & zero-trust boundaries",
-				badge: "Athena",
-			},
-			{
-				title: "System Architecture & DAG",
-				type: "Architecture",
-				summary: "Component hierarchy, state contracts & interface seams",
-				badge: "Atlas",
-			},
-		],
-		timestamp: Date.now() - 1000 * 60 * 8,
-	},
-	{
-		id: "gate-2",
-		gateNumber: 2,
-		title: "Checkpoint 2: Pre-Ship Quality Audit",
-		description:
-			"Cipher finished code implementation. Sentinel completed verification and test suite execution. Pipeline awaiting final authorization to package and ship.",
-		personaId: "sentinel",
-		status: "pending",
-		deliverables: [
-			{
-				title: "Test Execution Report",
-				type: "QA",
-				summary: "180/180 Vitest suites passed. 0 regression failures.",
-				badge: "Sentinel",
-			},
-			{
-				title: "Atomic ChangeSet Manifest",
-				type: "Manifest",
-				summary: "Validated SHA-256 base hashes & rollback transactions.",
-				badge: "Cipher",
-			},
-		],
-		timestamp: Date.now() - 1000 * 60 * 2,
-	},
-];
+export function createInitialCheckpointGates(
+	t: ReturnType<typeof getLensTranslations>["ultraAgency"],
+): WarRoomCheckpointGate[] {
+	return [
+		{
+			id: "gate-1",
+			gateNumber: 1,
+			title: t.checkpointGate1Title,
+			description: t.checkpoint1Desc,
+			personaId: "atlas",
+			status: "pending",
+			deliverables: [
+				{
+					title: t.gate1Deliv1Title,
+					type: "PRD",
+					summary: t.gate1Deliv1Summary,
+					badge: "Athena",
+				},
+				{
+					title: t.gate1Deliv2Title,
+					type: "Architecture",
+					summary: t.gate1Deliv2Summary,
+					badge: "Atlas",
+				},
+			],
+			timestamp: Date.now() - 1000 * 60 * 8,
+		},
+		{
+			id: "gate-2",
+			gateNumber: 2,
+			title: t.checkpointGate2Title,
+			description: t.checkpoint2Desc,
+			personaId: "sentinel",
+			status: "pending",
+			deliverables: [
+				{
+					title: t.gate2Deliv1Title,
+					type: "QA",
+					summary: t.gate2Deliv1Summary,
+					badge: "Sentinel",
+				},
+				{
+					title: t.gate2Deliv2Title,
+					type: "Manifest",
+					summary: t.gate2Deliv2Summary,
+					badge: "Cipher",
+				},
+			],
+			timestamp: Date.now() - 1000 * 60 * 2,
+		},
+	];
+}
 
 const INITIAL_PERSONA_STATES: Record<
 	SpecialistPersonaId,
@@ -84,118 +87,137 @@ const INITIAL_PERSONA_STATES: Record<
 	echo: "idle",
 };
 
-const SIMULATION_SCENARIO_STEPS: Array<{
+export function createSimulationScenarioSteps(
+	t: ReturnType<typeof getLensTranslations>["ultraAgency"],
+): Array<{
 	message: Omit<WarRoomMessage, "id" | "timestamp">;
 	personaStates: Partial<Record<SpecialistPersonaId, PersonaActivityState>>;
 	gateTrigger?: "gate-1" | "gate-2";
-}> = [
-	{
-		message: {
-			senderPersonaId: "orion",
-			recipientPersonaId: "all",
-			stage: "strategy",
-			type: "chat",
-			content:
-				"Initializing Ultra SOP Swarm session. We are targeting high-reliability dual-loop execution with zero-trust research boundaries. Lyra, initiate technical research pass.",
+}> {
+	return [
+		{
+			message: {
+				senderPersonaId: "orion",
+				recipientPersonaId: "all",
+				stage: "strategy",
+				type: "chat",
+				content: t.scenarioMsg1,
+			},
+			personaStates: { orion: "speaking", lyra: "thinking" },
 		},
-		personaStates: { orion: "speaking", lyra: "thinking" },
-	},
-	{
-		message: {
-			senderPersonaId: "lyra",
-			recipientPersonaId: "orion",
-			stage: "research",
-			type: "artifact",
-			content:
-				"Research pass complete. Synthesized 8 verified claims from repo documentation and secondary evidence. Zero-trust containment contract verified.",
-			artifact: {
-				title: "EvidenceBundle #842",
-				type: "EvidenceBundle",
-				summary: "8 verified claims, 0 untrusted elevations.",
+		{
+			message: {
+				senderPersonaId: "lyra",
+				recipientPersonaId: "orion",
+				stage: "research",
+				type: "artifact",
+				content: t.scenarioMsg2,
+				untrusted: true,
+				artifact: {
+					title: t.scenarioArtifactTitle,
+					type: "EvidenceBundle",
+					summary: t.scenarioArtifactSummary,
+					untrusted: true,
+					provenance: "Secondary web & repo documentation research pass",
+				},
+			},
+			personaStates: { lyra: "working", athena: "thinking" },
+		},
+		{
+			message: {
+				senderPersonaId: "athena",
+				recipientPersonaId: "atlas",
+				stage: "strategy",
+				type: "handoff",
+				content: t.scenarioMsg3,
+			},
+			personaStates: { athena: "speaking", atlas: "working" },
+		},
+		{
+			message: {
+				senderPersonaId: "atlas",
+				recipientPersonaId: "all",
+				stage: "architecture",
+				type: "checkpoint",
+				content: t.scenarioMsg4,
+				checkpointGateId: "gate-1",
+				codeSnippet: {
+					language: "typescript",
+					filename: "agency-war-room/types.ts",
+					code: "export interface WarRoomCheckpointGate {\n  id: string;\n  status: 'pending' | 'approved';\n}",
+				},
+			},
+			personaStates: { atlas: "checkpoint", orion: "checkpoint" },
+			gateTrigger: "gate-1",
+		},
+		{
+			message: {
+				senderPersonaId: "cipher",
+				recipientPersonaId: "vector",
+				stage: "development",
+				type: "tool_call",
+				content: t.scenarioMsg5,
+				toolCall: {
+					toolName: "write_to_file",
+					args: { targetFile: "agency-war-room-panel.tsx" },
+					output: "File created successfully.",
+					status: "completed",
+				},
+			},
+			personaStates: { cipher: "working", vector: "working", atlas: "idle" },
+		},
+		{
+			message: {
+				senderPersonaId: "sentinel",
+				recipientPersonaId: "all",
+				stage: "qa",
+				type: "checkpoint",
+				content: t.scenarioMsg6,
+				checkpointGateId: "gate-2",
+			},
+			personaStates: { sentinel: "checkpoint", orion: "checkpoint" },
+			gateTrigger: "gate-2",
+		},
+		{
+			message: {
+				senderPersonaId: "echo",
+				recipientPersonaId: "all",
+				stage: "documentation",
+				type: "chat",
+				content: t.scenarioMsg7,
+			},
+			personaStates: {
+				orion: "idle",
+				lyra: "idle",
+				athena: "idle",
+				atlas: "idle",
+				cipher: "idle",
+				vector: "idle",
+				sentinel: "idle",
+				echo: "idle",
 			},
 		},
-		personaStates: { lyra: "working", athena: "thinking" },
-	},
-	{
-		message: {
-			senderPersonaId: "athena",
-			recipientPersonaId: "atlas",
-			stage: "strategy",
-			type: "handoff",
-			content:
-				"PRD-001 drafted with user stories P0 (Split-Screen War Room), P1 (Live Agent SVG Bubbles), P2 (Checkpoint Gates). Handing off requirements to Atlas for architecture modeling.",
-		},
-		personaStates: { athena: "speaking", atlas: "working" },
-	},
-	{
-		message: {
-			senderPersonaId: "atlas",
-			recipientPersonaId: "all",
-			stage: "architecture",
-			type: "checkpoint",
-			content:
-				"Architecture blueprint formulated. Module decomposition complete with ResizablePanelGroup layout. Pausing execution at Checkpoint Gate 1 for user sign-off.",
-			checkpointGateId: "gate-1",
-			codeSnippet: {
-				language: "typescript",
-				filename: "agency-war-room/types.ts",
-				code: "export interface WarRoomCheckpointGate {\n  id: string;\n  status: 'pending' | 'approved';\n}",
-			},
-		},
-		personaStates: { atlas: "checkpoint", orion: "checkpoint" },
-		gateTrigger: "gate-1",
-	},
-	{
-		message: {
-			senderPersonaId: "cipher",
-			recipientPersonaId: "vector",
-			stage: "development",
-			type: "tool_call",
-			content:
-				"Checkpoint Gate 1 cleared! Commencing core implementation. Constructing reactive War Room context and SVG message bubbles.",
-			toolCall: {
-				toolName: "write_to_file",
-				args: { targetFile: "agency-war-room-panel.tsx" },
-				output: "File created successfully.",
-				status: "completed",
-			},
-		},
-		personaStates: { cipher: "working", vector: "working", atlas: "idle" },
-	},
-	{
-		message: {
-			senderPersonaId: "sentinel",
-			recipientPersonaId: "all",
-			stage: "qa",
-			type: "checkpoint",
-			content:
-				"Code implementation complete. Executed test runner: all 180 unit tests and persona avatar assertions passed! Checkpoint Gate 2: Pre-Ship Quality Audit reached.",
-			checkpointGateId: "gate-2",
-		},
-		personaStates: { sentinel: "checkpoint", orion: "checkpoint" },
-		gateTrigger: "gate-2",
-	},
-	{
-		message: {
-			senderPersonaId: "echo",
-			recipientPersonaId: "all",
-			stage: "documentation",
-			type: "chat",
-			content:
-				"Checkpoint Gate 2 approved! Synchronized bilingual documentation and changelog entries. Ultra Swarm execution successfully finalized.",
-		},
-		personaStates: {
-			orion: "idle",
-			lyra: "idle",
-			athena: "idle",
-			atlas: "idle",
-			cipher: "idle",
-			vector: "idle",
-			sentinel: "idle",
-			echo: "idle",
-		},
-	},
-];
+	];
+}
+
+export function isCheckpointGateBlocking(
+	step: number,
+	gates: WarRoomCheckpointGate[],
+): boolean {
+	if (step === 4) {
+		const gate1 = gates.find((g) => g.id === "gate-1");
+		if (gate1 && gate1.status === "pending") {
+			return true;
+		}
+	}
+	if (step === 6) {
+		const gate2 = gates.find((g) => g.id === "gate-2");
+		if (gate2 && gate2.status === "pending") {
+			return true;
+		}
+	}
+	return false;
+}
 
 interface WarRoomContextValue extends WarRoomState {
 	openWarRoom: () => void;
@@ -222,6 +244,9 @@ export function WarRoomProvider({
 	children: React.ReactNode;
 	initialOpen?: boolean;
 }) {
+	const t = getLensTranslations().ultraAgency;
+	const scenarioSteps = useMemo(() => createSimulationScenarioSteps(t), [t]);
+
 	const [isOpen, setIsOpen] = useState(initialOpen);
 	const [viewMode, setViewMode] = useState<WarRoomViewMode>("split");
 	const [activeFilterPersona, setActiveFilterPersona] = useState<
@@ -229,14 +254,14 @@ export function WarRoomProvider({
 	>("all");
 	const [checkpointGates, setCheckpointGates] = useState<
 		WarRoomCheckpointGate[]
-	>(INITIAL_CHECKPOINT_GATES);
+	>(() => createInitialCheckpointGates(t));
 	const [activePersonaStates, setActivePersonaStates] = useState<
 		Record<SpecialistPersonaId, PersonaActivityState>
 	>(INITIAL_PERSONA_STATES);
 
 	// Start with initial 4 messages from the scenario
 	const [messages, setMessages] = useState<WarRoomMessage[]>(() =>
-		SIMULATION_SCENARIO_STEPS.slice(0, 4).map((step, idx) => ({
+		scenarioSteps.slice(0, 4).map((step, idx) => ({
 			...step.message,
 			id: `msg-${idx + 1}`,
 			timestamp: Date.now() - 1000 * 60 * (10 - idx * 2),
@@ -246,6 +271,15 @@ export function WarRoomProvider({
 	const [isSimulating, setIsSimulating] = useState(false);
 	const [activeSimulationStep, setActiveSimulationStep] = useState(4);
 	const simTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+	const activeSimulationStepRef = useRef(activeSimulationStep);
+	activeSimulationStepRef.current = activeSimulationStep;
+
+	const checkpointGatesRef = useRef(checkpointGates);
+	checkpointGatesRef.current = checkpointGates;
+
+	const scenarioStepsRef = useRef(scenarioSteps);
+	scenarioStepsRef.current = scenarioSteps;
 
 	const openWarRoom = useCallback(() => setIsOpen(true), []);
 	const closeWarRoom = useCallback(() => setIsOpen(false), []);
@@ -267,94 +301,123 @@ export function WarRoomProvider({
 		[],
 	);
 
-	const approveCheckpoint = useCallback((gateId: string) => {
-		setCheckpointGates((prev) =>
-			prev.map((gate) =>
-				gate.id === gateId ? { ...gate, status: "approved" } : gate,
-			),
-		);
+	const approveCheckpoint = useCallback(
+		(gateId: string) => {
+			setCheckpointGates((prev) =>
+				prev.map((gate) =>
+					gate.id === gateId ? { ...gate, status: "approved" as const } : gate,
+				),
+			);
 
-		// Emit positive inter-agent response
-		setMessages((prev) => [
-			...prev,
-			{
+			const gateTitle =
+				gateId === "gate-1" ? t.checkpointGate1Title : t.checkpointGate2Title;
+
+			const approvalMessage: WarRoomMessage = {
 				id: `msg-approval-${Date.now()}`,
 				senderPersonaId: "orion",
 				recipientPersonaId: "all",
 				stage: "strategy",
 				type: "chat",
-				content: `User verified and approved ${gateId === "gate-1" ? "Checkpoint Gate 1 (Architecture & PRD)" : "Checkpoint Gate 2 (Pre-Ship Audit)"}. Proceeding immediately!`,
+				content: `${t.gateApprovedProceeding} ${gateTitle}. ${t.proceedingImmediately}`,
 				timestamp: Date.now(),
-			},
-		]);
+			};
 
-		// Advance simulation if paused at this gate
-		setActiveSimulationStep((step) => {
-			const nextStep = step + 1;
-			if (nextStep <= SIMULATION_SCENARIO_STEPS.length) {
-				const stepData = SIMULATION_SCENARIO_STEPS[step];
+			const currentStep = activeSimulationStepRef.current;
+			const steps = scenarioStepsRef.current;
+			let nextStep = currentStep;
+			let nextMessage: WarRoomMessage | null = null;
+			let nextPersonaStates: Partial<
+				Record<SpecialistPersonaId, PersonaActivityState>
+			> | null = null;
+
+			if (currentStep < steps.length) {
+				const stepData = steps[currentStep];
 				if (stepData) {
-					setMessages((prev) => [
-						...prev,
-						{
-							...stepData.message,
-							id: `msg-${nextStep}-${Date.now()}`,
-							timestamp: Date.now(),
-						},
-					]);
-					setActivePersonaStates((prev) => ({
-						...prev,
-						...stepData.personaStates,
-					}));
+					nextStep = currentStep + 1;
+					nextMessage = {
+						...stepData.message,
+						id: `msg-${nextStep}-${Date.now()}`,
+						timestamp: Date.now() + 10,
+					};
+					nextPersonaStates = stepData.personaStates;
 				}
 			}
-			return nextStep;
-		});
-	}, []);
 
-	const rejectCheckpoint = useCallback((gateId: string, feedback: string) => {
-		setCheckpointGates((prev) =>
-			prev.map((gate) =>
-				gate.id === gateId ? { ...gate, status: "rejected", feedback } : gate,
-			),
-		);
+			setMessages((prev) => {
+				const nextList = [...prev, approvalMessage];
+				if (nextMessage) {
+					nextList.push(nextMessage);
+				}
+				return nextList;
+			});
 
-		setMessages((prev) => [
-			...prev,
-			{
-				id: `msg-reject-${Date.now()}`,
-				senderPersonaId: "orion",
-				recipientPersonaId: "all",
-				stage: "strategy",
-				type: "chat",
-				content: `User requested modifications on ${gateId}: "${feedback}". Orion reallocating resources for design adjustment.`,
-				timestamp: Date.now(),
-			},
-		]);
-	}, []);
-
-	const stepSimulation = useCallback(() => {
-		setActiveSimulationStep((currentStep) => {
-			if (currentStep >= SIMULATION_SCENARIO_STEPS.length) {
-				return currentStep;
-			}
-			const stepData = SIMULATION_SCENARIO_STEPS[currentStep];
-			if (stepData) {
-				setMessages((prev) => [
-					...prev,
-					{
-						...stepData.message,
-						id: `msg-sim-${currentStep + 1}-${Date.now()}`,
-						timestamp: Date.now(),
-					},
-				]);
+			if (nextPersonaStates) {
 				setActivePersonaStates((prev) => ({
 					...prev,
-					...stepData.personaStates,
+					...nextPersonaStates,
 				}));
 			}
-			return currentStep + 1;
-		});
+
+			setActiveSimulationStep(nextStep);
+		},
+		[t],
+	);
+
+	const rejectCheckpoint = useCallback(
+		(gateId: string, feedback: string) => {
+			setCheckpointGates((prev) =>
+				prev.map((gate) =>
+					gate.id === gateId
+						? { ...gate, status: "rejected" as const, feedback }
+						: gate,
+				),
+			);
+
+			setMessages((prev) => [
+				...prev,
+				{
+					id: `msg-reject-${Date.now()}`,
+					senderPersonaId: "orion",
+					recipientPersonaId: "all",
+					stage: "strategy",
+					type: "chat",
+					content: `${t.gateModificationsRequested} ${gateId}: "${feedback}". ${t.reallocatingResources}`,
+					timestamp: Date.now(),
+				},
+			]);
+		},
+		[t],
+	);
+
+	const stepSimulation = useCallback(() => {
+		const currentStep = activeSimulationStepRef.current;
+		const steps = scenarioStepsRef.current;
+
+		if (currentStep >= steps.length) {
+			return;
+		}
+
+		if (isCheckpointGateBlocking(currentStep, checkpointGatesRef.current)) {
+			return;
+		}
+
+		const stepData = steps[currentStep];
+		if (stepData) {
+			const nextStep = currentStep + 1;
+			setMessages((prev) => [
+				...prev,
+				{
+					...stepData.message,
+					id: `msg-sim-${nextStep}-${Date.now()}`,
+					timestamp: Date.now(),
+				},
+			]);
+			setActivePersonaStates((prev) => ({
+				...prev,
+				...stepData.personaStates,
+			}));
+			setActiveSimulationStep(nextStep);
+		}
 	}, []);
 
 	const pauseSimulation = useCallback(() => {
@@ -368,49 +431,55 @@ export function WarRoomProvider({
 	const playSimulation = useCallback(() => {
 		setIsSimulating(true);
 		if (simTimerRef.current) clearInterval(simTimerRef.current);
+
 		simTimerRef.current = setInterval(() => {
-			setActiveSimulationStep((currentStep) => {
-				if (currentStep >= SIMULATION_SCENARIO_STEPS.length) {
-					if (simTimerRef.current) {
-						clearInterval(simTimerRef.current);
-						simTimerRef.current = null;
-					}
-					setIsSimulating(false);
-					return currentStep;
-				}
-				const stepData = SIMULATION_SCENARIO_STEPS[currentStep];
-				if (stepData) {
-					setMessages((prev) => [
-						...prev,
-						{
-							...stepData.message,
-							id: `msg-sim-${currentStep + 1}-${Date.now()}`,
-							timestamp: Date.now(),
-						},
-					]);
-					setActivePersonaStates((prev) => ({
-						...prev,
-						...stepData.personaStates,
-					}));
-				}
-				return currentStep + 1;
-			});
+			const currentStep = activeSimulationStepRef.current;
+			const steps = scenarioStepsRef.current;
+
+			if (currentStep >= steps.length) {
+				pauseSimulation();
+				return;
+			}
+
+			if (isCheckpointGateBlocking(currentStep, checkpointGatesRef.current)) {
+				pauseSimulation();
+				return;
+			}
+
+			const stepData = steps[currentStep];
+			if (stepData) {
+				const nextStep = currentStep + 1;
+				setMessages((prev) => [
+					...prev,
+					{
+						...stepData.message,
+						id: `msg-sim-${nextStep}-${Date.now()}`,
+						timestamp: Date.now(),
+					},
+				]);
+				setActivePersonaStates((prev) => ({
+					...prev,
+					...stepData.personaStates,
+				}));
+				setActiveSimulationStep(nextStep);
+			}
 		}, 3000);
-	}, []);
+	}, [pauseSimulation]);
 
 	const resetSimulation = useCallback(() => {
 		pauseSimulation();
 		setActiveSimulationStep(4);
-		setCheckpointGates(INITIAL_CHECKPOINT_GATES);
+		setCheckpointGates(createInitialCheckpointGates(t));
 		setActivePersonaStates(INITIAL_PERSONA_STATES);
+		const steps = createSimulationScenarioSteps(t);
 		setMessages(
-			SIMULATION_SCENARIO_STEPS.slice(0, 4).map((step, idx) => ({
+			steps.slice(0, 4).map((step, idx) => ({
 				...step.message,
 				id: `msg-${idx + 1}`,
 				timestamp: Date.now() - 1000 * 60 * (10 - idx * 2),
 			})),
 		);
-	}, [pauseSimulation]);
+	}, [pauseSimulation, t]);
 
 	useEffect(() => {
 		return () => {

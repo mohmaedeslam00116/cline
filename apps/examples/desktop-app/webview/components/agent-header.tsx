@@ -17,8 +17,8 @@ import {
 } from "lucide-react";
 import { type CSSProperties, memo, useEffect, useMemo, useState } from "react";
 import { useSquadConfig } from "@/hooks/use-squad-config";
-import { getLensTranslations } from "@/lib/lens-i18n";
 import type { ChatSessionStatus } from "@/lib/chat-schema";
+import { getLensTranslations } from "@/lib/lens-i18n";
 import {
 	agentEntryState,
 	describeAgentActivity,
@@ -241,7 +241,7 @@ function AgentHeaderImpl({
 						<>
 							<Button
 								aria-label={`Open Ultra Agency Squad Roster (${squadConfig.activePersonaIds.length} agents)`}
-								className="flex items-center gap-1.5 rounded-md bg-indigo-500/15 text-indigo-500 hover:bg-indigo-500/25 border border-indigo-500/30 px-2 py-1 text-xs font-medium transition-colors cursor-pointer"
+								className="flex items-center gap-1.5 rounded-md bg-[#111111] hover:bg-[#161616] text-slate-200 border border-[#1E1E1E] px-2 py-1 text-xs font-medium transition-colors cursor-pointer"
 								id="ultra-squad-header-badge"
 								onClick={() => onOpenUltraPanel?.()}
 								size="sm"
@@ -249,7 +249,7 @@ function AgentHeaderImpl({
 								type="button"
 								variant="outline"
 							>
-								<Workflow className="size-3.5" />
+								<Workflow className="size-3.5 text-slate-400" />
 								<span>Ultra Squad ({squadConfig.activePersonaIds.length})</span>
 							</Button>
 							<Button
@@ -259,8 +259,8 @@ function AgentHeaderImpl({
 								className={cn(
 									"flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors cursor-pointer border",
 									warRoomOpen
-										? "bg-cyan-950/60 text-cyan-300 border-cyan-400 shadow-sm shadow-cyan-500/20"
-										: "bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 border-cyan-500/30",
+										? "bg-[#1E1E1E] text-slate-100 border-slate-600 shadow-xs"
+										: "bg-[#111111] hover:bg-[#161616] text-slate-300 border-[#1E1E1E]",
 								)}
 								id="ultra-war-room-header-btn"
 								onClick={() => onToggleWarRoom?.()}
@@ -270,10 +270,10 @@ function AgentHeaderImpl({
 								variant="outline"
 							>
 								<span className="relative flex h-2 w-2">
-									<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-									<span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500" />
+									<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+									<span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
 								</span>
-								<Radio className="size-3.5 text-cyan-400" />
+								<Radio className="size-3.5 text-slate-300" />
 								<span>{tAgency.warRoomButton}</span>
 							</Button>
 						</>

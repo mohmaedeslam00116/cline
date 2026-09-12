@@ -3,25 +3,20 @@
 import {
 	BUILTIN_PERSONAS,
 	getSquadPresets,
-	type SpecialistPersona,
 	type SpecialistPersonaId,
 	type SquadPresetId,
 } from "@cline/shared/browser";
 import {
-	Check,
 	ChevronDown,
 	ChevronRight,
 	Code2,
 	Compass,
 	Database,
-	ExternalLink,
 	FileText,
 	Globe,
 	Layers,
 	ListChecks,
 	Radio,
-	ShieldAlert,
-	ShieldCheck,
 	Sparkles,
 	TestTube2,
 	Users,
@@ -29,6 +24,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useMemo, useState } from "react";
+import { PersonaAvatar, PersonaGallery } from "@/components/personas";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -47,7 +43,6 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
-import { PersonaGallery, PersonaAvatar } from "@/components/personas";
 import { useSquadConfig } from "@/hooks/use-squad-config";
 import { getLensDirection, getLensTranslations } from "@/lib/lens-i18n";
 import { cn } from "@/lib/utils";
@@ -255,7 +250,7 @@ export function UltraPersonasSidePanel({
 											)}
 										>
 											<span className="text-xs font-semibold capitalize truncate max-w-full">
-												{preset.id}
+												{presetLabel}
 											</span>
 											<span className="text-[10px] opacity-75 mt-0.5">
 												{preset.personaIds.length} {t.agentsSuffix}
@@ -279,7 +274,6 @@ export function UltraPersonasSidePanel({
 
 							<div className="space-y-2">
 								{allPersonas.map((persona) => {
-									const Icon = PERSONA_ICONS[persona.id] ?? Globe;
 									const isActive = config.activePersonaIds.includes(persona.id);
 									const isRequired =
 										persona.id === "orion" || persona.id === "cipher";
@@ -370,9 +364,9 @@ export function UltraPersonasSidePanel({
 															Responsibilities
 														</span>
 														<ul className="space-y-1 text-muted-foreground text-[11px]">
-															{persona.responsibilities.map((resp, i) => (
+															{persona.responsibilities.map((resp) => (
 																<li
-																	key={i}
+																	key={`${persona.id}-resp-${resp.slice(0, 20)}`}
 																	className="flex items-start gap-1.5"
 																>
 																	<span className="text-primary mt-1">•</span>
@@ -465,11 +459,11 @@ export function UltraSquadShowcase({
 	return (
 		<div
 			dir={dir}
-			className="w-full rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-background p-4 sm:p-5 shadow-lg backdrop-blur-md mb-4 transition-all"
+			className="w-full rounded-2xl border border-[#1E1E1E] bg-[#111111]/90 p-4 sm:p-5 shadow-lg backdrop-blur-md mb-4 transition-all"
 		>
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/50">
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1E1E1E]">
 				<div className="flex items-center gap-2.5">
-					<div className="size-9 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-500 shadow-xs">
+					<div className="size-9 rounded-xl bg-[#161616] border border-[#1E1E1E] flex items-center justify-center text-slate-300 shadow-xs">
 						<Workflow className="size-5" />
 					</div>
 					<div>
@@ -479,7 +473,7 @@ export function UltraSquadShowcase({
 							</h3>
 							<Badge
 								variant="outline"
-								className="border-indigo-500/30 text-indigo-500 bg-indigo-500/10 text-xs"
+								className="border-[#1E1E1E] text-slate-300 bg-[#161616] text-xs"
 							>
 								{config.activePersonaIds.length} {t.agentsSuffix} Active
 							</Badge>
@@ -495,9 +489,9 @@ export function UltraSquadShowcase({
 							variant="outline"
 							size="sm"
 							onClick={onOpenWarRoom}
-							className="h-8 gap-1.5 text-xs font-medium border-cyan-500/30 hover:border-cyan-500/60 hover:bg-cyan-500/10 text-cyan-400 cursor-pointer"
+							className="h-8 gap-1.5 text-xs font-medium border-[#1E1E1E] hover:border-slate-600 bg-[#161616] hover:bg-[#1E1E1E] text-slate-200 cursor-pointer"
 						>
-							<Radio className="size-3.5 text-cyan-400" />
+							<Radio className="size-3.5 text-slate-300" />
 							<span>{t.warRoomButton}</span>
 						</Button>
 					)}
@@ -508,9 +502,9 @@ export function UltraSquadShowcase({
 								type="button"
 								variant="outline"
 								size="sm"
-								className="h-8 gap-1.5 text-xs font-medium border-cyan-500/30 hover:border-cyan-500/60 hover:bg-cyan-500/10 text-cyan-400 cursor-pointer"
+								className="h-8 gap-1.5 text-xs font-medium border-[#1E1E1E] hover:border-slate-600 bg-[#161616] hover:bg-[#1E1E1E] text-slate-200 cursor-pointer"
 							>
-								<Sparkles className="size-3.5 text-cyan-400" />
+								<Sparkles className="size-3.5 text-slate-300" />
 								<span>{t.cyberGallery}</span>
 							</Button>
 						</DialogTrigger>
@@ -527,7 +521,7 @@ export function UltraSquadShowcase({
 						variant="outline"
 						size="sm"
 						onClick={onOpenPanel}
-						className="h-8 gap-1.5 text-xs font-medium border-indigo-500/30 hover:border-indigo-500/60 hover:bg-indigo-500/10 text-indigo-400 cursor-pointer"
+						className="h-8 gap-1.5 text-xs font-medium border-[#1E1E1E] hover:border-slate-600 bg-[#161616] hover:bg-[#1E1E1E] text-slate-200 cursor-pointer"
 					>
 						<Users className="size-3.5" />
 						<span>{t.configureSquad}</span>

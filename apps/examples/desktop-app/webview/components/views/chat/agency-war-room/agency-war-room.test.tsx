@@ -7,10 +7,10 @@ import {
 	AgencyWarRoomPanel,
 	AgentMessageBubble,
 	CheckpointGateCard,
-	WarRoomProvider,
 	useWarRoom,
 	type WarRoomCheckpointGate,
 	type WarRoomMessage,
+	WarRoomProvider,
 } from "./index";
 
 let container: HTMLDivElement;
@@ -155,20 +155,31 @@ describe("Agency War Room Suite", () => {
 			lyraFilter?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 		});
 
-		// Stream now contains Lyra messages
+		// Stream now contains Lyra messages and excludes messages that do not involve Lyra
 		expect(container.textContent).toContain("Lyra");
+		expect(container.textContent).toContain("EvidenceBundle #842");
+		expect(container.textContent).not.toContain(
+			"Architecture blueprint formulated",
+		);
 	});
 
 	it("supports interactive simulation advancement and checkpoint approval", async () => {
 		function TestComponent() {
-			const { checkpointGates, approveCheckpoint, activeSimulationStep } =
-				useWarRoom();
+			const {
+				checkpointGates,
+				approveCheckpoint,
+				activeSimulationStep,
+				stepSimulation,
+			} = useWarRoom();
 			const gate1 = checkpointGates.find((g) => g.id === "gate-1");
 
 			return (
 				<div>
 					<span data-testid="gate-status">{gate1?.status}</span>
 					<span data-testid="sim-step">{activeSimulationStep}</span>
+					<button type="button" data-testid="step-btn" onClick={stepSimulation}>
+						Step
+					</button>
 					<button
 						type="button"
 						data-testid="approve-btn"
@@ -189,13 +200,24 @@ describe("Agency War Room Suite", () => {
 		});
 
 		const gateStatus = container.querySelector('[data-testid="gate-status"]');
+		const simStep = container.querySelector('[data-testid="sim-step"]');
 		expect(gateStatus?.textContent).toBe("pending");
+		expect(simStep?.textContent).toBe("4");
 
+		// Progression is blocked while gate 1 is pending
+		const stepBtn = container.querySelector('[data-testid="step-btn"]');
+		await act(async () => {
+			stepBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		});
+		expect(simStep?.textContent).toBe("4");
+
+		// Approving gate advances simulation past the gate
 		const approveBtn = container.querySelector('[data-testid="approve-btn"]');
 		await act(async () => {
 			approveBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 		});
 
 		expect(gateStatus?.textContent).toBe("approved");
+		expect(simStep?.textContent).toBe("5");
 	});
 });

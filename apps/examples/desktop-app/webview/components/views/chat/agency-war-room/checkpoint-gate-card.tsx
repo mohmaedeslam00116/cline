@@ -11,15 +11,14 @@ import {
 	Radio,
 	Send,
 	ShieldCheck,
-	Sparkles,
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
+import { PersonaAvatar } from "@/components/personas";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { PersonaAvatar } from "@/components/personas";
 import { getLensTranslations } from "@/lib/lens-i18n";
 import { cn } from "@/lib/utils";
 import type { WarRoomCheckpointGate } from "./types";
@@ -166,12 +165,12 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 			{gate.deliverables && gate.deliverables.length > 0 && (
 				<div className="mt-3.5 space-y-2">
 					<span className="text-[11px] font-mono uppercase text-slate-400 tracking-wider">
-						Deliverables For Sign-Off:
+						{t.deliverablesForSignOff}
 					</span>
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-						{gate.deliverables.map((item, idx) => (
+						{gate.deliverables.map((item) => (
 							<div
-								key={idx}
+								key={`${gate.id}-deliv-${item.title}`}
 								className="flex items-start gap-2 p-2 rounded-lg bg-slate-950/70 border border-slate-800/80"
 							>
 								<FileText className="size-3.5 text-cyan-400 shrink-0 mt-0.5" />
@@ -199,7 +198,9 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 			{/* Feedback Display if already rejected */}
 			{gate.feedback && (
 				<div className="mt-3 p-2.5 rounded-lg bg-rose-950/30 border border-rose-800/50 text-xs text-rose-300">
-					<span className="font-semibold text-rose-400">User Directive: </span>
+					<span className="font-semibold text-rose-400">
+						{t.userDirective}{" "}
+					</span>
 					{gate.feedback}
 				</div>
 			)}
@@ -253,7 +254,7 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 							onClick={() => setShowFeedbackInput(false)}
 							className="text-xs h-7"
 						>
-							Cancel
+							{t.cancel}
 						</Button>
 						<Button
 							type="button"

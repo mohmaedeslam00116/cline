@@ -26,6 +26,11 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+	ResizableHandle,
+	ResizablePanel,
+	ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import {
 	Sidebar,
 	SidebarInset,
 	SidebarProvider,
@@ -34,14 +39,9 @@ import {
 } from "@/components/ui/sidebar";
 import {
 	AgencyWarRoomPanel,
-	WarRoomProvider,
 	useWarRoom,
+	WarRoomProvider,
 } from "@/components/views/chat/agency-war-room";
-import {
-	ResizableHandle,
-	ResizablePanel,
-	ResizablePanelGroup,
-} from "@/components/ui/resizable";
 import { ChatInputBar } from "@/components/views/chat/chat-input-bar";
 import { ChatMessages } from "@/components/views/chat/chat-messages";
 import { UltraPersonasSidePanel } from "@/components/views/chat/ultra-personas-side-panel";
@@ -188,13 +188,6 @@ function toThreadTitle(options: { title?: string; prompt?: string }): string {
 }
 
 function HomeContent() {
-	const {
-		isOpen: warRoomOpen,
-		viewMode: warRoomViewMode,
-		toggleWarRoom,
-		openWarRoom,
-		closeWarRoom,
-	} = useWarRoom();
 	const [initialThreadId] = useState(makeThreadId);
 	const [appState, dispatchApp] = useReducer(
 		desktopAppReducer<SettingsSection>,
@@ -699,6 +692,11 @@ function ChatThreadPane({
 	const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
 	const [showDiffView, setShowDiffView] = useState(false);
 	const [ultraPanelOpen, setUltraPanelOpen] = useState(false);
+	const {
+		isOpen: warRoomOpen,
+		viewMode: warRoomViewMode,
+		closeWarRoom,
+	} = useWarRoom();
 	const handleOpenUltraPanel = useCallback(() => {
 		setUltraPanelOpen(true);
 	}, []);
@@ -1778,13 +1776,13 @@ function ChatThreadPane({
 								<ResizablePanel
 									defaultSize={55}
 									minSize={30}
-									className="min-w-0 h-full overflow-hidden"
+									className="grid h-full min-h-0 min-w-0 grid-rows-[minmax(0,1fr)_auto] overflow-hidden"
 								>
 									{welcomeScreenNode}
 								</ResizablePanel>
 								<ResizableHandle
 									withHandle
-									className="bg-slate-800 hover:bg-cyan-500/50 transition-colors"
+									className="bg-[#1E1E1E] hover:bg-cyan-500/40 transition-colors"
 								/>
 								<ResizablePanel
 									defaultSize={45}

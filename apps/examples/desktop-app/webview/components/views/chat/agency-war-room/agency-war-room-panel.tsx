@@ -6,30 +6,26 @@ import {
 } from "@cline/shared/browser";
 import {
 	Activity,
-	Compass,
 	Cpu,
 	Maximize2,
 	Minimize2,
-	PanelRightClose,
 	Pause,
 	Play,
 	Radio,
 	RotateCcw,
 	Send,
 	SkipForward,
-	Sparkles,
 	Users,
 	Wrench,
 	X,
 } from "lucide-react";
 import type React from "react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { PersonaAvatar } from "@/components/personas";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { PersonaAvatar } from "@/components/personas";
-import { getLensDirection, getLensTranslations } from "@/lib/lens-i18n";
+import { getLensTranslations } from "@/lib/lens-i18n";
 import { cn } from "@/lib/utils";
 import { AgentMessageBubble } from "./agent-message-bubble";
 import { useWarRoom } from "./war-room-context";
@@ -55,8 +51,8 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 	onClose,
 }) => {
 	const t = getLensTranslations().ultraAgency;
-	const dir = getLensDirection();
 	const scrollAreaRef = useRef<HTMLDivElement>(null);
+	const previousFocusRef = useRef<HTMLElement | null>(null);
 	const [directDirective, setDirectDirective] = useState("");
 
 	const {
@@ -77,6 +73,25 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 		rejectCheckpoint,
 		addMessage,
 	} = useWarRoom();
+
+	// Keyboard focus containment & Escape key trap for fullscreen dialog mode
+	useEffect(() => {
+		if (viewMode === "fullscreen") {
+			previousFocusRef.current = document.activeElement as HTMLElement | null;
+
+			const handleKeyDown = (e: KeyboardEvent) => {
+				if (e.key === "Escape") {
+					toggleFullscreen();
+				}
+			};
+
+			window.addEventListener("keydown", handleKeyDown);
+			return () => {
+				window.removeEventListener("keydown", handleKeyDown);
+				previousFocusRef.current?.focus?.();
+			};
+		}
+	}, [viewMode, toggleFullscreen]);
 
 	const handleClose = onClose || closeWarRoom;
 
@@ -119,21 +134,14 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 			recipientPersonaId: "all",
 			stage: "strategy",
 			type: "chat",
-			content: `Directive received: "${directDirective.trim()}". Orion re-aligning squad priorities and dispatching tasks.`,
+			content: `${t.directiveReceived} "${directDirective.trim()}". ${t.directiveRealigning}`,
 		});
 
 		setDirectDirective("");
 	};
 
-	return (
-		<aside
-			aria-label={t.warRoomTitle}
-			className={cn(
-				"flex flex-col h-full bg-[#070b12] text-slate-100 border-l border-slate-800 shadow-2xl overflow-hidden font-sans",
-				viewMode === "fullscreen" && "fixed inset-0 z-50 border-0",
-				className,
-			)}
-		>
+	const innerContent = (
+		<>
 			{/* Top Cyberpunk War Room Header */}
 			<div className="flex flex-col gap-3 px-4 py-3 bg-gradient-to-r from-slate-950 via-[#0a0e1a] to-slate-950 border-b border-slate-800/90 shrink-0">
 				<div className="flex items-center justify-between gap-2">
@@ -150,7 +158,7 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 								variant="outline"
 								className="border-cyan-500/30 text-cyan-400 bg-cyan-950/40 text-[10px] font-mono"
 							>
-								LIVE SWARM
+								{t.liveSwarmBadge}
 							</Badge>
 							{pendingGatesCount > 0 && (
 								<Badge
@@ -158,7 +166,7 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 									className="border-amber-500/50 text-amber-400 bg-amber-950/50 text-[10px] font-mono animate-pulse"
 								>
 									<Radio className="size-2.5 mr-1" />
-									{pendingGatesCount} GATE PENDING
+									{pendingGatesCount} {t.gatePendingBadge}
 								</Badge>
 							)}
 						</div>
@@ -246,7 +254,7 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 				{/* Active Squad Mini-Avatar Strip */}
 				<div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar">
 					<span className="text-[10px] font-mono uppercase text-slate-400 shrink-0">
-						Squad:
+						{t.squadRosterLabel}
 					</span>
 					{ALL_PERSONA_IDS.map((personaId) => {
 						const persona = BUILTIN_PERSONAS[personaId];
@@ -265,7 +273,7 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 										: "bg-slate-900/60 border-slate-800 hover:border-slate-700",
 								)}
 								title={`${persona.name} (${persona.role}) - ${state}`}
-								aria-label={`${persona.name} - Filter messages`}
+								aria-label={`${persona.name} - ${t.filterPersonaAria}`}
 							>
 								<PersonaAvatar
 									personaId={personaId}
@@ -335,9 +343,7 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 				{filteredMessages.length === 0 ? (
 					<div className="flex flex-col items-center justify-center h-48 text-center p-6 text-slate-500">
 						<Users className="size-8 text-slate-600 mb-2" />
-						<p className="text-xs font-mono">
-							No messages match this persona filter.
-						</p>
+						<p className="text-xs font-mono">{t.noFilteredMessages}</p>
 					</div>
 				) : (
 					filteredMessages.map((message) => {
@@ -378,7 +384,7 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 					</div>
 
 					<span className="text-slate-500 text-[10px]">
-						Ultra SOP Dual-Loop Protocol
+						{t.ultraSopProtocol}
 					</span>
 				</div>
 
@@ -390,7 +396,7 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 					<Input
 						value={directDirective}
 						onChange={(e) => setDirectDirective(e.target.value)}
-						placeholder="Dispatch direct command to Ultra Swarm..."
+						placeholder={t.directivePlaceholder}
 						className="h-8 text-xs bg-slate-900/90 border-slate-800 text-slate-100 placeholder:text-slate-500 focus-visible:ring-cyan-500/40"
 					/>
 					<Button
@@ -400,10 +406,38 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 						className="h-8 px-3 bg-cyan-600 hover:bg-cyan-500 text-black font-semibold text-xs gap-1 cursor-pointer shrink-0"
 					>
 						<Send className="size-3" />
-						<span>Send</span>
+						<span>{t.sendButton}</span>
 					</Button>
 				</form>
 			</div>
+		</>
+	);
+
+	if (viewMode === "fullscreen") {
+		return (
+			<div
+				role="dialog"
+				aria-modal="true"
+				aria-label={t.warRoomTitle}
+				className={cn(
+					"fixed inset-0 z-50 flex flex-col h-full bg-[#070b12] text-slate-100 border-0 shadow-2xl overflow-hidden font-sans",
+					className,
+				)}
+			>
+				{innerContent}
+			</div>
+		);
+	}
+
+	return (
+		<aside
+			aria-label={t.warRoomTitle}
+			className={cn(
+				"flex flex-col h-full bg-[#070b12] text-slate-100 border-l border-slate-800 shadow-2xl overflow-hidden font-sans",
+				className,
+			)}
+		>
+			{innerContent}
 		</aside>
 	);
 };

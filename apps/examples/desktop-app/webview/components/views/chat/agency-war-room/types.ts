@@ -39,7 +39,10 @@ export interface WarRoomMessage {
 		type: string;
 		summary?: string;
 		uri?: string;
+		untrusted?: boolean;
+		provenance?: string;
 	};
+	untrusted?: boolean;
 	checkpointGateId?: string;
 	timestamp: number;
 }
