@@ -513,5 +513,6 @@ export { createTool } from "./tools/create";
 export { AUTH_ERROR_PATTERNS, isLikelyAuthError } from "./types/auth";
 export * from "./planning";
 export * from "./ultra/personas";
+export * from "./personas/agent-specification";
 // VCR is Node-only (uses node:fs, node:path), excluded from browser build
 export type { VcrRecording } from "./types/vcr";

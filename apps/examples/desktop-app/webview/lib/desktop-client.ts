@@ -1,13 +1,19 @@
 "use client";
 
-import type {
-	AgendaAutomationPolicy,
-	AgendaTaskListInput,
-	AgendaTaskRecord,
-	AgendaTaskRunRecord,
-	DesktopDebugLogPayload,
-	HubTaskCreateInput,
-	HubTaskUpdateInput,
+import {
+	PersonaDeleteResponseSchema,
+	PersonasListResponseSchema,
+	PersonaReadResponseSchema,
+	PersonaSaveResponseSchema,
+	type AgendaAutomationPolicy,
+	type AgendaTaskListInput,
+	type AgendaTaskRecord,
+	type AgendaTaskRunRecord,
+	type AgentFrontmatter,
+	type CustomPersonaRecord,
+	type DesktopDebugLogPayload,
+	type HubTaskCreateInput,
+	type HubTaskUpdateInput,
 } from "@cline/shared/browser";
 import type {
 	DesktopTransportEvent,
@@ -708,6 +714,87 @@ class DesktopClient {
 			{ ...input },
 		);
 		return response.policy;
+	}
+
+	// ── Custom Specialist Personas (ADR 0006) ───────────────────
+	async listPersonas(workspaceRoot?: string): Promise<CustomPersonaRecord[]> {
+		const raw = await this.invoke<unknown>(
+			"lens_personas_list",
+			workspaceRoot ? { workspaceRoot } : {},
+		);
+		const parsed = PersonasListResponseSchema.safeParse(raw);
+		if (!parsed.success) {
+			throw new Error(
+				`Transport error: invalid personas list response (${parsed.error.message})`,
+			);
+		}
+		return parsed.data.personas;
+	}
+
+	async readPersona(
+		id: string,
+		workspaceRoot?: string,
+	): Promise<CustomPersonaRecord | null> {
+		const raw = await this.invoke<unknown>(
+			"lens_persona_read",
+			{ id, ...(workspaceRoot ? { workspaceRoot } : {}) },
+		);
+		const parsed = PersonaReadResponseSchema.safeParse(raw);
+		if (!parsed.success) {
+			throw new Error(
+				`Transport error: invalid persona read response (${parsed.error.message})`,
+			);
+		}
+		return parsed.data.persona;
+	}
+
+	async savePersona(
+		frontmatter: AgentFrontmatter,
+		instructions: string,
+		scope: "workspace" | "global" = "workspace",
+		workspaceRoot?: string,
+	): Promise<{ success: boolean; filePath: string }> {
+		const raw = await this.invoke<unknown>(
+			"lens_persona_save",
+			{
+				frontmatter,
+				instructions,
+				scope,
+				...(workspaceRoot ? { workspaceRoot } : {}),
+			},
+		);
+		const parsed = PersonaSaveResponseSchema.safeParse(raw);
+		if (!parsed.success) {
+			throw new Error(
+				`Transport error: invalid persona save response (${parsed.error.message})`,
+			);
+		}
+		return {
+			success: parsed.data.success,
+			filePath: parsed.data.filePath,
+		};
+	}
+
+	async deletePersona(
+		id: string,
+		scope?: "workspace" | "global",
+		workspaceRoot?: string,
+	): Promise<{ success: boolean }> {
+		const raw = await this.invoke<unknown>(
+			"lens_persona_delete",
+			{
+				id,
+				...(scope ? { scope } : {}),
+				...(workspaceRoot ? { workspaceRoot } : {}),
+			},
+		);
+		const parsed = PersonaDeleteResponseSchema.safeParse(raw);
+		if (!parsed.success) {
+			throw new Error(
+				`Transport error: invalid persona delete response (${parsed.error.message})`,
+			);
+		}
+		return { success: parsed.data.success };
 	}
 }
 

@@ -53,5 +53,13 @@ A configured group of specialist personas selected to collaborate on an Ultra Mo
 _Avoid_: agent swarm, crew, team leader
 
 **Checkpoint Gate**:
-A human-in-the-loop review point orchestrated by the Orchestrator where execution pauses for user validation before advancing to the next engineering milestone.
+The human-in-the-loop review point orchestrated by the Orchestrator where execution pauses for user validation before advancing to the next engineering milestone.
 _Avoid_: breakpoint, prompt stop, team leader review
+
+**Custom Persona**:
+A user-defined specialist agent adhering to the universal Agent Specification (`.agent.md` with YAML frontmatter + Markdown body), stored either globally in `~/.lens/personas/` or per-project in `.lens/personas/`.
+_Avoid_: custom bot, subagent script
+
+**Agent Team Memory**:
+The structured repository-level knowledge base stored under `<workspace>/.lens/memory/` (`decisions.md`, `conventions.md`, `learnings.md`) that preserves shared architectural context, project conventions, and operational learnings across multi-agent sessions.
+_Avoid_: vector dump, agent memory cache

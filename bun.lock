@@ -165,7 +165,7 @@
     },
     "apps/examples/desktop-app": {
       "name": "@cline/code",
-      "version": "0.0.25",
+      "version": "0.0.27",
       "dependencies": {
         "@base-ui/react": "^1.2.0",
         "@cline/core": "workspace:*",
@@ -770,6 +770,7 @@
       "dependencies": {
         "aws4fetch": "^1.0.20",
         "jsonrepair": "^3.13.2",
+        "yaml": "^2.8.2",
         "zod": "^4.3.6",
         "zod-to-json-schema": "^3.25.1",
       },
