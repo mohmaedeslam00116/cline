@@ -5,6 +5,7 @@ import {
 	DEFAULT_CLINE_SYSTEM_PROMPT,
 	YOLO_CLINE_SYSTEM_PROMPT,
 } from "./system";
+import { formatTeamMemoryPromptSection } from "../memory/team-memory";
 
 const WORKSPACE_CONFIGURATION_MARKER = "# Workspace Configuration";
 
@@ -281,6 +282,11 @@ export interface ClineSystemPromptOptions
 	 * calling a tool that is not in its toolset.
 	 */
 	planModeSwitchTool?: boolean;
+	/**
+	 * Token-bounded stratified summary of institutional team memory (.lens/memory/).
+	 * Injected as a structured <team_memory> section into system prompt rules.
+	 */
+	teamMemorySummary?: string;
 }
 
 export function buildClineSystemPrompt(
@@ -296,6 +302,7 @@ export function buildClineSystemPrompt(
 		overridePrompt,
 		providerId,
 		planModeSwitchTool = true,
+		teamMemorySummary,
 	} = options;
 	const workspaceRoot = options.workspaceRoot ?? options.rootPath ?? "";
 	const isCline = isClineProvider(providerId || "");
@@ -315,6 +322,10 @@ export function buildClineSystemPrompt(
 	const basePrompt =
 		mode === "yolo" ? YOLO_CLINE_SYSTEM_PROMPT : DEFAULT_CLINE_SYSTEM_PROMPT;
 
+	const teamMemorySection = teamMemorySummary?.trim()
+		? formatTeamMemoryPromptSection(teamMemorySummary)
+		: undefined;
+
 	// Mode semantics ride in the rules slot so every host emits them without
 	// composing its own copy. Order matches what the CLI historically built by
 	// hand (caller rules, then the mode-tag explanation, then the plan-mode
@@ -322,6 +333,7 @@ export function buildClineSystemPrompt(
 	const effectiveRules = [
 		rules,
 		MODE_TAG_INSTRUCTIONS,
+		teamMemorySection,
 		mode === "plan"
 			? planModeSwitchTool
 				? PLAN_MODE_INSTRUCTIONS
