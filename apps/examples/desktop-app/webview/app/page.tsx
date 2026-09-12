@@ -696,7 +696,13 @@ function ChatThreadPane({
 		isOpen: warRoomOpen,
 		viewMode: warRoomViewMode,
 		closeWarRoom,
+		setSessionId: setWarRoomSessionId,
 	} = useWarRoom();
+
+	useEffect(() => {
+		setWarRoomSessionId(sessionId || null);
+	}, [sessionId, setWarRoomSessionId]);
+
 	const handleOpenUltraPanel = useCallback(() => {
 		setUltraPanelOpen(true);
 	}, []);

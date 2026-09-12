@@ -34,10 +34,19 @@ export const SpawnAgentInputSchema = z.object({
 		.describe("System prompt defining the sub-agent's behavior"),
 	task: z.string().describe("Task for the sub-agent to complete"),
 	personaId: z
-		.string()
+		.enum([
+			"orion",
+			"lyra",
+			"athena",
+			"atlas",
+			"cipher",
+			"vector",
+			"sentinel",
+			"echo",
+		])
 		.optional()
 		.describe(
-			"Specialist persona ID (e.g. orion, lyra, athena, atlas, cipher, vector, sentinel, echo)",
+			"Specialist persona ID (orion, lyra, athena, atlas, cipher, vector, sentinel, echo)",
 		),
 });
 

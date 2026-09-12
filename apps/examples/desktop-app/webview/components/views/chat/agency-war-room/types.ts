@@ -30,6 +30,7 @@ export interface WarRoomMessage {
 	};
 	toolCall?: {
 		toolName: string;
+		toolCallId?: string;
 		args?: Record<string, unknown>;
 		output?: string;
 		status: "running" | "completed" | "error";

@@ -226,13 +226,31 @@ describe("Agency War Room Suite", () => {
 
 		await act(async () => {
 			root.render(
-				<WarRoomProvider initialOpen={true}>
+				<WarRoomProvider initialOpen={true} sessionId="test-session">
 					<AgencyWarRoomPanel />
 				</WarRoomProvider>,
 			);
 		});
 
-		// Dispatch live subagent chat event from Lyra
+		// Event from a different session should be ignored
+		await act(async () => {
+			desktopClient.dispatchLocalEvent("agency_war_room_event", {
+				sessionId: "different-session",
+				subAgentId: "subagent-atlas-1",
+				personaId: "atlas",
+				event: {
+					type: "content_start",
+					contentType: "text",
+					text: "This should NOT appear in test-session",
+				},
+				ts: Date.now(),
+			});
+		});
+		expect(container.textContent).not.toContain(
+			"This should NOT appear in test-session",
+		);
+
+		// Dispatch live subagent chat event from Lyra for test-session
 		await act(async () => {
 			desktopClient.dispatchLocalEvent("agency_war_room_event", {
 				sessionId: "test-session",
@@ -251,5 +269,40 @@ describe("Agency War Room Suite", () => {
 		expect(container.textContent).toContain(
 			"Live AST parsing analysis complete.",
 		);
+
+		// Dispatch tool start with unique toolCallId
+		await act(async () => {
+			desktopClient.dispatchLocalEvent("agency_war_room_event", {
+				sessionId: "test-session",
+				subAgentId: "subagent-lyra-99",
+				personaId: "lyra",
+				event: {
+					type: "content_start",
+					contentType: "tool",
+					toolName: "read_file",
+					toolCallId: "call-123",
+					input: { path: "src/index.ts" },
+				},
+				ts: Date.now(),
+			});
+		});
+		expect(container.textContent).toContain("Executing tool: read_file");
+
+		// Dispatch tool end correlating with toolCallId
+		await act(async () => {
+			desktopClient.dispatchLocalEvent("agency_war_room_event", {
+				sessionId: "test-session",
+				subAgentId: "subagent-lyra-99",
+				personaId: "lyra",
+				event: {
+					type: "content_end",
+					contentType: "tool",
+					toolName: "read_file",
+					toolCallId: "call-123",
+					output: "file contents",
+				},
+				ts: Date.now(),
+			});
+		});
 	});
 });
