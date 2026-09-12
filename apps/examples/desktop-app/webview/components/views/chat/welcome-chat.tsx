@@ -26,6 +26,7 @@ export function WelcomeScreen({
 	gitBranch,
 	mode,
 	onOpenUltraPanel,
+	onOpenWarRoom,
 	onListGitBranches,
 	onSwitchGitBranch,
 	onOpenSession,
@@ -39,6 +40,7 @@ export function WelcomeScreen({
 	gitBranch: string | null;
 	mode?: "act" | "plan" | "yolo" | "ultra";
 	onOpenUltraPanel?: () => void;
+	onOpenWarRoom?: () => void;
 	onListGitBranches: () => Promise<{ current: string; branches: string[] }>;
 	onSwitchGitBranch: (branch: string) => Promise<boolean>;
 	onOpenSession?: (sessionId: string) => void | Promise<void>;
@@ -185,7 +187,10 @@ export function WelcomeScreen({
 
 					{active && mode === "ultra" ? (
 						<div className="mt-4 w-full">
-							<UltraSquadShowcase onOpenPanel={onOpenUltraPanel} />
+							<UltraSquadShowcase
+								onOpenPanel={onOpenUltraPanel}
+								onOpenWarRoom={onOpenWarRoom}
+							/>
 						</div>
 					) : null}
 

@@ -204,6 +204,35 @@ export interface LensTranslations {
 		readonly systemPromptSeed: string;
 		readonly statusLabel: string;
 		readonly targetLabel: string;
+		readonly warRoomTitle: string;
+		readonly warRoomSubtitle: string;
+		readonly warRoomButton: string;
+		readonly splitScreen: string;
+		readonly fullScreen: string;
+		readonly exitFullScreen: string;
+		readonly closeWarRoom: string;
+		readonly filterAll: string;
+		readonly simulationPlay: string;
+		readonly simulationPause: string;
+		readonly simulationStep: string;
+		readonly simulationReset: string;
+		readonly checkpointGate1Title: string;
+		readonly checkpointGate2Title: string;
+		readonly requestChanges: string;
+		readonly checkpointApproved: string;
+		readonly checkpointPending: string;
+		readonly checkpointRejected: string;
+		readonly handoffTo: string;
+		readonly broadcastToAll: string;
+		readonly telemetryActiveSquad: string;
+		readonly telemetryMessages: string;
+		readonly telemetryToolCalls: string;
+		readonly stageStrategy: string;
+		readonly stageResearch: string;
+		readonly stageArchitecture: string;
+		readonly stageDevelopment: string;
+		readonly stageQa: string;
+		readonly stageDocumentation: string;
 	};
 }
 
@@ -428,6 +457,35 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			systemPromptSeed: "System Prompt Seed",
 			statusLabel: "STATUS:",
 			targetLabel: "Target:",
+			warRoomTitle: "Agency War Room",
+			warRoomSubtitle: "Autonomous Multi-Agent Swarm Stream & Live Checkpoints",
+			warRoomButton: "War Room",
+			splitScreen: "Split View",
+			fullScreen: "Full Screen",
+			exitFullScreen: "Exit Full Screen",
+			closeWarRoom: "Close War Room",
+			filterAll: "All Agents",
+			simulationPlay: "Play Swarm",
+			simulationPause: "Pause",
+			simulationStep: "Next Step",
+			simulationReset: "Reset",
+			checkpointGate1Title: "Checkpoint 1: Architecture & PRD Sign-off",
+			checkpointGate2Title: "Checkpoint 2: Pre-Ship Quality Audit",
+			requestChanges: "Request Changes",
+			checkpointApproved: "Checkpoint Approved",
+			checkpointPending: "Awaiting Your Approval",
+			checkpointRejected: "Changes Requested",
+			handoffTo: "Handoff to",
+			broadcastToAll: "Broadcast to Swarm",
+			telemetryActiveSquad: "Active Swarm",
+			telemetryMessages: "Messages",
+			telemetryToolCalls: "Tool Calls",
+			stageStrategy: "Strategy & SOP",
+			stageResearch: "Deep Research",
+			stageArchitecture: "Architecture & DAG",
+			stageDevelopment: "Core Implementation",
+			stageQa: "QA Verification",
+			stageDocumentation: "Technical Documentation",
 		},
 	},
 	ar: {
@@ -648,6 +706,35 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			systemPromptSeed: "بذرة التوجيه الأساسي",
 			statusLabel: "الحالة:",
 			targetLabel: "الهدف:",
+			warRoomTitle: "غرفة عمليات الوكالة",
+			warRoomSubtitle: "بث عمليات سرب الوكلاء المستقل والبوابات التفاعلية",
+			warRoomButton: "غرفة العمليات",
+			splitScreen: "عرض منقسم",
+			fullScreen: "ملء الشاشة",
+			exitFullScreen: "إنهاء ملء الشاشة",
+			closeWarRoom: "إغلاق غرفة العمليات",
+			filterAll: "كافة الوكلاء",
+			simulationPlay: "تشغيل السرب",
+			simulationPause: "إيقاف مؤقت",
+			simulationStep: "الخطوة التالية",
+			simulationReset: "إعادة ضبط",
+			checkpointGate1Title: "المحطة 1: اعتماد المعمارية والمواصفات",
+			checkpointGate2Title: "المحطة 2: فحص الجودة قبل الشحن",
+			requestChanges: "طلب تعديلات",
+			checkpointApproved: "تم اعتماد المحطة",
+			checkpointPending: "بانتظار موافقتك",
+			checkpointRejected: "تم طلب تعديلات",
+			handoffTo: "تسليم إلى",
+			broadcastToAll: "بث لكافة الفريق",
+			telemetryActiveSquad: "السرب النشط",
+			telemetryMessages: "رسائل",
+			telemetryToolCalls: "أدوات منفذة",
+			stageStrategy: "الاستراتيجية وإجراءات التشغيل",
+			stageResearch: "الأبحاث المعمقة",
+			stageArchitecture: "المعمارية وهيكلة المهام",
+			stageDevelopment: "التنفيذ البرمجي",
+			stageQa: "فحص الجودة",
+			stageDocumentation: "التوثيق الفني",
 		},
 	},
 };

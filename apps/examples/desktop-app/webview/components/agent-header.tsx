@@ -11,11 +11,13 @@ import {
 	Loader2,
 	MoreHorizontal,
 	Plus,
+	Radio,
 	Trash2,
 	Workflow,
 } from "lucide-react";
 import { type CSSProperties, memo, useEffect, useMemo, useState } from "react";
 import { useSquadConfig } from "@/hooks/use-squad-config";
+import { getLensTranslations } from "@/lib/lens-i18n";
 import type { ChatSessionStatus } from "@/lib/chat-schema";
 import {
 	agentEntryState,
@@ -64,6 +66,8 @@ type AgentHeaderProps = {
 	onOpenParentSession?: (parentSessionId: string) => void | Promise<void>;
 	mode?: "act" | "plan" | "yolo" | "ultra";
 	onOpenUltraPanel?: () => void;
+	onToggleWarRoom?: () => void;
+	warRoomOpen?: boolean;
 };
 
 function AgentHeaderImpl({
@@ -89,7 +93,10 @@ function AgentHeaderImpl({
 	onOpenParentSession,
 	mode,
 	onOpenUltraPanel,
+	onToggleWarRoom,
+	warRoomOpen = false,
 }: AgentHeaderProps) {
+	const tAgency = getLensTranslations().ultraAgency;
 	const [squadConfig] = useSquadConfig();
 	const [isEditingTitle, setIsEditingTitle] = useState(false);
 	const [titleInput, setTitleInput] = useState("");
@@ -231,19 +238,45 @@ function AgentHeaderImpl({
 			{showSessionActions ? (
 				<div className="flex shrink-0 items-center gap-2">
 					{mode === "ultra" ? (
-						<Button
-							aria-label={`Open Ultra Agency Squad Roster (${squadConfig.activePersonaIds.length} agents)`}
-							className="flex items-center gap-1.5 rounded-md bg-indigo-500/15 text-indigo-500 hover:bg-indigo-500/25 border border-indigo-500/30 px-2 py-1 text-xs font-medium transition-colors cursor-pointer"
-							id="ultra-squad-header-badge"
-							onClick={() => onOpenUltraPanel?.()}
-							size="sm"
-							title={`Ultra Agency: ${squadConfig.presetId} (${squadConfig.activePersonaIds.length} agents)`}
-							type="button"
-							variant="outline"
-						>
-							<Workflow className="size-3.5" />
-							<span>Ultra Squad ({squadConfig.activePersonaIds.length})</span>
-						</Button>
+						<>
+							<Button
+								aria-label={`Open Ultra Agency Squad Roster (${squadConfig.activePersonaIds.length} agents)`}
+								className="flex items-center gap-1.5 rounded-md bg-indigo-500/15 text-indigo-500 hover:bg-indigo-500/25 border border-indigo-500/30 px-2 py-1 text-xs font-medium transition-colors cursor-pointer"
+								id="ultra-squad-header-badge"
+								onClick={() => onOpenUltraPanel?.()}
+								size="sm"
+								title={`Ultra Agency: ${squadConfig.presetId} (${squadConfig.activePersonaIds.length} agents)`}
+								type="button"
+								variant="outline"
+							>
+								<Workflow className="size-3.5" />
+								<span>Ultra Squad ({squadConfig.activePersonaIds.length})</span>
+							</Button>
+							<Button
+								aria-label={
+									warRoomOpen ? tAgency.closeWarRoom : tAgency.warRoomButton
+								}
+								className={cn(
+									"flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors cursor-pointer border",
+									warRoomOpen
+										? "bg-cyan-950/60 text-cyan-300 border-cyan-400 shadow-sm shadow-cyan-500/20"
+										: "bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 border-cyan-500/30",
+								)}
+								id="ultra-war-room-header-btn"
+								onClick={() => onToggleWarRoom?.()}
+								size="sm"
+								title={`${tAgency.warRoomTitle} - ${warRoomOpen ? tAgency.closeWarRoom : tAgency.splitScreen}`}
+								type="button"
+								variant="outline"
+							>
+								<span className="relative flex h-2 w-2">
+									<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+									<span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500" />
+								</span>
+								<Radio className="size-3.5 text-cyan-400" />
+								<span>{tAgency.warRoomButton}</span>
+							</Button>
+						</>
 					) : null}
 					<AgentActivityStatus
 						activity={agentActivity}

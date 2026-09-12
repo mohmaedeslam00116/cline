@@ -1,0 +1,77 @@
+import type { SpecialistPersonaId } from "@cline/shared/browser";
+import type { PersonaActivityState } from "@/components/personas";
+
+export type WarRoomStage =
+	| "strategy"
+	| "research"
+	| "architecture"
+	| "development"
+	| "qa"
+	| "documentation";
+
+export type WarRoomMessageType =
+	| "chat"
+	| "handoff"
+	| "checkpoint"
+	| "tool_call"
+	| "artifact";
+
+export interface WarRoomMessage {
+	id: string;
+	senderPersonaId: SpecialistPersonaId;
+	recipientPersonaId?: SpecialistPersonaId | "all";
+	stage: WarRoomStage;
+	type: WarRoomMessageType;
+	content: string;
+	codeSnippet?: {
+		language: string;
+		code: string;
+		filename?: string;
+	};
+	toolCall?: {
+		toolName: string;
+		args?: Record<string, unknown>;
+		output?: string;
+		status: "running" | "completed" | "error";
+	};
+	artifact?: {
+		title: string;
+		type: string;
+		summary?: string;
+		uri?: string;
+	};
+	checkpointGateId?: string;
+	timestamp: number;
+}
+
+export interface WarRoomDeliverable {
+	title: string;
+	type: string;
+	summary: string;
+	badge?: string;
+}
+
+export interface WarRoomCheckpointGate {
+	id: string;
+	gateNumber: 1 | 2;
+	title: string;
+	description: string;
+	personaId: SpecialistPersonaId;
+	status: "pending" | "approved" | "rejected";
+	deliverables: WarRoomDeliverable[];
+	feedback?: string;
+	timestamp: number;
+}
+
+export type WarRoomViewMode = "split" | "fullscreen" | "hidden";
+
+export interface WarRoomState {
+	isOpen: boolean;
+	viewMode: WarRoomViewMode;
+	messages: WarRoomMessage[];
+	activeFilterPersona: SpecialistPersonaId | "all";
+	checkpointGates: WarRoomCheckpointGate[];
+	activePersonaStates: Record<SpecialistPersonaId, PersonaActivityState>;
+	isSimulating: boolean;
+	activeSimulationStep: number;
+}

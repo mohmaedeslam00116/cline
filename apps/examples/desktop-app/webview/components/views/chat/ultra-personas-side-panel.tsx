@@ -19,6 +19,7 @@ import {
 	Globe,
 	Layers,
 	ListChecks,
+	Radio,
 	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
@@ -451,8 +452,10 @@ export function UltraPersonasSidePanel({
  */
 export function UltraSquadShowcase({
 	onOpenPanel,
+	onOpenWarRoom,
 }: {
 	onOpenPanel?: () => void;
+	onOpenWarRoom?: () => void;
 }) {
 	const [config] = useSquadConfig();
 	const t = getLensTranslations().ultraAgency;
@@ -471,12 +474,12 @@ export function UltraSquadShowcase({
 					</div>
 					<div>
 						<div className="flex items-center gap-2">
-							<h3 className="text-sm font-semibold text-foreground tracking-tight">
+							<h3 className="text-sm font-semibold text-foreground">
 								{t.badge}
 							</h3>
 							<Badge
 								variant="outline"
-								className="text-[10px] font-mono uppercase bg-indigo-500/15 text-indigo-400 border-indigo-500/30"
+								className="border-indigo-500/30 text-indigo-500 bg-indigo-500/10 text-xs"
 							>
 								{config.activePersonaIds.length} {t.agentsSuffix} Active
 							</Badge>
@@ -485,7 +488,20 @@ export function UltraSquadShowcase({
 					</div>
 				</div>
 
-				<div className="flex items-center gap-2 self-start sm:self-auto">
+				<div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+					{onOpenWarRoom && (
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={onOpenWarRoom}
+							className="h-8 gap-1.5 text-xs font-medium border-cyan-500/30 hover:border-cyan-500/60 hover:bg-cyan-500/10 text-cyan-400 cursor-pointer"
+						>
+							<Radio className="size-3.5 text-cyan-400" />
+							<span>{t.warRoomButton}</span>
+						</Button>
+					)}
+
 					<Dialog>
 						<DialogTrigger asChild>
 							<Button
