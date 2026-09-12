@@ -19,6 +19,9 @@ import {
 	serializeAgentSpecification,
 } from "@cline/shared";
 
+/** Safe identifier pattern: lowercase alphanumeric, hyphens, and underscores */
+export const PERSONA_ID_REGEX = /^[a-z0-9_-]+$/;
+
 /** Resolve the workspace-scoped personas directory: `<workspace>/.lens/personas` */
 export function resolveWorkspacePersonasDir(workspaceRoot: string): string {
 	return join(resolve(workspaceRoot), ".lens", "personas");
@@ -76,10 +79,11 @@ async function scanDirectoryForPersonas(
 	} catch (err: unknown) {
 		// Directory not existing is a normal state, return empty list
 		const error = err as { code?: string };
-		if (error.code !== "ENOENT") {
-			console.warn(`[Personas] Error scanning directory "${dirPath}":`, err);
+		if (error.code === "ENOENT") {
+			return [];
 		}
-		return [];
+		console.error(`[Personas] Error scanning directory "${dirPath}":`, err);
+		throw err;
 	}
 }
 
@@ -161,9 +165,16 @@ export async function saveCustomPersona(
 			? resolveWorkspacePersonasDir(workspaceRoot)
 			: resolveGlobalPersonasDir();
 
+	const trimmedId = input.frontmatter.id.trim();
+	if (!PERSONA_ID_REGEX.test(trimmedId)) {
+		throw new Error(
+			`Invalid persona ID "${input.frontmatter.id}": must contain only lowercase letters, digits, hyphens, and underscores`,
+		);
+	}
+
 	await mkdir(targetDir, { recursive: true });
 
-	const fileName = `${input.frontmatter.id}.agent.md`;
+	const fileName = `${trimmedId}.agent.md`;
 	const targetFilePath = join(targetDir, fileName);
 
 	const serializedContent = serializeAgentSpecification(
@@ -200,16 +211,19 @@ export async function deleteCustomPersona(
 	scope?: "workspace" | "global",
 ): Promise<{ success: boolean; deletedPath?: string }> {
 	const trimmedId = personaId.trim();
-	if (!trimmedId) return { success: false };
+	if (!trimmedId || !PERSONA_ID_REGEX.test(trimmedId)) return { success: false };
 
 	const candidatePaths: string[] = [];
-	const fileName = `${trimmedId}.agent.md`;
+	const extensions = [".agent.md", ".agent.markdown"];
 
-	if (!scope || scope === "workspace") {
-		candidatePaths.push(join(resolveWorkspacePersonasDir(workspaceRoot), fileName));
-	}
-	if (!scope || scope === "global") {
-		candidatePaths.push(join(resolveGlobalPersonasDir(), fileName));
+	for (const ext of extensions) {
+		const fileName = `${trimmedId}${ext}`;
+		if (!scope || scope === "workspace") {
+			candidatePaths.push(join(resolveWorkspacePersonasDir(workspaceRoot), fileName));
+		}
+		if (!scope || scope === "global") {
+			candidatePaths.push(join(resolveGlobalPersonasDir(), fileName));
+		}
 	}
 
 	for (const candidatePath of candidatePaths) {

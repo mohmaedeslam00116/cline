@@ -77,7 +77,7 @@ Always verify CEI (Checks-Effects-Interactions) patterns before certifying any t
 			expect(result.success).toBe(true);
 			expect(result.persona?.frontmatter.id).toBe("win-agent");
 			expect(result.persona?.instructions).toBe(
-				"Instructions with CRLF",
+				"Instructions with CRLF\r\n",
 			);
 		});
 
@@ -240,6 +240,51 @@ temperature: 99
 			const parsed = parseAgentSpecification(serialized);
 			expect(parsed.success).toBe(true);
 			expect(parsed.persona?.instructions).toBe("");
+		});
+
+		it("preserves leading indented code blocks and trailing Markdown hard-break spaces in round-trip", () => {
+			const frontmatter = {
+				id: "code-formatter",
+				name: "Code Formatter",
+				version: "1.0.0",
+				description: "Preserves whitespace",
+				role: "Formatter",
+				stage: "development" as const,
+				avatar: {
+					chassis: "cipher" as const,
+					accentColor: "#3b82f6",
+				},
+				tools: [],
+				toolPolicy: "auto" as const,
+			};
+
+			const instructions = "    const indentedCode = true;\nLine with hard break spaces  \nAnother line";
+			const serialized = serializeAgentSpecification(frontmatter, instructions);
+			const parsed = parseAgentSpecification(serialized);
+
+			expect(parsed.success).toBe(true);
+			expect(parsed.persona?.instructions).toBe(instructions);
+		});
+
+		it("rejects unknown or misspelled frontmatter keys such as toolPolciy", () => {
+			const typoSpec = `---
+id: typo-agent
+name: Typo Agent
+version: 1.0.0
+description: Has misspelled key
+role: Worker
+stage: development
+avatar:
+  chassis: cipher
+  accentColor: "#3b82f6"
+tools: []
+toolPolciy: require_approval
+---
+Instructions
+`;
+			const result = parseAgentSpecification(typoSpec);
+			expect(result.success).toBe(false);
+			expect(result.errors?.some((e) => e.includes("toolPolciy") || e.includes("Unrecognized key"))).toBe(true);
 		});
 	});
 

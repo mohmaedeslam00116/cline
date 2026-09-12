@@ -459,16 +459,32 @@ describe("DesktopClient custom personas", () => {
 		});
 
 		// 3. readPersona
+		const validPersonaRecord = {
+			frontmatter: {
+				id: "audit-bot",
+				name: "Audit Bot",
+				version: "1.0.0",
+				description: "Auditor",
+				role: "Auditor",
+				stage: "qa",
+				avatar: { chassis: "sentinel", accentColor: "#10b981" },
+				tools: ["read_file"],
+				toolPolicy: "require_approval",
+			},
+			instructions: "Prompt",
+			rawContent: "---\nid: audit-bot\n---\nPrompt",
+			scope: "workspace",
+			filePath: "/test/ws/.lens/personas/audit-bot.agent.md",
+			isBuiltin: false,
+		};
 		const readPromise = desktopClient.readPersona("audit-bot", "/test/ws");
 		await Promise.resolve();
 		expect(socket.lastRequest()).toMatchObject({
 			command: "lens_persona_read",
 			args: { id: "audit-bot", workspaceRoot: "/test/ws" },
 		});
-		socket.respond({ persona: { frontmatter: { id: "audit-bot" } } });
-		await expect(readPromise).resolves.toEqual({
-			frontmatter: { id: "audit-bot" },
-		});
+		socket.respond({ persona: validPersonaRecord });
+		await expect(readPromise).resolves.toEqual(validPersonaRecord);
 
 		// 4. deletePersona
 		const deletePromise = desktopClient.deletePersona(
@@ -484,4 +500,46 @@ describe("DesktopClient custom personas", () => {
 		socket.respond({ success: true });
 		await expect(deletePromise).resolves.toEqual({ success: true });
 	});
+
+	it("rejects malformed responses at the transport boundary with descriptive errors", async () => {
+		const { desktopClient } = await import("./desktop-client");
+
+		// 1. malformed listPersonas response
+		const listPromise = desktopClient.listPersonas("/test/ws");
+		const socket = await connectLatestSocket();
+		socket.respond({ personas: "not-an-array" });
+		await expect(listPromise).rejects.toThrow("Transport error: invalid personas list response");
+
+		// 2. malformed readPersona response
+		const readPromise = desktopClient.readPersona("audit-bot", "/test/ws");
+		await Promise.resolve();
+		socket.respond({ persona: { frontmatter: "invalid-not-object" } });
+		await expect(readPromise).rejects.toThrow("Transport error: invalid persona read response");
+
+		// 3. malformed savePersona response
+		const savePromise = desktopClient.savePersona(
+			{
+				id: "bot",
+				name: "Bot",
+				version: "1.0.0",
+				description: "Desc",
+				role: "Role",
+				stage: "strategy",
+				avatar: { chassis: "orion", accentColor: "#3b82f6" },
+				tools: [],
+				toolPolicy: "auto",
+			},
+			"Instructions",
+		);
+		await Promise.resolve();
+		socket.respond({ success: "not-a-boolean" });
+		await expect(savePromise).rejects.toThrow("Transport error: invalid persona save response");
+
+		// 4. malformed deletePersona response
+		const deletePromise = desktopClient.deletePersona("bot");
+		await Promise.resolve();
+		socket.respond({ success: "not-a-boolean" });
+		await expect(deletePromise).rejects.toThrow("Transport error: invalid persona delete response");
+	});
 });
+

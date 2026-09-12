@@ -1409,19 +1409,13 @@ export async function handleCommand(
 
 	// ── Custom Specialist Personas (ADR 0006) ───────────────────
 	if (command === "lens_personas_list") {
-		const workspaceRoot =
-			typeof args?.workspaceRoot === "string" && args.workspaceRoot.trim()
-				? args.workspaceRoot.trim()
-				: ctx.workspaceRoot;
+		const workspaceRoot = ctx.workspaceRoot;
 		const { listCustomPersonas } = await import("./personas");
 		const personas = await listCustomPersonas(workspaceRoot);
 		return { personas };
 	}
 	if (command === "lens_persona_read") {
-		const workspaceRoot =
-			typeof args?.workspaceRoot === "string" && args.workspaceRoot.trim()
-				? args.workspaceRoot.trim()
-				: ctx.workspaceRoot;
+		const workspaceRoot = ctx.workspaceRoot;
 		const id = typeof args?.id === "string" ? args.id.trim() : "";
 		if (!id) {
 			throw new Error("Missing required persona id");
@@ -1431,29 +1425,27 @@ export async function handleCommand(
 		return { persona };
 	}
 	if (command === "lens_persona_save") {
-		const workspaceRoot =
-			typeof args?.workspaceRoot === "string" && args.workspaceRoot.trim()
-				? args.workspaceRoot.trim()
-				: ctx.workspaceRoot;
-		const frontmatter = args?.frontmatter;
+		const workspaceRoot = ctx.workspaceRoot;
 		const instructions =
 			typeof args?.instructions === "string" ? args.instructions : "";
 		const scope = args?.scope === "global" ? "global" : "workspace";
-		if (!frontmatter || typeof frontmatter !== "object") {
-			throw new Error("Missing or invalid persona frontmatter");
+		const { AgentFrontmatterSchema } = await import("@cline/shared");
+		const validation = AgentFrontmatterSchema.safeParse(args?.frontmatter);
+		if (!validation.success) {
+			const errorMsgs = validation.error.issues
+				.map((i) => `[${i.path.join(".") || "root"}]: ${i.message}`)
+				.join(", ");
+			throw new Error(`Invalid persona frontmatter: ${errorMsgs}`);
 		}
 		const { saveCustomPersona } = await import("./personas");
 		return await saveCustomPersona(workspaceRoot, {
-			frontmatter: frontmatter as any,
+			frontmatter: validation.data,
 			instructions,
 			scope,
 		});
 	}
 	if (command === "lens_persona_delete") {
-		const workspaceRoot =
-			typeof args?.workspaceRoot === "string" && args.workspaceRoot.trim()
-				? args.workspaceRoot.trim()
-				: ctx.workspaceRoot;
+		const workspaceRoot = ctx.workspaceRoot;
 		const id = typeof args?.id === "string" ? args.id.trim() : "";
 		if (!id) {
 			throw new Error("Missing required persona id");

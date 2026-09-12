@@ -34,7 +34,7 @@ export const AgentChassisSchema = z.enum([
 export type AgentChassis = z.infer<typeof AgentChassisSchema>;
 
 /** Cyberpunk avatar configuration */
-export const AgentAvatarSchema = z.object({
+export const AgentAvatarSchema = z.strictObject({
 	chassis: AgentChassisSchema,
 	accentColor: z
 		.string()
@@ -53,7 +53,7 @@ export type AgentToolPolicy = z.infer<typeof AgentToolPolicySchema>;
 /**
  * Universal YAML Frontmatter Schema for .agent.md files.
  */
-export const AgentFrontmatterSchema = z.object({
+export const AgentFrontmatterSchema = z.strictObject({
 	id: z
 		.string()
 		.min(1, "Agent ID cannot be empty")
@@ -74,21 +74,49 @@ export const AgentFrontmatterSchema = z.object({
 });
 export type AgentFrontmatter = z.infer<typeof AgentFrontmatterSchema>;
 
-/** Complete custom persona model including runtime metadata and markdown instructions */
-export interface CustomPersonaRecord {
+/** Complete custom persona model schema including runtime metadata and markdown instructions */
+export const CustomPersonaRecordSchema = z.object({
 	/** Validated frontmatter metadata */
-	frontmatter: AgentFrontmatter;
+	frontmatter: AgentFrontmatterSchema,
 	/** Markdown body containing system prompt instructions */
-	instructions: string;
+	instructions: z.string(),
 	/** Complete raw file content (.agent.md) */
-	rawContent: string;
+	rawContent: z.string(),
 	/** Storage scope: workspace (.lens/personas/) or global (~/.lens/personas/) */
-	scope: "workspace" | "global";
+	scope: z.enum(["workspace", "global"]),
 	/** Absolute or resolved filesystem path */
-	filePath: string;
+	filePath: z.string(),
 	/** True if this is an immutable built-in system persona */
-	isBuiltin?: boolean;
-}
+	isBuiltin: z.boolean().optional(),
+});
+export type CustomPersonaRecord = z.infer<typeof CustomPersonaRecordSchema>;
+
+/** Response schema for lens_personas_list */
+export const PersonasListResponseSchema = z.object({
+	personas: z.array(CustomPersonaRecordSchema),
+});
+export type PersonasListResponse = z.infer<typeof PersonasListResponseSchema>;
+
+/** Response schema for lens_persona_read */
+export const PersonaReadResponseSchema = z.object({
+	persona: CustomPersonaRecordSchema.nullable(),
+});
+export type PersonaReadResponse = z.infer<typeof PersonaReadResponseSchema>;
+
+/** Response schema for lens_persona_save */
+export const PersonaSaveResponseSchema = z.object({
+	success: z.boolean(),
+	filePath: z.string(),
+	persona: CustomPersonaRecordSchema.optional(),
+});
+export type PersonaSaveResponse = z.infer<typeof PersonaSaveResponseSchema>;
+
+/** Response schema for lens_persona_delete */
+export const PersonaDeleteResponseSchema = z.object({
+	success: z.boolean(),
+	deletedPath: z.string().optional(),
+});
+export type PersonaDeleteResponse = z.infer<typeof PersonaDeleteResponseSchema>;
 
 /** Result of parsing an .agent.md specification file */
 export interface AgentSpecParseResult {
@@ -98,7 +126,7 @@ export interface AgentSpecParseResult {
 }
 
 /** Frontmatter delimiter pattern: matches leading `---` block */
-const FRONTMATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/;
+const FRONTMATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n([\s\S]*))?$/;
 
 /**
  * Parses raw .agent.md file content into a validated CustomPersonaRecord.
@@ -134,7 +162,9 @@ export function parseAgentSpecification(
 	}
 
 	const yamlPart = match[1];
-	const instructions = (match[2] ?? "").trim();
+	const rawInstructions = match[2] ?? "";
+	// Remove only the single newline separator immediately following the closing ---
+	const instructions = rawInstructions.replace(/^\r?\n/, "");
 
 	let parsedYaml: unknown;
 	try {
@@ -216,10 +246,9 @@ export function serializeAgentSpecification(
 		lineWidth: 0,
 	}).trim();
 
-	const trimmedInstructions = instructions.trim();
-	if (!trimmedInstructions) {
+	if (!instructions) {
 		return `---\n${yamlString}\n---\n`;
 	}
 
-	return `---\n${yamlString}\n---\n\n${trimmedInstructions}\n`;
+	return `---\n${yamlString}\n---\n\n${instructions}`;
 }

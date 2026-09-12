@@ -2,7 +2,7 @@
 
 - **Status**: Ready for Agent
 - **Issue**: [#62](https://github.com/mohmaedeslam00116/cline/issues/62)
-- **ADR Reference**: [ADR 0006](docs/adr/0006-custom-persona-studio-and-team-memory.md)
+- **ADR Reference**: [ADR 0006](../adr/0006-custom-persona-studio-and-team-memory.md)
 
 ## Problem Statement
 
