@@ -375,7 +375,9 @@ export async function handleSessionCreate(
 	});
 	const sessionMode =
 		sessionConfig?.mode ??
-		(runtimeOptions.mode === "plan" || runtimeOptions.mode === "yolo"
+		(runtimeOptions.mode === "plan" ||
+		runtimeOptions.mode === "yolo" ||
+		runtimeOptions.mode === "ultra"
 			? runtimeOptions.mode
 			: "act");
 	const started = await ctx.sessionHost.startSession({
@@ -669,7 +671,9 @@ export async function handleSessionRestore(
 								context.sourceSession.cwd;
 				const sessionMode =
 					sessionConfig?.mode ??
-					(runtimeOptions.mode === "plan" || runtimeOptions.mode === "yolo"
+					(runtimeOptions.mode === "plan" ||
+					runtimeOptions.mode === "yolo" ||
+					runtimeOptions.mode === "ultra"
 						? runtimeOptions.mode
 						: "act");
 				return {

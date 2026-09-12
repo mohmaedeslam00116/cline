@@ -34,7 +34,7 @@ import {
 import { getLensTranslations } from "@/lib/lens-i18n";
 import { cn } from "@/lib/utils";
 
-const STORAGE_KEY = "lens.ultra.squad-config.v1";
+import { useSquadConfig } from "@/hooks/use-squad-config";
 
 const PERSONA_ICONS: Record<
 	SpecialistPersonaId,
@@ -60,41 +60,16 @@ export function SquadConfigPopover({
 	className,
 }: SquadConfigPopoverProps) {
 	const t = getLensTranslations().ultraAgency;
-	const [config, setConfig] = useState<SquadConfig>(() => {
-		if (typeof window === "undefined") {
-			return getDefaultSquadConfig();
-		}
-		try {
-			const saved = window.localStorage.getItem(STORAGE_KEY);
-			if (saved) {
-				const parsed = JSON.parse(saved);
-				if (
-					Array.isArray(parsed.activePersonaIds) &&
-					parsed.activePersonaIds.length > 0
-				) {
-					return parsed;
-				}
-			}
-		} catch {
-			// Fallback to default
-		}
-		return getDefaultSquadConfig();
-	});
-
+	const [config, updateConfigInternal] = useSquadConfig();
 	const [isOpen, setIsOpen] = useState(false);
 	const presets = getSquadPresets();
 
 	const updateConfig = useCallback(
 		(nextConfig: SquadConfig) => {
-			setConfig(nextConfig);
-			try {
-				window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextConfig));
-			} catch {
-				// Ignore storage errors
-			}
+			updateConfigInternal(nextConfig);
 			onConfigChange?.(nextConfig);
 		},
-		[onConfigChange],
+		[onConfigChange, updateConfigInternal],
 	);
 
 	const handleSelectPreset = useCallback(

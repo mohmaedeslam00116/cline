@@ -15,6 +15,7 @@ import { isAgendaTaskExpired, useAgendaTasks } from "@/hooks/use-agenda-tasks";
 import { AGENDA_UI_ENABLED } from "@/lib/feature-flags";
 import { cn } from "@/lib/utils";
 import { SessionContent } from "./session-content";
+import { UltraSquadShowcase } from "./ultra-personas-side-panel";
 import { WelcomeWorkspaceControls } from "./welcome-workspace-controls";
 
 export function WelcomeScreen({
@@ -23,6 +24,8 @@ export function WelcomeScreen({
 	composer,
 	notice,
 	gitBranch,
+	mode,
+	onOpenUltraPanel,
 	onListGitBranches,
 	onSwitchGitBranch,
 	onOpenSession,
@@ -34,6 +37,8 @@ export function WelcomeScreen({
 	notice?: ReactNode;
 	/** Branch name, "no-git" for a non-repo folder, null while discovery is pending. */
 	gitBranch: string | null;
+	mode?: "act" | "plan" | "yolo" | "ultra";
+	onOpenUltraPanel?: () => void;
 	onListGitBranches: () => Promise<{ current: string; branches: string[] }>;
 	onSwitchGitBranch: (branch: string) => Promise<boolean>;
 	onOpenSession?: (sessionId: string) => void | Promise<void>;
@@ -177,6 +182,12 @@ export function WelcomeScreen({
 					</div>
 
 					{active && notice ? notice : null}
+
+					{active && mode === "ultra" ? (
+						<div className="mt-4 w-full">
+							<UltraSquadShowcase onOpenPanel={onOpenUltraPanel} />
+						</div>
+					) : null}
 
 					<div
 						className={active ? "mt-4 w-full" : "z-20 shrink-0 px-6 pb-6"}
