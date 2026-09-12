@@ -1,5 +1,12 @@
 # Cline Desktop Changelog
 
+## 0.0.27
+
+- Fixed Ultra Mode routing in the core prompt coordinator (`formatModePrompt`) which previously downgraded `<user_input mode="ultra">` prompts to `act`, preventing the model from following the Ultra Mode multi-agent specialist SOP.
+- Added the Ultra Squad Showcase inline card directly above the composer in the welcome chat view when Ultra Mode is active, displaying all active specialist personas with their badges and roles.
+- Added the Ultra Personas slide-over side panel drawer detailing all 8 specialist agents (Orion, Lyra, Athena, Atlas, Vector, Cipher, Sentinel, Echo), their responsibilities, key deliverables, presets, and Checkpoint Gates.
+- Added the interactive Ultra Squad badge button in the top navigation header to toggle the personas side panel at any time.
+
 ## 0.0.26
 
 - The composer now shows the current branch's GitHub pull request — PR number, merge status, changed-line totals, and CI checks. Click through to open it in your browser, or expand CI to inspect individual checks and their logs; status refreshes every 30 seconds while visible, on window focus, and on demand. If the branch has no PR, **Create PR** opens GitHub's comparison form. Requires the GitHub CLI (`gh`) installed and signed in, plus a GitHub.com `origin` remote; the row hides itself on the default branch, detached HEAD, and unsupported repositories. Cline does not push commits or submit the PR for you

@@ -4,11 +4,18 @@
 
 ### Added
 
+- **Ultra Mode Personas Showcase & Side Panel**: Added `UltraSquadShowcase` to the welcome screen and `UltraPersonasSidePanel` slide-over drawer detailing all 8 specialist agents (Orion, Lyra, Athena, Atlas, Vector, Cipher, Sentinel, Echo) with presets and checkpoint gates.
+- **Ultra Squad Header Badge**: Added interactive `Ultra Squad (X)` badge button in the top navigation header for immediate persona access.
 - **Ultra Mode Agency Architecture & Personas**: Added Atoms.dev-inspired agency framework schemas, prompts, and types for 8 named specialist personas (Orion, Lyra, Athena, Atlas, Vector, Cipher, Sentinel, Echo).
 - **ADR 0005**: Recorded architectural decision for the Ultra Mode Agency Framework covering Atoms.dev persona evolution, cognitive isolation, squad presets, and dual checkpoint gates.
 - **Squad Configuration Interface**: Added in-chat popover for configuring active specialist squads and choosing curated presets (Core, Full, Rapid).
 - **Agency Collaboration & Deliverables Board**: Added interactive webview collaboration board displaying squad lineup, inter-agent handoff stream, deliverable tabs, and dual checkpoint review gates.
 - **Bilingual Localization Support**: Added full English and Arabic dictionaries for squad configuration, roles, deliverable tabs, and checkpoint states.
+
+### Fixed
+
+- **Ultra Mode Prompt Coordinator Normalization**: Fixed `formatModePrompt` to preserve `<user_input mode="ultra">` instead of falling back to `act`, ensuring the LLM activates the Ultra Mode multi-agent specialist SOP.
+
 
 ### Changed
 
