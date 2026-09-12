@@ -190,6 +190,20 @@ export interface LensTranslations {
 		readonly roleEngineer: string;
 		readonly roleQaLead: string;
 		readonly roleDocs: string;
+		readonly cyberGallery: string;
+		readonly cyberGalleryTitle: string;
+		readonly cyberGallerySubtitle: string;
+		readonly cyberGalleryBadge: string;
+		readonly stateIdle: string;
+		readonly stateThinking: string;
+		readonly stateSpeaking: string;
+		readonly stateWorking: string;
+		readonly stateCheckpoint: string;
+		readonly primaryDeliverable: string;
+		readonly coreResponsibilities: string;
+		readonly systemPromptSeed: string;
+		readonly statusLabel: string;
+		readonly targetLabel: string;
 	};
 }
 
@@ -399,6 +413,21 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			roleEngineer: "Engineer",
 			roleQaLead: "QA Lead",
 			roleDocs: "Docs",
+			cyberGallery: "Cyber Gallery",
+			cyberGalleryTitle: "Cyberpunk Agency Persona Squad",
+			cyberGallerySubtitle:
+				"High-precision SVG avatars with live activity telemetry & state indicators",
+			cyberGalleryBadge: "8 Specialist Vectors",
+			stateIdle: "Idle / Ready",
+			stateThinking: "Thinking / Scanning",
+			stateSpeaking: "Speaking / Inter-Agent",
+			stateWorking: "Working / Tool Exec",
+			stateCheckpoint: "Checkpoint Gate",
+			primaryDeliverable: "Primary Deliverable",
+			coreResponsibilities: "Core Responsibilities",
+			systemPromptSeed: "System Prompt Seed",
+			statusLabel: "STATUS:",
+			targetLabel: "Target:",
 		},
 	},
 	ar: {
@@ -604,6 +633,21 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			roleEngineer: "مهندس البرمجيات",
 			roleQaLead: "مسؤول الجودة",
 			roleDocs: "التوثيق",
+			cyberGallery: "معرض السايبربانك",
+			cyberGalleryTitle: "فريق شخصيات الوكالة السايبربانكية",
+			cyberGallerySubtitle:
+				"شخصيات SVG عالية الدقة مع مؤشرات نشاط حية وتيليمتري لحالة العمل",
+			cyberGalleryBadge: "8 شخصيات متخصصة",
+			stateIdle: "جاهز / خامل",
+			stateThinking: "تفكير / مسح ليزري",
+			stateSpeaking: "تحدث / حوار بين الوكلاء",
+			stateWorking: "عمل / تنفيذ الأدوات",
+			stateCheckpoint: "بوابة فحص وموافقة",
+			primaryDeliverable: "المخرج الأساسي",
+			coreResponsibilities: "المسؤوليات الرئيسية",
+			systemPromptSeed: "بذرة التوجيه الأساسي",
+			statusLabel: "الحالة:",
+			targetLabel: "الهدف:",
 		},
 	},
 };

@@ -31,6 +31,12 @@ import { useCallback, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+	Dialog,
+	DialogContent,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
 	Sheet,
@@ -40,6 +46,7 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
+import { PersonaGallery, PersonaAvatar } from "@/components/personas";
 import { useSquadConfig } from "@/hooks/use-squad-config";
 import { getLensDirection, getLensTranslations } from "@/lib/lens-i18n";
 import { cn } from "@/lib/utils";
@@ -294,15 +301,15 @@ export function UltraPersonasSidePanel({
 											{/* Main row */}
 											<div className="p-3 flex items-center gap-3">
 												{/* Avatar Icon */}
-												<div
-													className={cn(
-														"size-8 rounded-lg flex items-center justify-center shrink-0 border",
-														colors.bg,
-														colors.border,
-														colors.text,
-													)}
-												>
-													<Icon className="size-4" />
+												<div className="size-9 shrink-0 flex items-center justify-center">
+													<PersonaAvatar
+														personaId={persona.id}
+														title={`${persona.name} - ${persona.role}`}
+														size={36}
+														showGlow={isActive}
+														showStatusRing={isActive}
+														state={isActive ? "idle" : "idle"}
+													/>
 												</div>
 
 												{/* Name & Role */}
@@ -331,9 +338,7 @@ export function UltraPersonasSidePanel({
 													<button
 														type="button"
 														onClick={() =>
-															setExpandedPersona(
-																isExpanded ? null : persona.id,
-															)
+															setExpandedPersona(isExpanded ? null : persona.id)
 														}
 														className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
 														title="Details"
@@ -365,7 +370,10 @@ export function UltraPersonasSidePanel({
 														</span>
 														<ul className="space-y-1 text-muted-foreground text-[11px]">
 															{persona.responsibilities.map((resp, i) => (
-																<li key={i} className="flex items-start gap-1.5">
+																<li
+																	key={i}
+																	className="flex items-start gap-1.5"
+																>
 																	<span className="text-primary mt-1">•</span>
 																	<span>{resp}</span>
 																</li>
@@ -473,28 +481,47 @@ export function UltraSquadShowcase({
 								{config.activePersonaIds.length} {t.agentsSuffix} Active
 							</Badge>
 						</div>
-						<p className="text-xs text-muted-foreground mt-0.5">
-							{t.subtitle}
-						</p>
+						<p className="text-xs text-muted-foreground mt-0.5">{t.subtitle}</p>
 					</div>
 				</div>
 
-				<Button
-					type="button"
-					variant="outline"
-					size="sm"
-					onClick={onOpenPanel}
-					className="h-8 gap-1.5 text-xs font-medium border-indigo-500/30 hover:border-indigo-500/60 hover:bg-indigo-500/10 text-indigo-400 self-start sm:self-auto cursor-pointer"
-				>
-					<Users className="size-3.5" />
-					<span>{t.configureSquad}</span>
-				</Button>
+				<div className="flex items-center gap-2 self-start sm:self-auto">
+					<Dialog>
+						<DialogTrigger asChild>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								className="h-8 gap-1.5 text-xs font-medium border-cyan-500/30 hover:border-cyan-500/60 hover:bg-cyan-500/10 text-cyan-400 cursor-pointer"
+							>
+								<Sparkles className="size-3.5 text-cyan-400" />
+								<span>{t.cyberGallery}</span>
+							</Button>
+						</DialogTrigger>
+						<DialogContent className="sm:max-w-5xl max-w-5xl h-[85vh] p-0 border-0 bg-transparent shadow-none">
+							<DialogTitle className="sr-only">
+								{t.cyberGalleryTitle}
+							</DialogTitle>
+							<PersonaGallery className="h-full" />
+						</DialogContent>
+					</Dialog>
+
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={onOpenPanel}
+						className="h-8 gap-1.5 text-xs font-medium border-indigo-500/30 hover:border-indigo-500/60 hover:bg-indigo-500/10 text-indigo-400 cursor-pointer"
+					>
+						<Users className="size-3.5" />
+						<span>{t.configureSquad}</span>
+					</Button>
+				</div>
 			</div>
 
-			{/* Personas Row */}
+			{/* Personas Row with Cyberpunk SVG Avatars */}
 			<div className="pt-3 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2">
 				{allPersonas.map((persona) => {
-					const Icon = PERSONA_ICONS[persona.id] ?? Globe;
 					const isActive = config.activePersonaIds.includes(persona.id);
 					const colors = PERSONA_ACCENT_CLASSES[persona.id];
 
@@ -506,19 +533,22 @@ export function UltraSquadShowcase({
 							className={cn(
 								"flex flex-col items-center p-2 rounded-xl border text-center transition-all cursor-pointer",
 								isActive
-									? cn("bg-card/60 hover:bg-card border-border/70", colors.border)
+									? cn(
+											"bg-card/60 hover:bg-card border-border/70",
+											colors.border,
+										)
 									: "bg-muted/20 border-transparent opacity-40 hover:opacity-60",
 							)}
 						>
-							<div
-								className={cn(
-									"size-7 rounded-lg flex items-center justify-center mb-1.5 border",
-									colors.bg,
-									colors.border,
-									colors.text,
-								)}
-							>
-								<Icon className="size-3.5" />
+							<div className="relative mb-1 flex items-center justify-center">
+								<PersonaAvatar
+									personaId={persona.id}
+									title={`${persona.name} - ${persona.role}`}
+									size={44}
+									showGlow={isActive}
+									showStatusRing={isActive}
+									state={isActive ? "idle" : "idle"}
+								/>
 							</div>
 							<span className="text-xs font-semibold text-foreground truncate max-w-full">
 								{persona.name}
