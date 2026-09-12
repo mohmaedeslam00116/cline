@@ -204,6 +204,74 @@ export interface LensTranslations {
 		readonly systemPromptSeed: string;
 		readonly statusLabel: string;
 		readonly targetLabel: string;
+		readonly warRoomTitle: string;
+		readonly warRoomSubtitle: string;
+		readonly warRoomButton: string;
+		readonly splitScreen: string;
+		readonly fullScreen: string;
+		readonly exitFullScreen: string;
+		readonly closeWarRoom: string;
+		readonly filterAll: string;
+		readonly simulationPlay: string;
+		readonly simulationPause: string;
+		readonly simulationStep: string;
+		readonly simulationReset: string;
+		readonly checkpointGate1Title: string;
+		readonly checkpointGate2Title: string;
+		readonly requestChanges: string;
+		readonly checkpointApproved: string;
+		readonly checkpointPending: string;
+		readonly checkpointRejected: string;
+		readonly handoffTo: string;
+		readonly broadcastToAll: string;
+		readonly telemetryActiveSquad: string;
+		readonly telemetryMessages: string;
+		readonly telemetryToolCalls: string;
+		readonly stageStrategy: string;
+		readonly stageResearch: string;
+		readonly stageArchitecture: string;
+		readonly stageDevelopment: string;
+		readonly stageQa: string;
+		readonly stageDocumentation: string;
+		readonly deliverablesForSignOff: string;
+		readonly userDirective: string;
+		readonly cancel: string;
+		readonly copyCodeSnippet: string;
+		readonly codeSnippetCopied: string;
+		readonly openArtifact: string;
+		readonly outputLabel: string;
+		readonly liveSwarmBadge: string;
+		readonly gatePendingBadge: string;
+		readonly squadRosterLabel: string;
+		readonly filterPersonaAria: string;
+		readonly noFilteredMessages: string;
+		readonly ultraSopProtocol: string;
+		readonly directivePlaceholder: string;
+		readonly directiveReceived: string;
+		readonly directiveRealigning: string;
+		readonly gateApprovedProceeding: string;
+		readonly proceedingImmediately: string;
+		readonly gateModificationsRequested: string;
+		readonly reallocatingResources: string;
+		readonly untrustedEvidenceBadge: string;
+		readonly sendButton: string;
+		readonly gate1Deliv1Title: string;
+		readonly gate1Deliv1Summary: string;
+		readonly gate1Deliv2Title: string;
+		readonly gate1Deliv2Summary: string;
+		readonly gate2Deliv1Title: string;
+		readonly gate2Deliv1Summary: string;
+		readonly gate2Deliv2Title: string;
+		readonly gate2Deliv2Summary: string;
+		readonly scenarioMsg1: string;
+		readonly scenarioMsg2: string;
+		readonly scenarioArtifactTitle: string;
+		readonly scenarioArtifactSummary: string;
+		readonly scenarioMsg3: string;
+		readonly scenarioMsg4: string;
+		readonly scenarioMsg5: string;
+		readonly scenarioMsg6: string;
+		readonly scenarioMsg7: string;
 	};
 }
 
@@ -428,6 +496,86 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			systemPromptSeed: "System Prompt Seed",
 			statusLabel: "STATUS:",
 			targetLabel: "Target:",
+			warRoomTitle: "Agency War Room",
+			warRoomSubtitle: "Autonomous Multi-Agent Swarm Stream & Live Checkpoints",
+			warRoomButton: "War Room",
+			splitScreen: "Split View",
+			fullScreen: "Full Screen",
+			exitFullScreen: "Exit Full Screen",
+			closeWarRoom: "Close War Room",
+			filterAll: "All Agents",
+			simulationPlay: "Play Swarm",
+			simulationPause: "Pause",
+			simulationStep: "Next Step",
+			simulationReset: "Reset",
+			checkpointGate1Title: "Checkpoint 1: Architecture & PRD Sign-off",
+			checkpointGate2Title: "Checkpoint 2: Pre-Ship Quality Audit",
+			requestChanges: "Request Changes",
+			checkpointApproved: "Checkpoint Approved",
+			checkpointPending: "Awaiting Your Approval",
+			checkpointRejected: "Changes Requested",
+			handoffTo: "Handoff to",
+			broadcastToAll: "Broadcast to Swarm",
+			telemetryActiveSquad: "Active Swarm",
+			telemetryMessages: "Messages",
+			telemetryToolCalls: "Tool Calls",
+			stageStrategy: "Strategy & SOP",
+			stageResearch: "Deep Research",
+			stageArchitecture: "Architecture & DAG",
+			stageDevelopment: "Core Implementation",
+			stageQa: "QA Verification",
+			stageDocumentation: "Technical Documentation",
+			deliverablesForSignOff: "Deliverables For Sign-Off:",
+			userDirective: "User Directive:",
+			cancel: "Cancel",
+			copyCodeSnippet: "Copy code snippet",
+			codeSnippetCopied: "Copied!",
+			openArtifact: "Open artifact",
+			outputLabel: "Output:",
+			liveSwarmBadge: "LIVE SWARM",
+			gatePendingBadge: "GATE PENDING",
+			squadRosterLabel: "Squad:",
+			filterPersonaAria: "Filter messages",
+			noFilteredMessages: "No messages match this persona filter.",
+			ultraSopProtocol: "Ultra SOP Dual-Loop Protocol",
+			directivePlaceholder: "Dispatch direct command to Ultra Swarm...",
+			directiveReceived: "Directive received:",
+			directiveRealigning:
+				"Orion re-aligning squad priorities and dispatching tasks.",
+			gateApprovedProceeding: "User verified and approved",
+			proceedingImmediately: "Proceeding immediately!",
+			gateModificationsRequested: "User requested modifications on",
+			reallocatingResources:
+				"Orion reallocating resources for design adjustment.",
+			untrustedEvidenceBadge: "[External Evidence - Untrusted]",
+			sendButton: "Send",
+			gate1Deliv1Title: "PRD-001 Specification",
+			gate1Deliv1Summary: "User stories (P0, P1, P2) & zero-trust boundaries",
+			gate1Deliv2Title: "System Architecture & DAG",
+			gate1Deliv2Summary:
+				"Component hierarchy, state contracts & interface seams",
+			gate2Deliv1Title: "Test Execution Report",
+			gate2Deliv1Summary:
+				"180/180 Vitest suites passed. 0 regression failures.",
+			gate2Deliv2Title: "Atomic ChangeSet Manifest",
+			gate2Deliv2Summary:
+				"Validated SHA-256 base hashes & rollback transactions.",
+			scenarioMsg1:
+				"Initializing Ultra SOP Swarm session. We are targeting high-reliability dual-loop execution with zero-trust research boundaries. Lyra, initiate technical research pass.",
+			scenarioMsg2:
+				"Research pass complete. Synthesized 8 verified claims from repo documentation and secondary evidence. Zero-trust containment contract verified.",
+			scenarioArtifactTitle: "EvidenceBundle #842",
+			scenarioArtifactSummary: "8 verified claims, 0 untrusted elevations.",
+			scenarioMsg3:
+				"PRD-001 drafted with user stories P0 (Split-Screen War Room), P1 (Live Agent SVG Bubbles), P2 (Checkpoint Gates). Handing off requirements to Atlas for architecture modeling.",
+			scenarioMsg4:
+				"Architecture blueprint formulated. Module decomposition complete with ResizablePanelGroup layout. Pausing execution at Checkpoint Gate 1 for user sign-off.",
+			scenarioMsg5:
+				"Checkpoint Gate 1 cleared! Commencing core implementation. Constructing reactive War Room context and SVG message bubbles.",
+			scenarioMsg6:
+				"Code implementation complete. Executed test runner: all 180 unit tests and persona avatar assertions passed! Checkpoint Gate 2: Pre-Ship Quality Audit reached.",
+			scenarioMsg7:
+				"Checkpoint Gate 2 approved! Synchronized bilingual documentation and changelog entries. Ultra Swarm execution successfully finalized.",
 		},
 	},
 	ar: {
@@ -648,6 +796,82 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			systemPromptSeed: "بذرة التوجيه الأساسي",
 			statusLabel: "الحالة:",
 			targetLabel: "الهدف:",
+			warRoomTitle: "غرفة عمليات الوكالة",
+			warRoomSubtitle: "بث عمليات سرب الوكلاء المستقل والبوابات التفاعلية",
+			warRoomButton: "غرفة العمليات",
+			splitScreen: "عرض منقسم",
+			fullScreen: "ملء الشاشة",
+			exitFullScreen: "إنهاء ملء الشاشة",
+			closeWarRoom: "إغلاق غرفة العمليات",
+			filterAll: "كافة الوكلاء",
+			simulationPlay: "تشغيل السرب",
+			simulationPause: "إيقاف مؤقت",
+			simulationStep: "الخطوة التالية",
+			simulationReset: "إعادة ضبط",
+			checkpointGate1Title: "المحطة 1: اعتماد المعمارية والمواصفات",
+			checkpointGate2Title: "المحطة 2: فحص الجودة قبل الشحن",
+			requestChanges: "طلب تعديلات",
+			checkpointApproved: "تم اعتماد المحطة",
+			checkpointPending: "بانتظار موافقتك",
+			checkpointRejected: "تم طلب تعديلات",
+			handoffTo: "تسليم إلى",
+			broadcastToAll: "بث لكافة الفريق",
+			telemetryActiveSquad: "السرب النشط",
+			telemetryMessages: "رسائل",
+			telemetryToolCalls: "أدوات منفذة",
+			stageStrategy: "الاستراتيجية وإجراءات التشغيل",
+			stageResearch: "الأبحاث المعمقة",
+			stageArchitecture: "المعمارية وهيكلة المهام",
+			stageDevelopment: "التنفيذ البرمجي",
+			stageQa: "فحص الجودة",
+			stageDocumentation: "التوثيق الفني",
+			deliverablesForSignOff: "المخرجات المطلوبة للاعتماد:",
+			userDirective: "توجيه المستخدم:",
+			cancel: "إلغاء",
+			copyCodeSnippet: "نسخ الكود",
+			codeSnippetCopied: "تم النسخ!",
+			openArtifact: "فتح المخرج",
+			outputLabel: "المخرجات:",
+			liveSwarmBadge: "سرب نشط",
+			gatePendingBadge: "بوابة معلقة",
+			squadRosterLabel: "الفريق:",
+			filterPersonaAria: "تصفية الرسائل",
+			noFilteredMessages: "لا توجد رسائل مطابقة لهذا الوكيل.",
+			ultraSopProtocol: "بروتوكول الحلقة المزدوجة Ultra SOP",
+			directivePlaceholder: "أرسل أمراً مباشراً لسرب الوكلاء...",
+			directiveReceived: "تم استلام التوجيه:",
+			directiveRealigning: "يقوم Orion بإعادة ترتيب الأولويات وتوزيع المهام.",
+			gateApprovedProceeding: "قام المستخدم بمراجعة واعتماد",
+			proceedingImmediately: "المتابعة الفورية!",
+			gateModificationsRequested: "طلب المستخدم تعديلات على",
+			reallocatingResources: "يقوم Orion بإعادة توزيع الموارد لتعديل التصميم.",
+			untrustedEvidenceBadge: "[أدلة خارجية - غير موثوقة]",
+			sendButton: "إرسال",
+			gate1Deliv1Title: "مواصفات المتطلبات PRD-001",
+			gate1Deliv1Summary: "قصص المستخدم (P0, P1, P2) وحدود انعدام الثقة",
+			gate1Deliv2Title: "معمارية النظام ومخطط المهام",
+			gate1Deliv2Summary: "التسلسل الهيكلي للمكونات وعقود الحالة ونقاط الربط",
+			gate2Deliv1Title: "تقرير تنفيذ الاختبارات",
+			gate2Deliv1Summary:
+				"نجاح كافة اختبارات Vitest الـ 180 بدون أي أخطاء تراجع.",
+			gate2Deliv2Title: "سجل التغييرات الذري",
+			gate2Deliv2Summary: "التحقق من تجزئات SHA-256 الأساسية ومعاملات التراجع.",
+			scenarioMsg1:
+				"بدء جلسة سرب Ultra SOP. نستهدف تنفيذاً عالي الموثوقية بالحلقة المزدوجة مع حدود بحث صفرية الثقة. Lyra، ابدئي جولة البحث الفني.",
+			scenarioMsg2:
+				"اكتملت جولة البحث. تم استخلاص 8 ادعاءات تم التحقق منها من وثائق المستودع والأدلة الثانوية. تم تأكيد عقد احتواء انعدام الثقة.",
+			scenarioArtifactTitle: "حزمة الأدلة #842",
+			scenarioArtifactSummary: "8 ادعاءات مؤكدة، 0 ترقيات غير موثوقة.",
+			scenarioMsg3:
+				"تمت صياغة PRD-001 مع قصص المستخدم P0 (غرفة العمليات المنقسمة)، P1 (فقاعات وكلاء SVG الحية)، P2 (بوابات التحقق). تسليم المتطلبات إلى Atlas لبناء المعمارية.",
+			scenarioMsg4:
+				"تمت صياغة المخطط المعماري. اكتمل تقسيم الوحدات مع تخطيط ResizablePanelGroup. إيقاف التنفيذ مؤقتاً عند بوابة التحقق 1 لموافقة المستخدم.",
+			scenarioMsg5:
+				"تمت الموافقة على بوابة التحقق 1! بدء التنفيذ الأساسي وبناء سياق غرفة العمليات وفقاعات الرسائل التفاعلية.",
+			scenarioMsg6:
+				"اكتمل تنفيذ الكود البرمجي. تم تشغيل الاختبارات: نجاح كافة اختبارات الوحدة الـ 180 وتأكيدات صور الوكلاء! تم الوصول لبوابة التحقق 2.",
+			scenarioMsg7:
+				"تم اعتماد بوابة التحقق 2! تمت مزامنة التوثيق الثنائي وسجل التغييرات. اكتمل تنفيذ سرب Ultra بنجاح.",
 		},
 	},
 };

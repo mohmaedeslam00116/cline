@@ -26,12 +26,22 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+	ResizableHandle,
+	ResizablePanel,
+	ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import {
 	Sidebar,
 	SidebarInset,
 	SidebarProvider,
 	SidebarRail,
 	SidebarTrigger,
 } from "@/components/ui/sidebar";
+import {
+	AgencyWarRoomPanel,
+	useWarRoom,
+	WarRoomProvider,
+} from "@/components/views/chat/agency-war-room";
 import { ChatInputBar } from "@/components/views/chat/chat-input-bar";
 import { ChatMessages } from "@/components/views/chat/chat-messages";
 import { UltraPersonasSidePanel } from "@/components/views/chat/ultra-personas-side-panel";
@@ -177,7 +187,7 @@ function toThreadTitle(options: { title?: string; prompt?: string }): string {
 	return "New session";
 }
 
-export default function Home() {
+function HomeContent() {
 	const [initialThreadId] = useState(makeThreadId);
 	const [appState, dispatchApp] = useReducer(
 		desktopAppReducer<SettingsSection>,
@@ -682,6 +692,11 @@ function ChatThreadPane({
 	const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
 	const [showDiffView, setShowDiffView] = useState(false);
 	const [ultraPanelOpen, setUltraPanelOpen] = useState(false);
+	const {
+		isOpen: warRoomOpen,
+		viewMode: warRoomViewMode,
+		closeWarRoom,
+	} = useWarRoom();
 	const handleOpenUltraPanel = useCallback(() => {
 		setUltraPanelOpen(true);
 	}, []);
@@ -1684,63 +1699,104 @@ function ChatThreadPane({
 								title={threadTitle}
 								mode={config.mode}
 								onOpenUltraPanel={handleOpenUltraPanel}
+								onToggleWarRoom={toggleWarRoom}
+								warRoomOpen={warRoomOpen}
 							/>
 						</div>
 					</WindowTitleBarContent>
 				) : null}
-				<WelcomeScreen
-					active={isWelcomeState}
-					mode={config.mode}
-					onOpenUltraPanel={handleOpenUltraPanel}
-					body={
-						showDiffView ? (
-							<DiffView
-								cwd={config.cwd || config.workspaceRoot}
-								fileDiffs={fileDiffs}
-								onClose={() => setShowDiffView(false)}
-							/>
-						) : (
-							<ChatMessages
-								onAnswerAskQuestion={handleAnswerAskQuestion}
-								onApproveToolApproval={handleApproveToolApproval}
-								onRejectToolApproval={handleRejectToolApproval}
-								chatTransportState={chatTransportState}
-								activityLabel={activityLabel}
-								error={displayedError}
-								importedFromTool={importedFromTool}
-								messages={displayedMessages}
-								onEditMessage={handleEditMessage}
-								onRestoreCheckpoint={handleRestoreCheckpoint}
-								onForkSession={handleForkSession}
-								onProceedWhileRunning={proceedWhileRunning}
-								onApprovePlan={handleApprovePlan}
-								onModeChange={handleModeChange}
-								pendingToolApprovals={pendingToolApprovals}
-								pendingAskQuestions={pendingAskQuestions}
-								sessionId={displayedSessionId}
-								streamingMessageId={activeAssistantMessageId}
-								isSessionSwitching={displayedIsSwitching}
-								status={displayedStatus}
-							/>
-						)
+				{(() => {
+					const welcomeScreenNode = (
+						<WelcomeScreen
+							active={isWelcomeState}
+							mode={config.mode}
+							onOpenUltraPanel={handleOpenUltraPanel}
+							onOpenWarRoom={openWarRoom}
+							body={
+								showDiffView ? (
+									<DiffView
+										cwd={config.cwd || config.workspaceRoot}
+										fileDiffs={fileDiffs}
+										onClose={() => setShowDiffView(false)}
+									/>
+								) : (
+									<ChatMessages
+										onAnswerAskQuestion={handleAnswerAskQuestion}
+										onApproveToolApproval={handleApproveToolApproval}
+										onRejectToolApproval={handleRejectToolApproval}
+										chatTransportState={chatTransportState}
+										activityLabel={activityLabel}
+										error={displayedError}
+										importedFromTool={importedFromTool}
+										messages={displayedMessages}
+										onEditMessage={handleEditMessage}
+										onRestoreCheckpoint={handleRestoreCheckpoint}
+										onForkSession={handleForkSession}
+										onProceedWhileRunning={proceedWhileRunning}
+										onApprovePlan={handleApprovePlan}
+										onModeChange={handleModeChange}
+										pendingToolApprovals={pendingToolApprovals}
+										pendingAskQuestions={pendingAskQuestions}
+										sessionId={displayedSessionId}
+										streamingMessageId={activeAssistantMessageId}
+										isSessionSwitching={displayedIsSwitching}
+										status={displayedStatus}
+									/>
+								)
+							}
+							composer={composer}
+							gitBranch={gitBranch}
+							notice={
+								providersLoaded &&
+								hasConnectedProvider === false &&
+								onOpenSetup &&
+								onOpenModelSettings ? (
+									<WelcomeSetupNotice
+										onOpenModelSettings={onOpenModelSettings}
+										onOpenSetup={onOpenSetup}
+									/>
+								) : undefined
+							}
+							onListGitBranches={listGitBranches}
+							onOpenSession={onOpenSessionById}
+							onSwitchGitBranch={switchGitBranch}
+						/>
+					);
+
+					if (warRoomOpen && warRoomViewMode === "fullscreen") {
+						return <AgencyWarRoomPanel onClose={closeWarRoom} />;
 					}
-					composer={composer}
-					gitBranch={gitBranch}
-					notice={
-						providersLoaded &&
-						hasConnectedProvider === false &&
-						onOpenSetup &&
-						onOpenModelSettings ? (
-							<WelcomeSetupNotice
-								onOpenModelSettings={onOpenModelSettings}
-								onOpenSetup={onOpenSetup}
-							/>
-						) : undefined
+
+					if (warRoomOpen && warRoomViewMode === "split") {
+						return (
+							<ResizablePanelGroup
+								direction="horizontal"
+								className="h-full w-full min-h-0"
+							>
+								<ResizablePanel
+									defaultSize={55}
+									minSize={30}
+									className="grid h-full min-h-0 min-w-0 grid-rows-[minmax(0,1fr)_auto] overflow-hidden"
+								>
+									{welcomeScreenNode}
+								</ResizablePanel>
+								<ResizableHandle
+									withHandle
+									className="bg-[#1E1E1E] hover:bg-cyan-500/40 transition-colors"
+								/>
+								<ResizablePanel
+									defaultSize={45}
+									minSize={25}
+									className="min-w-0 h-full overflow-hidden"
+								>
+									<AgencyWarRoomPanel onClose={closeWarRoom} />
+								</ResizablePanel>
+							</ResizablePanelGroup>
+						);
 					}
-					onListGitBranches={listGitBranches}
-					onOpenSession={onOpenSessionById}
-					onSwitchGitBranch={switchGitBranch}
-				/>
+
+					return welcomeScreenNode;
+				})()}
 				<UltraPersonasSidePanel
 					open={ultraPanelOpen}
 					onOpenChange={setUltraPanelOpen}
@@ -1777,5 +1833,13 @@ function ChatThreadPane({
 				</AlertDialogContent>
 			</AlertDialog>
 		</WorkspaceProvider>
+	);
+}
+
+export default function Home() {
+	return (
+		<WarRoomProvider>
+			<HomeContent />
+		</WarRoomProvider>
 	);
 }
