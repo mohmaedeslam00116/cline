@@ -54,7 +54,13 @@ describe("AgentEventBridge.dispatchAgentEvent", () => {
 			emit: vi.fn(),
 			persistMessages: vi.fn(),
 		} as unknown as AgentEventBridgeDeps;
-		return { telemetry, config, sessions, bridge: new AgentEventBridge(deps) };
+		return {
+			telemetry,
+			config,
+			sessions,
+			bridge: new AgentEventBridge(deps),
+			deps,
+		};
 	}
 
 	const toolEvent = {
@@ -69,11 +75,11 @@ describe("AgentEventBridge.dispatchAgentEvent", () => {
 		const call = telemetry.capture.mock.calls.find(
 			([arg]) => arg.event === "task.tool_used",
 		);
-		expect(call).toBeDefined();
-		return call?.[0].properties as Record<string, unknown>;
+		return (call?.[0] as { properties?: Record<string, unknown> })
+			?.properties as Record<string, unknown>;
 	}
 
-	it("stamps root agent identity on tool events while the session is registered", () => {
+	it("captures tool telemetry for a live session with root agent identity", () => {
 		const { telemetry, config, bridge } = createDispatchFixture();
 
 		bridge.dispatchAgentEvent("session-1", config, toolEvent);
@@ -88,15 +94,10 @@ describe("AgentEventBridge.dispatchAgentEvent", () => {
 		});
 	});
 
-	it("keeps the last known identity for events dispatched after the session was deregistered", () => {
+	it("reuses the last-known agent identity when the session is already deregistered", () => {
 		const { telemetry, config, sessions, bridge } = createDispatchFixture();
 
-		// A live event records the identity snapshot...
 		bridge.dispatchAgentEvent("session-1", config, toolEvent);
-		telemetry.capture.mockClear();
-
-		// ...then teardown removes the session from the map while the agent's
-		// run is still draining (sessions.delete precedes shutdown completion).
 		sessions.delete("session-1");
 		bridge.dispatchAgentEvent("session-1", config, toolEvent);
 
@@ -119,6 +120,45 @@ describe("AgentEventBridge.dispatchAgentEvent", () => {
 		expect(properties.ulid).toBe("session-unknown");
 		expect(properties.agentId).toBeUndefined();
 		expect(properties.agentKind).toBeUndefined();
+	});
+
+	it("distinguishes subagent events from primary root events and includes personaId and isPrimaryAgentEvent: false", () => {
+		const { telemetry, config, bridge, deps } = createDispatchFixture();
+
+		const subagentEvent = {
+			type: "content_end",
+			contentType: "tool",
+			toolName: "read_file",
+			agentId: "subagent-lyra-1",
+			parentAgentId: "agent-1",
+			personaId: "lyra",
+		} as unknown as AgentEvent;
+
+		bridge.dispatchAgentEvent("session-1", config, subagentEvent);
+
+		const properties = toolUsedProperties(telemetry);
+		expect(properties).toMatchObject({
+			ulid: "session-1",
+			tool: "read_file",
+			agentId: "subagent-lyra-1",
+			agentKind: "subagent",
+			parentAgentId: "agent-1",
+			isSubagent: true,
+		});
+		expect(deps.emit).toHaveBeenCalledWith(
+			expect.objectContaining({
+				type: "agent_event",
+				payload: expect.objectContaining({
+					sessionId: "session-1",
+					isPrimaryAgentEvent: false,
+					event: expect.objectContaining({
+						agentId: "subagent-lyra-1",
+						parentAgentId: "agent-1",
+						personaId: "lyra",
+					}),
+				}),
+			}),
+		);
 	});
 });
 

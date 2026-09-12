@@ -12,13 +12,39 @@ import {
 	useState,
 } from "react";
 import type { PersonaActivityState } from "@/components/personas";
+import { desktopClient } from "@/lib/desktop-client";
 import { getLensTranslations } from "@/lib/lens-i18n";
 import type {
+	AgencyWarRoomEventPayload,
 	WarRoomCheckpointGate,
 	WarRoomMessage,
+	WarRoomStage,
 	WarRoomState,
 	WarRoomViewMode,
 } from "./types";
+
+export function resolvePersonaStage(
+	personaId: SpecialistPersonaId,
+): WarRoomStage {
+	switch (personaId) {
+		case "orion":
+		case "athena":
+			return "strategy";
+		case "lyra":
+			return "research";
+		case "atlas":
+			return "architecture";
+		case "cipher":
+		case "vector":
+			return "development";
+		case "sentinel":
+			return "qa";
+		case "echo":
+			return "documentation";
+		default:
+			return "development";
+	}
+}
 
 export function createInitialCheckpointGates(
 	t: ReturnType<typeof getLensTranslations>["ultraAgency"],
@@ -280,6 +306,121 @@ export function WarRoomProvider({
 
 	const scenarioStepsRef = useRef(scenarioSteps);
 	scenarioStepsRef.current = scenarioSteps;
+
+	// Subscribe to live subagent events from desktop sidecar WebSocket
+	useEffect(() => {
+		const unsubscribe = desktopClient.subscribe(
+			"agency_war_room_event",
+			(rawPayload: unknown) => {
+				const payload = rawPayload as AgencyWarRoomEventPayload;
+				if (!payload || !payload.event) return;
+
+				const personaId: SpecialistPersonaId = payload.personaId || "cipher";
+				const event = payload.event;
+				const ts = payload.ts || Date.now();
+
+				if (event.type === "content_start") {
+					if (event.contentType === "text" && event.text) {
+						setActivePersonaStates((prev) => ({
+							...prev,
+							[personaId]: "speaking",
+						}));
+						setMessages((prev) => {
+							const last = prev[prev.length - 1];
+							if (
+								last &&
+								last.senderPersonaId === personaId &&
+								last.type === "chat" &&
+								Date.now() - last.timestamp < 15_000
+							) {
+								return [
+									...prev.slice(0, -1),
+									{
+										...last,
+										content: last.content + event.text,
+									},
+								];
+							}
+							return [
+								...prev,
+								{
+									id: `live-msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+									senderPersonaId: personaId,
+									recipientPersonaId: "all",
+									stage: resolvePersonaStage(personaId),
+									type: "chat",
+									content: event.text || "",
+									timestamp: ts,
+								},
+							];
+						});
+					} else if (event.contentType === "tool") {
+						setActivePersonaStates((prev) => ({
+							...prev,
+							[personaId]: "working",
+						}));
+						setMessages((prev) => [
+							...prev,
+							{
+								id: `live-tool-${event.toolCallId || Date.now()}`,
+								senderPersonaId: personaId,
+								recipientPersonaId: "all",
+								stage: resolvePersonaStage(personaId),
+								type: "tool_call",
+								content: `Executing tool: ${event.toolName || "tool"}`,
+								toolCall: {
+									toolName: event.toolName || "unknown",
+									args: event.input as Record<string, unknown>,
+									status: "running",
+								},
+								timestamp: ts,
+							},
+						]);
+					}
+				} else if (event.type === "content_end") {
+					if (event.contentType === "tool") {
+						setActivePersonaStates((prev) => ({
+							...prev,
+							[personaId]: "thinking",
+						}));
+						setMessages((prev) =>
+							prev.map((msg) => {
+								if (
+									msg.type === "tool_call" &&
+									msg.toolCall?.toolName === event.toolName &&
+									msg.toolCall.status === "running"
+								) {
+									return {
+										...msg,
+										toolCall: {
+											...msg.toolCall,
+											output: event.output,
+											status: event.error ? "error" : "completed",
+										},
+									};
+								}
+								return msg;
+							}),
+						);
+					} else if (event.contentType === "text") {
+						setActivePersonaStates((prev) => ({
+							...prev,
+							[personaId]: "idle",
+						}));
+					}
+				} else if (event.type === "done") {
+					setActivePersonaStates((prev) => ({
+						...prev,
+						[personaId]: "idle",
+					}));
+				}
+			},
+		);
+
+		return () => {
+			unsubscribe();
+		};
+	}, []);
 
 	const openWarRoom = useCallback(() => setIsOpen(true), []);
 	const closeWarRoom = useCallback(() => setIsOpen(false), []);

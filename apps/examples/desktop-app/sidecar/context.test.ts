@@ -1541,4 +1541,44 @@ describe("Chat chunk pipe selection", () => {
 		const second = createSidecarContext("/workspace/project");
 		expect(second.bootId).not.toBe(first.bootId);
 	});
+
+	it("routes subagent events exclusively to agency_war_room_event and does not leak to chat_text", async () => {
+		const { handleCoreSessionEvent } = await import("./context");
+		const ctx = await createStreamingContext("session-1");
+
+		handleCoreSessionEvent(ctx, {
+			type: "agent_event",
+			payload: {
+				sessionId: "session-1",
+				isPrimaryAgentEvent: false,
+				event: {
+					type: "content_start",
+					contentType: "text",
+					text: "Lyra deep research progress...",
+					agentId: "subagent-lyra-1",
+					parentAgentId: "session-1",
+					personaId: "lyra",
+				},
+			},
+		});
+
+		// Primary chat stream should NOT contain the subagent text
+		expect(chunksFor(ctx, "chat_text")).toEqual([]);
+
+		// War Room stream MUST receive the agency_war_room_event
+		const warRoomEvents = readEvents(ctx).filter(
+			(msg) => msg.event.name === "agency_war_room_event",
+		);
+		expect(warRoomEvents).toHaveLength(1);
+		expect(warRoomEvents[0].event.payload).toMatchObject({
+			sessionId: "session-1",
+			subAgentId: "subagent-lyra-1",
+			parentAgentId: "session-1",
+			personaId: "lyra",
+			event: expect.objectContaining({
+				type: "content_start",
+				text: "Lyra deep research progress...",
+			}),
+		});
+	});
 });

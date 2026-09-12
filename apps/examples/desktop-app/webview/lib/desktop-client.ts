@@ -599,6 +599,15 @@ class DesktopClient {
 		};
 	}
 
+	dispatchLocalEvent(eventName: string, payload: unknown): void {
+		const handlers = this.handlers.get(eventName);
+		if (handlers) {
+			for (const handler of handlers) {
+				handler(payload);
+			}
+		}
+	}
+
 	subscribeTransportState(handler: TransportStateHandler): () => void {
 		this.transportStateHandlers.add(handler);
 		handler(this.transportState);

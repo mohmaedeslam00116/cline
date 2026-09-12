@@ -78,3 +78,27 @@ export interface WarRoomState {
 	isSimulating: boolean;
 	activeSimulationStep: number;
 }
+
+export interface AgencyWarRoomEventPayload {
+	sessionId: string;
+	subAgentId?: string;
+	parentAgentId?: string;
+	personaId?: SpecialistPersonaId;
+	stage?: WarRoomStage;
+	event: {
+		type: string;
+		contentType?: string;
+		text?: string;
+		accumulated?: string;
+		reasoning?: string;
+		toolName?: string;
+		toolCallId?: string;
+		input?: unknown;
+		output?: string;
+		error?: string;
+		durationMs?: number;
+		reason?: string;
+		[key: string]: unknown;
+	};
+	ts: number;
+}

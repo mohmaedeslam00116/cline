@@ -17,6 +17,7 @@ import {
 } from "@cline/core";
 import {
 	type AgentEvent,
+	detectPersonaId,
 	HUB_CLIENT_TOOL_APPROVAL_CAPABILITY,
 	isGeneratedMedia,
 } from "@cline/shared";
@@ -267,7 +268,29 @@ function handleAgentEvent(
 	ctx: SidecarContext,
 	sessionId: string,
 	event: AgentEvent,
+	isPrimaryAgentEvent?: boolean,
 ): void {
+	const isSubAgent =
+		isPrimaryAgentEvent === false ||
+		Boolean(event.parentAgentId) ||
+		Boolean(event.agentId && event.agentId !== sessionId);
+
+	if (isSubAgent) {
+		const personaId =
+			event.personaId ||
+			detectPersonaId(event.agentId) ||
+			detectPersonaId(event.conversationId);
+		sendEvent(ctx, "agency_war_room_event", {
+			sessionId,
+			subAgentId: event.agentId,
+			parentAgentId: event.parentAgentId,
+			personaId,
+			event,
+			ts: nowMs(),
+		});
+		return;
+	}
+
 	switch (event.type) {
 		case "content_start": {
 			if (event.contentType === "text" && event.text) {
@@ -469,8 +492,12 @@ export function handleCoreSessionEvent(
 			break;
 		}
 		case "agent_event": {
-			const { sessionId, event: agentEvent } = event.payload;
-			handleAgentEvent(ctx, sessionId, agentEvent);
+			const {
+				sessionId,
+				event: agentEvent,
+				isPrimaryAgentEvent,
+			} = event.payload;
+			handleAgentEvent(ctx, sessionId, agentEvent, isPrimaryAgentEvent);
 			break;
 		}
 		case "pending_prompts": {

@@ -78,6 +78,8 @@ export type CoreSessionEvent =
 				teamAgentId?: string;
 				/** Whether this is the lead agent or a teammate */
 				teamRole?: "lead" | "teammate";
+				/** Whether this event originates from the primary root agent */
+				isPrimaryAgentEvent?: boolean;
 			};
 	  }
 	| { type: "team_progress"; payload: SessionTeamProgressEvent }

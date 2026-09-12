@@ -408,3 +408,16 @@ ${artifactList}
 ${codeImplementationNote}
 `;
 }
+
+/**
+ * Detects a SpecialistPersonaId from text, such as a system prompt or role description.
+ */
+export function detectPersonaId(
+	text?: string,
+): SpecialistPersonaId | undefined {
+	if (!text) return undefined;
+	const match = text.match(
+		/\b(orion|lyra|athena|atlas|cipher|vector|sentinel|echo)\b/i,
+	);
+	return match ? (match[1].toLowerCase() as SpecialistPersonaId) : undefined;
+}

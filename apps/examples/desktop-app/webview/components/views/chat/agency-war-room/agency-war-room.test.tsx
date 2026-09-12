@@ -220,4 +220,36 @@ describe("Agency War Room Suite", () => {
 		expect(gateStatus?.textContent).toBe("approved");
 		expect(simStep?.textContent).toBe("5");
 	});
+
+	it("receives live agency_war_room_event and renders incoming subagent message and active state", async () => {
+		const { desktopClient } = await import("@/lib/desktop-client");
+
+		await act(async () => {
+			root.render(
+				<WarRoomProvider initialOpen={true}>
+					<AgencyWarRoomPanel />
+				</WarRoomProvider>,
+			);
+		});
+
+		// Dispatch live subagent chat event from Lyra
+		await act(async () => {
+			desktopClient.dispatchLocalEvent("agency_war_room_event", {
+				sessionId: "test-session",
+				subAgentId: "subagent-lyra-99",
+				parentAgentId: "root-orion",
+				personaId: "lyra",
+				event: {
+					type: "content_start",
+					contentType: "text",
+					text: "Live AST parsing analysis complete.",
+				},
+				ts: Date.now(),
+			});
+		});
+
+		expect(container.textContent).toContain(
+			"Live AST parsing analysis complete.",
+		);
+	});
 });

@@ -4,6 +4,8 @@
 
 ### Added
 
+- **Subagent Event Bridge & Live Streaming in Agency War Room**: Bridged child agent sessions (`spawn_agent` / `createDelegatedAgent`) to the Desktop Sidecar over the `/transport` WebSocket (`agency_war_room_event`), isolating subagent dialogue, tool execution telemetry, and artifacts from primary user chat while streaming live activity states (`thinking`, `speaking`, `working`, `checkpoint`) to the split-screen Agency War Room.
+- **Specialist Persona Attribution**: Added `personaId` detection and propagation to `AgentEventMetadata`, `SpawnAgentInputSchema`, and `RuntimeEventAdapter` to preserve persona identity across subagent event pipelines.
 - **Ultra Mode Personas Showcase & Side Panel**: Added `UltraSquadShowcase` to the welcome screen and `UltraPersonasSidePanel` slide-over drawer detailing all 8 specialist agents (Orion, Lyra, Athena, Atlas, Vector, Cipher, Sentinel, Echo) with presets and checkpoint gates.
 - **Ultra Squad Header Badge**: Added interactive `Ultra Squad (X)` badge button in the top navigation header for immediate persona access.
 - **Ultra Mode Agency Architecture & Personas**: Added Atoms.dev-inspired agency framework schemas, prompts, and types for 8 named specialist personas (Orion, Lyra, Athena, Atlas, Vector, Cipher, Sentinel, Echo).

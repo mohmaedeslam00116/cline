@@ -11,6 +11,7 @@ import {
 	type AgentToolContext,
 	type BasicLogger,
 	createTool,
+	detectPersonaId,
 	type HookErrorMode,
 	type ITelemetryService,
 	type ToolApprovalRequest,
@@ -32,6 +33,12 @@ export const SpawnAgentInputSchema = z.object({
 		.string()
 		.describe("System prompt defining the sub-agent's behavior"),
 	task: z.string().describe("Task for the sub-agent to complete"),
+	personaId: z
+		.string()
+		.optional()
+		.describe(
+			"Specialist persona ID (e.g. orion, lyra, athena, atlas, cipher, vector, sentinel, echo)",
+		),
 });
 
 export type SpawnAgentInput = z.infer<typeof SpawnAgentInputSchema>;
@@ -50,6 +57,7 @@ export interface SubAgentStartContext {
 	subAgentId: string;
 	conversationId: string;
 	parentAgentId: string;
+	personaId?: string;
 	input: SpawnAgentInput;
 }
 
@@ -57,6 +65,7 @@ export interface SubAgentEndContext {
 	subAgentId: string;
 	conversationId: string;
 	parentAgentId: string;
+	personaId?: string;
 	input: SpawnAgentInput;
 	result?: SpawnAgentOutput;
 	agentResult?: AgentResult;
@@ -126,28 +135,41 @@ export function createSpawnAgentTool(
 				? await config.createSubAgentTools(input, context)
 				: (config.subAgentTools ?? []);
 
+			const parentAgentId = context.agentId;
+			const personaId = input.personaId || detectPersonaId(input.systemPrompt);
+
 			const subAgent = createDelegatedAgent({
 				kind: "subagent",
 				prompt: input.systemPrompt,
 				configProvider: config.configProvider,
 				tools,
 				maxIterations: config.defaultMaxIterations,
-				parentAgentId: context.agentId,
+				parentAgentId,
 				abortSignal: context.signal,
-				onEvent: config.onSubAgentEvent,
+				onEvent: config.onSubAgentEvent
+					? (event) => {
+							config.onSubAgentEvent?.({
+								...event,
+								agentId: subAgent.getAgentId(),
+								parentAgentId,
+								conversationId: subAgent.getConversationId(),
+								...(personaId ? { personaId } : {}),
+							} as AgentEvent);
+						}
+					: undefined,
 				hookErrorMode: config.hookErrorMode,
 				toolPolicies: config.toolPolicies,
 				requestToolApproval: config.requestToolApproval,
 			});
 			const subAgentId = subAgent.getAgentId();
 			const conversationId = subAgent.getConversationId();
-			const parentAgentId = context.agentId;
 			if (config.onSubAgentStart) {
 				try {
 					await config.onSubAgentStart({
 						subAgentId,
 						conversationId,
 						parentAgentId,
+						personaId,
 						input,
 					});
 				} catch {
@@ -171,6 +193,7 @@ export function createSpawnAgentTool(
 							subAgentId,
 							conversationId,
 							parentAgentId,
+							personaId,
 							input,
 							result: output,
 							agentResult: result,
@@ -187,6 +210,7 @@ export function createSpawnAgentTool(
 							subAgentId,
 							conversationId,
 							parentAgentId,
+							personaId,
 							input,
 							error: error instanceof Error ? error : new Error(String(error)),
 						});

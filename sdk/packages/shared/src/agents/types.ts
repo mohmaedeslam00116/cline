@@ -82,6 +82,8 @@ export interface AgentEventMetadata {
 	conversationId?: string;
 	/** ID of the agent that created this agent */
 	parentAgentId?: string | null;
+	/** Specialist persona ID (e.g. orion, lyra, athena, atlas, cipher, vector, sentinel, echo) */
+	personaId?: string;
 }
 
 export interface AgentContentStartEvent extends AgentEventMetadata {
