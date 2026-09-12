@@ -8,7 +8,7 @@ export const AthenaAvatar: React.FC<PersonaAvatarProps> = ({
 	showGlow = true,
 	showStatusRing = true,
 	interactive = false,
-	title = "Athena - Product Lead & PRD",
+	title,
 	onClick,
 }) => {
 	const isThinking = state === "thinking";
@@ -73,6 +73,11 @@ export const AthenaAvatar: React.FC<PersonaAvatarProps> = ({
 					<stop offset="0%" stopColor="#2e1065" />
 					<stop offset="100%" stopColor="#17042a" />
 				</linearGradient>
+
+				<radialGradient id="athena-ambient-glow" cx="50%" cy="50%" r="50%">
+					<stop offset="0%" stopColor="#a855f7" stopOpacity="0.2" />
+					<stop offset="70%" stopColor="#090312" stopOpacity="0" />
+				</radialGradient>
 
 				<style>{`
 					@keyframes athena-float-p0 {
@@ -178,7 +183,7 @@ export const AthenaAvatar: React.FC<PersonaAvatarProps> = ({
 					cx="64"
 					cy="58"
 					r="38"
-					fill="radial-gradient(circle, rgba(168,85,247,0.2) 0%, rgba(9,3,18,0) 70%)"
+					fill="url(#athena-ambient-glow)"
 					opacity={isWorking ? "1" : "0.55"}
 				/>
 			)}

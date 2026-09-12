@@ -8,7 +8,7 @@ export const OrionAvatar: React.FC<PersonaAvatarProps> = ({
 	showGlow = true,
 	showStatusRing = true,
 	interactive = false,
-	title = "Orion - Lead Orchestrator",
+	title,
 	onClick,
 }) => {
 	const isThinking = state === "thinking";
@@ -79,6 +79,11 @@ export const OrionAvatar: React.FC<PersonaAvatarProps> = ({
 					<stop offset="0%" stopColor="#fbbf24" />
 					<stop offset="100%" stopColor="#d97706" />
 				</linearGradient>
+
+				<radialGradient id="orion-ambient-glow" cx="50%" cy="50%" r="50%">
+					<stop offset="0%" stopColor="#38bdf8" stopOpacity="0.15" />
+					<stop offset="70%" stopColor="#060911" stopOpacity="0" />
+				</radialGradient>
 
 				<style>{`
 					@keyframes orion-breathe {
@@ -234,7 +239,7 @@ export const OrionAvatar: React.FC<PersonaAvatarProps> = ({
 					cx="64"
 					cy="60"
 					r="38"
-					fill="radial-gradient(circle, rgba(56,189,248,0.15) 0%, rgba(6,9,17,0) 70%)"
+					fill="url(#orion-ambient-glow)"
 					opacity={isWorking ? "0.9" : "0.5"}
 				/>
 			)}

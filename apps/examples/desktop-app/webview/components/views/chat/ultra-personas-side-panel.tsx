@@ -304,6 +304,7 @@ export function UltraPersonasSidePanel({
 												<div className="size-9 shrink-0 flex items-center justify-center">
 													<PersonaAvatar
 														personaId={persona.id}
+														title={`${persona.name} - ${persona.role}`}
 														size={36}
 														showGlow={isActive}
 														showStatusRing={isActive}
@@ -494,12 +495,12 @@ export function UltraSquadShowcase({
 								className="h-8 gap-1.5 text-xs font-medium border-cyan-500/30 hover:border-cyan-500/60 hover:bg-cyan-500/10 text-cyan-400 cursor-pointer"
 							>
 								<Sparkles className="size-3.5 text-cyan-400" />
-								<span>Cyber Gallery</span>
+								<span>{t.cyberGallery}</span>
 							</Button>
 						</DialogTrigger>
-						<DialogContent className="max-w-5xl h-[85vh] p-0 border-0 bg-transparent shadow-none">
+						<DialogContent className="sm:max-w-5xl max-w-5xl h-[85vh] p-0 border-0 bg-transparent shadow-none">
 							<DialogTitle className="sr-only">
-								Cyberpunk Agency Persona Squad Gallery
+								{t.cyberGalleryTitle}
 							</DialogTitle>
 							<PersonaGallery className="h-full" />
 						</DialogContent>
@@ -542,6 +543,7 @@ export function UltraSquadShowcase({
 							<div className="relative mb-1 flex items-center justify-center">
 								<PersonaAvatar
 									personaId={persona.id}
+									title={`${persona.name} - ${persona.role}`}
 									size={44}
 									showGlow={isActive}
 									showStatusRing={isActive}

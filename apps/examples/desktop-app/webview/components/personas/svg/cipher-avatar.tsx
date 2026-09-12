@@ -8,7 +8,7 @@ export const CipherAvatar: React.FC<PersonaAvatarProps> = ({
 	showGlow = true,
 	showStatusRing = true,
 	interactive = false,
-	title = "Cipher - Core Full-Stack Engineer",
+	title,
 	onClick,
 }) => {
 	const isThinking = state === "thinking";
@@ -74,6 +74,11 @@ export const CipherAvatar: React.FC<PersonaAvatarProps> = ({
 					<stop offset="50%" stopColor="#ffae19" />
 					<stop offset="100%" stopColor="#ff4500" />
 				</linearGradient>
+
+				<radialGradient id="cipher-ambient-glow" cx="50%" cy="50%" r="50%">
+					<stop offset="0%" stopColor="#f97316" stopOpacity="0.2" />
+					<stop offset="70%" stopColor="#0b0402" stopOpacity="0" />
+				</radialGradient>
 
 				<style>{`
 					@keyframes cipher-code-orbit {
@@ -213,7 +218,7 @@ export const CipherAvatar: React.FC<PersonaAvatarProps> = ({
 					cx="64"
 					cy="58"
 					r="38"
-					fill="radial-gradient(circle, rgba(249,115,22,0.2) 0%, rgba(11,4,2,0) 70%)"
+					fill="url(#cipher-ambient-glow)"
 					opacity={isWorking ? "1" : "0.55"}
 				/>
 			)}

@@ -8,7 +8,7 @@ export const VectorAvatar: React.FC<PersonaAvatarProps> = ({
 	showGlow = true,
 	showStatusRing = true,
 	interactive = false,
-	title = "Vector - Data Architect",
+	title,
 	onClick,
 }) => {
 	const isThinking = state === "thinking";
@@ -62,6 +62,11 @@ export const VectorAvatar: React.FC<PersonaAvatarProps> = ({
 					<stop offset="50%" stopColor="#facc15" />
 					<stop offset="100%" stopColor="#eab308" />
 				</linearGradient>
+
+				<radialGradient id="vector-ambient-glow" cx="50%" cy="50%" r="50%">
+					<stop offset="0%" stopColor="#facc15" stopOpacity="0.2" />
+					<stop offset="70%" stopColor="#0a0701" stopOpacity="0" />
+				</radialGradient>
 
 				<style>{`
 					@keyframes vector-stream {
@@ -143,7 +148,7 @@ export const VectorAvatar: React.FC<PersonaAvatarProps> = ({
 					cx="64"
 					cy="58"
 					r="38"
-					fill="radial-gradient(circle, rgba(250,204,21,0.2) 0%, rgba(10,7,1,0) 70%)"
+					fill="url(#vector-ambient-glow)"
 					opacity={isWorking ? "1" : "0.5"}
 				/>
 			)}

@@ -8,7 +8,7 @@ export const AtlasAvatar: React.FC<PersonaAvatarProps> = ({
 	showGlow = true,
 	showStatusRing = true,
 	interactive = false,
-	title = "Atlas - Systems Architect",
+	title,
 	onClick,
 }) => {
 	const isThinking = state === "thinking";
@@ -80,6 +80,11 @@ export const AtlasAvatar: React.FC<PersonaAvatarProps> = ({
 					<stop offset="50%" stopColor="#10b981" />
 					<stop offset="100%" stopColor="#059669" />
 				</linearGradient>
+
+				<radialGradient id="atlas-ambient-glow" cx="50%" cy="50%" r="50%">
+					<stop offset="0%" stopColor="#10b981" stopOpacity="0.18" />
+					<stop offset="70%" stopColor="#020e09" stopOpacity="0" />
+				</radialGradient>
 
 				<style>{`
 					@keyframes atlas-cube-spin {
@@ -156,7 +161,7 @@ export const AtlasAvatar: React.FC<PersonaAvatarProps> = ({
 					cx="64"
 					cy="58"
 					r="38"
-					fill="radial-gradient(circle, rgba(16,185,129,0.18) 0%, rgba(2,14,9,0) 70%)"
+					fill="url(#atlas-ambient-glow)"
 					opacity={isWorking ? "0.95" : "0.5"}
 				/>
 			)}

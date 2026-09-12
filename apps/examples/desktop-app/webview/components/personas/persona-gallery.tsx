@@ -9,18 +9,17 @@ import {
 	CheckCircle2,
 	Eye,
 	Layers,
-	Play,
 	Radio,
 	Sparkles,
 	Volume2,
 	Zap,
 } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { getLensDirection, getLensTranslations } from "@/lib/lens-i18n";
 import { cn } from "@/lib/utils";
 import { PersonaAvatar, type PersonaActivityState } from "./svg";
 
@@ -35,39 +34,6 @@ const PERSONA_LIST: SpecialistPersonaId[] = [
 	"echo",
 ];
 
-const STATE_OPTIONS: {
-	id: PersonaActivityState;
-	label: string;
-	icon: React.ComponentType<{ className?: string }>;
-	color: string;
-}[] = [
-	{ id: "idle", label: "Idle / Ready", icon: Eye, color: "text-emerald-400" },
-	{
-		id: "thinking",
-		label: "Thinking / Scanning",
-		icon: Sparkles,
-		color: "text-purple-400",
-	},
-	{
-		id: "speaking",
-		label: "Speaking / Inter-Agent",
-		icon: Volume2,
-		color: "text-cyan-400",
-	},
-	{
-		id: "working",
-		label: "Working / Tool Exec",
-		icon: Zap,
-		color: "text-blue-400",
-	},
-	{
-		id: "checkpoint",
-		label: "Checkpoint Gate",
-		icon: Radio,
-		color: "text-amber-400",
-	},
-];
-
 export const PersonaGallery: React.FC<{ className?: string }> = ({
 	className,
 }) => {
@@ -75,10 +41,51 @@ export const PersonaGallery: React.FC<{ className?: string }> = ({
 	const [selectedPersonaId, setSelectedPersonaId] =
 		useState<SpecialistPersonaId>("orion");
 
+	const t = getLensTranslations().ultraAgency;
+	const dir = getLensDirection();
 	const selectedPersona = BUILTIN_PERSONAS[selectedPersonaId];
+
+	const stateOptions = useMemo<
+		{
+			id: PersonaActivityState;
+			label: string;
+			icon: React.ComponentType<{ className?: string }>;
+			color: string;
+		}[]
+	>(
+		() => [
+			{ id: "idle", label: t.stateIdle, icon: Eye, color: "text-emerald-400" },
+			{
+				id: "thinking",
+				label: t.stateThinking,
+				icon: Sparkles,
+				color: "text-purple-400",
+			},
+			{
+				id: "speaking",
+				label: t.stateSpeaking,
+				icon: Volume2,
+				color: "text-cyan-400",
+			},
+			{
+				id: "working",
+				label: t.stateWorking,
+				icon: Zap,
+				color: "text-blue-400",
+			},
+			{
+				id: "checkpoint",
+				label: t.stateCheckpoint,
+				icon: Radio,
+				color: "text-amber-400",
+			},
+		],
+		[t],
+	);
 
 	return (
 		<div
+			dir={dir}
 			className={cn(
 				"flex flex-col h-full bg-[#080c14] text-slate-100 p-6 rounded-xl border border-slate-800 shadow-2xl overflow-hidden",
 				className,
@@ -90,24 +97,27 @@ export const PersonaGallery: React.FC<{ className?: string }> = ({
 					<div className="flex items-center gap-2.5">
 						<span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
 						<h2 className="text-xl font-bold tracking-wider uppercase font-mono text-cyan-400">
-							Cyberpunk Agency Persona Squad
+							{t.cyberGalleryTitle}
 						</h2>
 						<Badge
 							variant="outline"
 							className="border-cyan-500/30 text-cyan-400 bg-cyan-950/40 text-xs"
 						>
-							8 Specialist Vectors
+							{t.cyberGalleryBadge}
 						</Badge>
 					</div>
 					<p className="text-xs text-slate-400 mt-1 font-mono">
-						High-precision SVG avatars with live activity telemetry & state
-						indicators
+						{t.cyberGallerySubtitle}
 					</p>
 				</div>
 
 				{/* State Selector Switcher */}
-				<div className="flex items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-lg border border-slate-800">
-					{STATE_OPTIONS.map((opt) => {
+				<div
+					role="toolbar"
+					aria-label={t.statusLabel}
+					className="flex items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-lg border border-slate-800"
+				>
+					{stateOptions.map((opt) => {
 						const Icon = opt.icon;
 						const isSelected = activeState === opt.id;
 						return (
@@ -116,8 +126,10 @@ export const PersonaGallery: React.FC<{ className?: string }> = ({
 								size="sm"
 								variant={isSelected ? "secondary" : "ghost"}
 								onClick={() => setActiveState(opt.id)}
+								aria-label={opt.label}
+								aria-pressed={isSelected}
 								className={cn(
-									"h-8 px-2.5 text-xs font-mono transition-all flex items-center gap-1.5",
+									"h-8 px-2.5 text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer",
 									isSelected
 										? "bg-slate-800 text-white shadow-sm border border-slate-700"
 										: "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50",
@@ -135,17 +147,32 @@ export const PersonaGallery: React.FC<{ className?: string }> = ({
 			<div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6 flex-1 min-h-0">
 				{/* 8-Card Avatar Grid (7 Cols on large screens) */}
 				<ScrollArea className="lg:col-span-7 pr-2">
-					<div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pb-4">
+					<div
+						role="listbox"
+						aria-label={t.specialistPersonasLabel}
+						className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pb-4"
+					>
 						{PERSONA_LIST.map((pId) => {
 							const persona = BUILTIN_PERSONAS[pId];
 							const isSelected = selectedPersonaId === pId;
+							const localizedTitle = `${persona.name} - ${persona.role}`;
 
 							return (
-								<Card
+								<button
+									type="button"
 									key={pId}
+									role="option"
+									aria-selected={isSelected}
+									aria-label={localizedTitle}
 									onClick={() => setSelectedPersonaId(pId)}
+									onKeyDown={(e) => {
+										if (e.key === "Enter" || e.key === " ") {
+											e.preventDefault();
+											setSelectedPersonaId(pId);
+										}
+									}}
 									className={cn(
-										"flex flex-col items-center p-3.5 rounded-xl transition-all duration-200 cursor-pointer text-center relative group border",
+										"flex flex-col items-center p-3.5 rounded-xl transition-all duration-200 cursor-pointer text-center relative group border focus:outline-hidden focus:ring-2 focus:ring-cyan-500",
 										isSelected
 											? "bg-slate-900/90 border-cyan-500/60 shadow-lg shadow-cyan-950/50 scale-[1.02]"
 											: "bg-[#0c121e]/80 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900/60",
@@ -155,6 +182,7 @@ export const PersonaGallery: React.FC<{ className?: string }> = ({
 									<div className="relative p-1">
 										<PersonaAvatar
 											personaId={pId}
+											title={localizedTitle}
 											state={activeState}
 											size={72}
 											interactive
@@ -181,7 +209,7 @@ export const PersonaGallery: React.FC<{ className?: string }> = ({
 									>
 										{pId}
 									</Badge>
-								</Card>
+								</button>
 							);
 						})}
 					</div>
@@ -196,6 +224,7 @@ export const PersonaGallery: React.FC<{ className?: string }> = ({
 								<div className="p-1 rounded-xl bg-slate-950 border border-slate-800 shadow-inner">
 									<PersonaAvatar
 										personaId={selectedPersona.id}
+										title={`${selectedPersona.name} - ${selectedPersona.role}`}
 										state={activeState}
 										size={96}
 										showStatusRing
@@ -231,14 +260,14 @@ export const PersonaGallery: React.FC<{ className?: string }> = ({
 									<div>
 										<h5 className="font-mono text-[11px] uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
 											<Layers className="w-3.5 h-3.5 text-cyan-400" />
-											Primary Deliverable
+											{t.primaryDeliverable}
 										</h5>
 										<div className="bg-slate-950/80 p-2.5 rounded-lg border border-slate-800 font-mono text-[11px] text-slate-300">
 											<div className="text-cyan-300 font-semibold">
 												{selectedPersona.deliverableName}
 											</div>
 											<div className="text-slate-500 text-[10px] mt-0.5">
-												Target: {selectedPersona.deliverableFile}
+												{t.targetLabel} {selectedPersona.deliverableFile}
 											</div>
 										</div>
 									</div>
@@ -246,7 +275,7 @@ export const PersonaGallery: React.FC<{ className?: string }> = ({
 									<div>
 										<h5 className="font-mono text-[11px] uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
 											<CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-											Core Responsibilities
+											{t.coreResponsibilities}
 										</h5>
 										<ul className="space-y-1.5 text-slate-300">
 											{selectedPersona.responsibilities.map((r, i) => (
@@ -263,7 +292,7 @@ export const PersonaGallery: React.FC<{ className?: string }> = ({
 									<div>
 										<h5 className="font-mono text-[11px] uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
 											<Sparkles className="w-3.5 h-3.5 text-purple-400" />
-											System Prompt Seed
+											{t.systemPromptSeed}
 										</h5>
 										<div className="bg-slate-950/80 p-2.5 rounded-lg border border-slate-800 font-mono text-[10.5px] text-slate-400 leading-relaxed italic">
 											"{selectedPersona.systemPromptSnippet}"
@@ -279,7 +308,9 @@ export const PersonaGallery: React.FC<{ className?: string }> = ({
 										className="w-2 h-2 rounded-full animate-ping"
 										style={{ backgroundColor: selectedPersona.color }}
 									/>
-									<span>STATUS: {activeState.toUpperCase()}</span>
+									<span>
+										{t.statusLabel} {activeState.toUpperCase()}
+									</span>
 								</div>
 								<span className="text-slate-500">LENS WORKSTATION // V0.1</span>
 							</div>

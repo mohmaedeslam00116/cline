@@ -8,7 +8,7 @@ export const SentinelAvatar: React.FC<PersonaAvatarProps> = ({
 	showGlow = true,
 	showStatusRing = true,
 	interactive = false,
-	title = "Sentinel - QA & Verification",
+	title,
 	onClick,
 }) => {
 	const isThinking = state === "thinking";
@@ -79,6 +79,11 @@ export const SentinelAvatar: React.FC<PersonaAvatarProps> = ({
 					<stop offset="0%" stopColor="#34d399" />
 					<stop offset="100%" stopColor="#059669" />
 				</linearGradient>
+
+				<radialGradient id="sentinel-ambient-glow" cx="50%" cy="50%" r="50%">
+					<stop offset="0%" stopColor="#f43f5e" stopOpacity="0.2" />
+					<stop offset="70%" stopColor="#0d0205" stopOpacity="0" />
+				</radialGradient>
 
 				<style>{`
 					@keyframes sentinel-radar-expand {
@@ -176,7 +181,7 @@ export const SentinelAvatar: React.FC<PersonaAvatarProps> = ({
 					cx="64"
 					cy="58"
 					r="38"
-					fill="radial-gradient(circle, rgba(244,63,94,0.2) 0%, rgba(13,2,5,0) 70%)"
+					fill="url(#sentinel-ambient-glow)"
 					opacity={isWorking ? "1" : "0.5"}
 				/>
 			)}

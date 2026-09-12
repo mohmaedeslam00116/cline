@@ -8,7 +8,7 @@ export const LyraAvatar: React.FC<PersonaAvatarProps> = ({
 	showGlow = true,
 	showStatusRing = true,
 	interactive = false,
-	title = "Lyra - Deep Tech Researcher",
+	title,
 	onClick,
 }) => {
 	const isThinking = state === "thinking";
@@ -80,6 +80,11 @@ export const LyraAvatar: React.FC<PersonaAvatarProps> = ({
 					<stop offset="50%" stopColor="#2dd4bf" />
 					<stop offset="100%" stopColor="#38bdf8" />
 				</linearGradient>
+
+				<radialGradient id="lyra-ambient-glow" cx="50%" cy="50%" r="50%">
+					<stop offset="0%" stopColor="#22d3ee" stopOpacity="0.18" />
+					<stop offset="70%" stopColor="#040b14" stopOpacity="0" />
+				</radialGradient>
 
 				<style>{`
 					@keyframes lyra-reticle-spin {
@@ -232,7 +237,7 @@ export const LyraAvatar: React.FC<PersonaAvatarProps> = ({
 					cx="64"
 					cy="58"
 					r="38"
-					fill="radial-gradient(circle, rgba(34,211,238,0.18) 0%, rgba(4,11,20,0) 70%)"
+					fill="url(#lyra-ambient-glow)"
 					opacity={isWorking ? "0.95" : "0.5"}
 				/>
 			)}

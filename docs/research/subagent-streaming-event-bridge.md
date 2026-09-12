@@ -188,41 +188,44 @@ To power the **Agency War Room** without chat stream collisions, the streaming p
 ### Seam Adjustments Required:
 
 ### 1. Fix Event Attribution at the Source (`spawn-tool.ts`)
-In `sdk/packages/core/src/runtime/host/local/spawn-tool.ts`, enrich `onSubAgentEvent` with the child agent's identity:
+In `sdk/packages/core/src/runtime/host/local/spawn-tool.ts`, enrich `onSubAgentEvent` with per-child tracking:
 ```ts
 export function createSessionSubAgentLifecycleCallbacks(
     deps: SpawnToolDeps,
     config: CoreSessionConfig,
     rootSessionId: string,
 ): SessionSubAgentLifecycleCallbacks {
-    let currentSubAgentId: string | undefined;
-    let currentParentAgentId: string | undefined;
+    // Per-child attribution tracking map to prevent state corruption during concurrent child agent runs
+    const activeChildren = new Map<string, { subAgentId: string; parentAgentId: string }>();
 
     return {
         onSubAgentStart: (context) => {
-            currentSubAgentId = context.subAgentId;
-            currentParentAgentId = context.parentAgentId;
+            activeChildren.set(context.subAgentId, {
+                subAgentId: context.subAgentId,
+                parentAgentId: context.parentAgentId,
+            });
         },
-        onSubAgentEvent: (event) => {
-            if (!event.agentId && currentSubAgentId) {
-                event.agentId = currentSubAgentId;
-                event.parentAgentId = currentParentAgentId;
+        onSubAgentEvent: (event, subAgentId) => {
+            const childMeta = subAgentId ? activeChildren.get(subAgentId) : undefined;
+            if (childMeta) {
+                event.agentId = childMeta.subAgentId;
+                event.parentAgentId = childMeta.parentAgentId;
             }
             deps.onAgentEvent(rootSessionId, config, event);
         },
         onSubAgentEnd: (context) => {
-            // handle lifecycle cleanup...
+            activeChildren.delete(context.subAgentId);
         }
     };
 }
 ```
 
-### 2. Sidecar Dual-Pipe Routing
+### 2. Sidecar Dual-Pipe Routing & Domain Adapter
 In `apps/examples/desktop-app/sidecar/context.ts`:
 - Check if `agentEvent.parentAgentId` is present.
 - If it is a subagent event:
   - **Do NOT** emit `"chat_text"` or `"chat_tool_call_start"` on the main chat stream.
-  - Instead, emit `"agency_war_room_event"` with metadata:
+  - Instead, emit the canonical WebSocket event `"agency_war_room_event"` with structured transport payload:
     ```ts
     sendEvent(ctx, "agency_war_room_event", {
         rootSessionId,
@@ -230,11 +233,50 @@ In `apps/examples/desktop-app/sidecar/context.ts`:
         agentId: agentEvent.agentId,
         parentAgentId: agentEvent.parentAgentId,
         personaId: resolvePersona(agentEvent),
-        stream: mapSubAgentStream(agentEvent),
-        chunk: agentEvent.text || JSON.stringify(agentEvent),
-        ts: nowMs(),
+        stage: resolveStage(agentEvent),
+        type: mapEventType(agentEvent),
+        content: agentEvent.text || "",
+        toolCall: mapToolCall(agentEvent),
+        timestamp: nowMs(),
     });
     ```
+
+Consumers in the webview adapt transport events into `InterAgentMessageEnvelope`:
+```ts
+export interface AgencyWarRoomTransportPayload {
+    rootSessionId: string;
+    subSessionId: string;
+    agentId: string;
+    parentAgentId?: string;
+    personaId: AgentPersonaId;
+    stage: WorkflowStage;
+    type: InterAgentMessageType;
+    content: string;
+    toolCall?: ToolCallPayload;
+    timestamp: number;
+}
+
+export function toInterAgentMessageEnvelope(
+    payload: AgencyWarRoomTransportPayload,
+): InterAgentMessageEnvelope {
+    return {
+        id: `${payload.subSessionId}-${payload.timestamp}`,
+        rootSessionId: payload.rootSessionId,
+        subSessionId: payload.subSessionId,
+        senderPersonaId: payload.personaId,
+        recipientPersonaId: "orion",
+        stage: payload.stage,
+        type: payload.type,
+        timestamp: payload.timestamp,
+        content: payload.content,
+        toolCall: payload.toolCall,
+        metadata: {
+            parentAgentId: payload.parentAgentId,
+            subAgentId: payload.agentId,
+        },
+    };
+}
+```
 
 ---
 
@@ -251,11 +293,10 @@ export type AgentPersonaId =
     | "lyra"           // Deep technical researcher
     | "athena"         // Product & requirements strategist
     | "atlas"          // Systems & software architect
-    | "vector"         // Core full-stack engineer
-    | "cipher"         // Data & security architect
+    | "vector"         // Data architect
+    | "cipher"         // Core full-stack engineer
     | "sentinel"       // QA & compiler guardian
-    | "echo"           // Docs & release specialist
-    | (string & {});
+    | "echo";          // Docs & release specialist
 
 export type WorkflowStage =
     | "intake"

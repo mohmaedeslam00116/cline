@@ -8,7 +8,7 @@ export const EchoAvatar: React.FC<PersonaAvatarProps> = ({
 	showGlow = true,
 	showStatusRing = true,
 	interactive = false,
-	title = "Echo - Web & Docs Specialist",
+	title,
 	onClick,
 }) => {
 	const isThinking = state === "thinking";
@@ -68,6 +68,11 @@ export const EchoAvatar: React.FC<PersonaAvatarProps> = ({
 					<stop offset="50%" stopColor="#a78bfa" />
 					<stop offset="100%" stopColor="#818cf8" />
 				</linearGradient>
+
+				<radialGradient id="echo-ambient-glow" cx="50%" cy="50%" r="50%">
+					<stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.2" />
+					<stop offset="70%" stopColor="#08020e" stopOpacity="0" />
+				</radialGradient>
 
 				<style>{`
 					@keyframes echo-wave-radiate {
@@ -152,7 +157,7 @@ export const EchoAvatar: React.FC<PersonaAvatarProps> = ({
 					cx="64"
 					cy="58"
 					r="38"
-					fill="radial-gradient(circle, rgba(139,92,246,0.2) 0%, rgba(8,2,14,0) 70%)"
+					fill="url(#echo-ambient-glow)"
 					opacity={isWorking ? "1" : "0.5"}
 				/>
 			)}

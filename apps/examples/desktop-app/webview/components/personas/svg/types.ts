@@ -45,8 +45,9 @@ export interface PersonaAvatarProps {
 
 	/**
 	 * Accessible title or tooltip for screen readers.
+	 * Required to ensure proper accessibility and bilingual parity.
 	 */
-	title?: string;
+	title: string;
 
 	/**
 	 * Optional click handler.
