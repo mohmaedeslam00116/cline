@@ -61,6 +61,8 @@ async function renderWelcomeScreen({
 		branches: ["main"],
 	})),
 	onOpenSession = vi.fn(),
+	mode,
+	onOpenUltraPanel,
 }: {
 	workspaceRoot: string;
 	workspaces: string[];
@@ -71,6 +73,8 @@ async function renderWelcomeScreen({
 		branches: string[];
 	}>;
 	onOpenSession?: (sessionId: string) => void | Promise<void>;
+	mode?: "act" | "plan" | "yolo" | "ultra";
+	onOpenUltraPanel?: () => void;
 }): Promise<void> {
 	await act(async () => {
 		root.render(
@@ -90,6 +94,8 @@ async function renderWelcomeScreen({
 					body={null}
 					composer={null}
 					gitBranch={gitBranch}
+					mode={mode}
+					onOpenUltraPanel={onOpenUltraPanel}
 					onListGitBranches={onListGitBranches}
 					onOpenSession={onOpenSession}
 					onSwitchGitBranch={vi.fn(async () => true)}
@@ -213,8 +219,7 @@ describe("WelcomeScreen", () => {
 		});
 
 		const heading = container.querySelector("h1");
-		expect(heading?.textContent).toBe("What would you like to build?");
-		expect(heading?.classList.contains("sr-only")).toBe(true);
+		expect(heading?.textContent).toBe("LENS Workstation");
 		expect(container.querySelector("[data-welcome-hero]")).not.toBeNull();
 		await clickButton("project-1");
 
@@ -243,6 +248,22 @@ describe("WelcomeScreen", () => {
 		await clickButton("Just chat", true);
 
 		expect(selectChat).toHaveBeenCalledOnce();
+	});
+
+	it("renders UltraSquadShowcase with active personas when mode is ultra", async () => {
+		const onOpenUltraPanel = vi.fn();
+		await renderWelcomeScreen({
+			workspaceRoot: "/projects/project-1",
+			workspaces: ["/projects/project-1"],
+			mode: "ultra",
+			onOpenUltraPanel,
+		});
+
+		expect(container.textContent).toContain("Ultra Mode Agency");
+		expect(container.textContent).toContain("Orion");
+		expect(container.textContent).toContain("Athena");
+		expect(container.textContent).toContain("Atlas");
+		expect(container.textContent).toContain("Cipher");
 	});
 });
 

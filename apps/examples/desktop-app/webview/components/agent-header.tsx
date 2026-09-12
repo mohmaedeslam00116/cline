@@ -12,8 +12,10 @@ import {
 	MoreHorizontal,
 	Plus,
 	Trash2,
+	Workflow,
 } from "lucide-react";
 import { type CSSProperties, memo, useEffect, useMemo, useState } from "react";
+import { useSquadConfig } from "@/hooks/use-squad-config";
 import type { ChatSessionStatus } from "@/lib/chat-schema";
 import {
 	agentEntryState,
@@ -60,6 +62,8 @@ type AgentHeaderProps = {
 	/** Set when the open session is itself a child agent run. */
 	parentSession?: { sessionId: string; title?: string };
 	onOpenParentSession?: (parentSessionId: string) => void | Promise<void>;
+	mode?: "act" | "plan" | "yolo" | "ultra";
+	onOpenUltraPanel?: () => void;
 };
 
 function AgentHeaderImpl({
@@ -83,7 +87,10 @@ function AgentHeaderImpl({
 	onOpenAgentSession,
 	parentSession,
 	onOpenParentSession,
+	mode,
+	onOpenUltraPanel,
 }: AgentHeaderProps) {
+	const [squadConfig] = useSquadConfig();
 	const [isEditingTitle, setIsEditingTitle] = useState(false);
 	const [titleInput, setTitleInput] = useState("");
 	const [titleEditorWidth, setTitleEditorWidth] = useState<number>();
@@ -223,6 +230,21 @@ function AgentHeaderImpl({
 
 			{showSessionActions ? (
 				<div className="flex shrink-0 items-center gap-2">
+					{mode === "ultra" ? (
+						<Button
+							aria-label={`Open Ultra Agency Squad Roster (${squadConfig.activePersonaIds.length} agents)`}
+							className="flex items-center gap-1.5 rounded-md bg-indigo-500/15 text-indigo-500 hover:bg-indigo-500/25 border border-indigo-500/30 px-2 py-1 text-xs font-medium transition-colors cursor-pointer"
+							id="ultra-squad-header-badge"
+							onClick={() => onOpenUltraPanel?.()}
+							size="sm"
+							title={`Ultra Agency: ${squadConfig.presetId} (${squadConfig.activePersonaIds.length} agents)`}
+							type="button"
+							variant="outline"
+						>
+							<Workflow className="size-3.5" />
+							<span>Ultra Squad ({squadConfig.activePersonaIds.length})</span>
+						</Button>
+					) : null}
 					<AgentActivityStatus
 						activity={agentActivity}
 						agents={agents}

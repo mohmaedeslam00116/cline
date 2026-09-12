@@ -370,7 +370,13 @@ function normalizeConfig(
 	return {
 		sessionId: config.sessionId || "",
 		mode:
-			config.mode === "plan" ? "plan" : config.mode === "yolo" ? "yolo" : "act",
+			config.mode === "plan"
+				? "plan"
+				: config.mode === "yolo"
+					? "yolo"
+					: config.mode === "ultra"
+						? "ultra"
+						: "act",
 		enableTools: config.enableTools !== false,
 		enableSpawnAgent:
 			config.enableSpawnAgent ?? preset.enableSpawnAgent ?? true,

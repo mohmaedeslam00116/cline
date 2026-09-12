@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/sidebar";
 import { ChatInputBar } from "@/components/views/chat/chat-input-bar";
 import { ChatMessages } from "@/components/views/chat/chat-messages";
+import { UltraPersonasSidePanel } from "@/components/views/chat/ultra-personas-side-panel";
 import { WelcomeScreen } from "@/components/views/chat/welcome-chat";
 import { WelcomeSetupNotice } from "@/components/views/chat/welcome-setup-notice";
 import type { OnboardingStep } from "@/components/views/onboarding/onboarding-view";
@@ -680,6 +681,10 @@ function ChatThreadPane({
 	}, []);
 	const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
 	const [showDiffView, setShowDiffView] = useState(false);
+	const [ultraPanelOpen, setUltraPanelOpen] = useState(false);
+	const handleOpenUltraPanel = useCallback(() => {
+		setUltraPanelOpen(true);
+	}, []);
 	const [deletingSession, setDeletingSession] = useState(false);
 	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 	const [renamingSession, setRenamingSession] = useState(false);
@@ -1677,12 +1682,16 @@ function ChatThreadPane({
 								renamingTitle={renamingSession}
 								status={status}
 								title={threadTitle}
+								mode={config.mode}
+								onOpenUltraPanel={handleOpenUltraPanel}
 							/>
 						</div>
 					</WindowTitleBarContent>
 				) : null}
 				<WelcomeScreen
 					active={isWelcomeState}
+					mode={config.mode}
+					onOpenUltraPanel={handleOpenUltraPanel}
 					body={
 						showDiffView ? (
 							<DiffView
@@ -1731,6 +1740,10 @@ function ChatThreadPane({
 					onListGitBranches={listGitBranches}
 					onOpenSession={onOpenSessionById}
 					onSwitchGitBranch={switchGitBranch}
+				/>
+				<UltraPersonasSidePanel
+					open={ultraPanelOpen}
+					onOpenChange={setUltraPanelOpen}
 				/>
 			</AttachmentDropZone>
 			<AlertDialog

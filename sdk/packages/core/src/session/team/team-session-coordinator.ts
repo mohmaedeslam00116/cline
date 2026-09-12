@@ -244,6 +244,12 @@ export function formatModePrompt(
 ): string {
 	return formatUserInputBlock(
 		prompt,
-		mode === "plan" ? "plan" : mode === "yolo" ? "yolo" : "act",
+		mode === "plan"
+			? "plan"
+			: mode === "yolo"
+				? "yolo"
+				: mode === "ultra"
+					? "ultra"
+					: "act",
 	);
 }
