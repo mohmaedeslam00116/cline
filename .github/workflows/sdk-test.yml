@@ -44,6 +44,7 @@ jobs:
             - name: Typecheck
               run: |
                   bun run build:sdk
+                  bun run build:lens
                   bun run -F @cline/cli build
                   bun run types
 
@@ -83,7 +84,9 @@ jobs:
 
             - name: Build SDK
               id: build_sdk_step
-              run: bun run build:sdk
+              run: |
+                  bun run build:sdk
+                  bun run build:lens
 
             - name: Build CLI
               id: build_cli_step
