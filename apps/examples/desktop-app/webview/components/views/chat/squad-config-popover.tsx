@@ -7,7 +7,7 @@ import {
 	type SpecialistPersonaId,
 	type SquadConfig,
 	type SquadPresetId,
-} from "@cline/shared";
+} from "@cline/shared/browser";
 import {
 	ChevronDown,
 	Code2,
