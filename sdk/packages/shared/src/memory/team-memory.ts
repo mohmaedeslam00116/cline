@@ -20,22 +20,49 @@ export type ReadTeamMemoryInput = z.infer<typeof ReadTeamMemoryInputSchema>;
 
 /**
  * Schema for record_team_learning tool input.
+ * Note: personaId is derived strictly from execution context to prevent spoofing.
  */
 export const RecordTeamLearningInputSchema = z.strictObject({
-	topic: z.string().min(1, "topic cannot be empty"),
-	learning: z.string().min(1, "learning cannot be empty"),
+	topic: z.string().min(1, "topic cannot be empty").max(200, "topic too long"),
+	learning: z.string().min(1, "learning cannot be empty").max(10000, "learning too long"),
 });
 export type RecordTeamLearningInput = z.infer<
 	typeof RecordTeamLearningInputSchema
 >;
 
 /**
+ * Schema for human-approved learning submissions passed to lens_team_memory_commit.
+ */
+export const ApprovedTeamLearningInputSchema = z.strictObject({
+	id: z.string().min(1, "id cannot be empty").max(100, "id too long"),
+	topic: z.string().min(1, "topic cannot be empty").max(200, "topic too long"),
+	learning: z.string().min(1, "learning cannot be empty").max(10000, "learning too long"),
+	timestamp: z.string().min(1, "timestamp cannot be empty").max(100, "timestamp too long"),
+	personaId: z.string().max(100, "personaId too long").optional(),
+});
+export type ApprovedTeamLearningInput = z.infer<
+	typeof ApprovedTeamLearningInputSchema
+>;
+
+/**
+ * Schema for lens_team_memory_commit command payload.
+ */
+export const CommitTeamMemoryInputSchema = z.strictObject({
+	approvedLearnings: z.array(ApprovedTeamLearningInputSchema).max(50).optional(),
+});
+export type CommitTeamMemoryInput = z.infer<
+	typeof CommitTeamMemoryInputSchema
+>;
+
+/**
  * Schema for an in-memory staged learning awaiting human Checkpoint Gate approval.
  */
 export const StagedTeamLearningSchema = z.strictObject({
-	topic: z.string(),
-	learning: z.string(),
+	id: z.string().optional(),
+	topic: z.string().min(1).max(200),
+	learning: z.string().min(1).max(10000),
 	timestamp: z.string(),
+	personaId: z.string().max(100).optional(),
 });
 export type StagedTeamLearning = z.infer<typeof StagedTeamLearningSchema>;
 

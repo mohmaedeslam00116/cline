@@ -144,6 +144,8 @@ export type SidecarContext = {
 	 * replayed to webviews that connect after the event fired.
 	 */
 	hubBuildMismatch: ManagedHubBuildMismatchEvent | null;
+	/** Shared team memory service instance for the workspace root. */
+	teamMemoryService?: unknown;
 };
 export type BunRuntimeApi = {
 	serve: (options: unknown) => { port: number; stop?: () => void };

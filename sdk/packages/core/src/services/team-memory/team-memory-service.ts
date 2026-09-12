@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import {
+	ApprovedTeamLearningInputSchema,
 	DEFAULT_TEAM_MEMORY_BUDGET_CHARS,
 	formatTeamMemorySummary,
 	type StagedTeamLearning,
@@ -138,7 +139,11 @@ export class TeamMemoryService {
 	 * Stages a newly discovered operational learning in runtime memory.
 	 * Does NOT mutate persistent disk files directly during agent execution.
 	 */
-	stageLearning(topic: string, learning: string): StagedTeamLearning {
+	stageLearning(
+		topic: string,
+		learning: string,
+		options?: { personaId?: string; id?: string },
+	): StagedTeamLearning {
 		const trimmedTopic = topic.trim();
 		const trimmedLearning = learning.trim();
 
@@ -150,9 +155,13 @@ export class TeamMemoryService {
 		}
 
 		const staged: StagedTeamLearning = {
+			id:
+				options?.id ??
+				`learning-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
 			topic: trimmedTopic,
 			learning: trimmedLearning,
 			timestamp: new Date().toISOString(),
+			...(options?.personaId ? { personaId: options.personaId } : {}),
 		};
 
 		this.stagedLearnings.push(staged);
@@ -167,15 +176,50 @@ export class TeamMemoryService {
 	}
 
 	/**
-	 * Commits all staged learnings to .lens/memory/learnings.md after human
+	 * Commits staged learnings to .lens/memory/learnings.md after human
 	 * approval at a Checkpoint Gate, then clears the in-memory staging queue.
+	 * If approvedLearnings is provided, only those items (with developer edits)
+	 * are committed. Otherwise all staged learnings are committed.
 	 */
-	async commitStagedLearnings(): Promise<number> {
-		if (this.stagedLearnings.length === 0) {
+	async commitStagedLearnings(
+		approvedLearnings?: StagedTeamLearning[],
+	): Promise<number> {
+		let toCommit: StagedTeamLearning[] = [];
+
+		if (approvedLearnings) {
+			if (this.stagedLearnings.length > 0) {
+				// Reconcile approved items against legitimate staged proposals
+				for (const item of approvedLearnings) {
+					const match = this.stagedLearnings.find(
+						(s) => s.id && item.id && s.id === item.id,
+					);
+					if (match) {
+						toCommit.push({
+							id: match.id,
+							topic: item.topic.trim() || match.topic,
+							learning: item.learning.trim() || match.learning,
+							timestamp: match.timestamp,
+							personaId: match.personaId,
+						});
+					}
+				}
+			} else {
+				// Fallback when approvedLearnings are passed directly (e.g. seeded in tests or standalone)
+				for (const item of approvedLearnings) {
+					const parsed = ApprovedTeamLearningInputSchema.parse(item);
+					toCommit.push(parsed);
+				}
+			}
+		} else {
+			toCommit = [...this.stagedLearnings];
+		}
+
+		if (toCommit.length === 0) {
+			this.stagedLearnings = [];
 			return 0;
 		}
 
-		const count = this.stagedLearnings.length;
+		const count = toCommit.length;
 		let currentContent = "";
 		try {
 			currentContent = await this.readCategory("learnings");
@@ -187,10 +231,11 @@ export class TeamMemoryService {
 			}
 		}
 
-		const newEntries = this.stagedLearnings
+		const newEntries = toCommit
 			.map((entry) => {
 				const dateStr = entry.timestamp.slice(0, 10);
-				return `\n### ${entry.topic} (${dateStr})\n${entry.learning}\n`;
+				const personaBadge = entry.personaId ? ` [${entry.personaId}]` : "";
+				return `\n### ${entry.topic}${personaBadge} (${dateStr})\n${entry.learning}\n`;
 			})
 			.join("");
 

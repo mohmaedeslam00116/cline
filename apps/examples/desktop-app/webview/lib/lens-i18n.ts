@@ -234,6 +234,20 @@ export interface LensTranslations {
 		readonly stageQa: string;
 		readonly stageDocumentation: string;
 		readonly deliverablesForSignOff: string;
+		readonly teamMemoryProposalsTitle: string;
+		readonly teamMemoryProposalsDesc: string;
+		readonly editProposal: string;
+		readonly saveProposal: string;
+		readonly approveProposal: string;
+		readonly excludeProposal: string;
+		readonly learningTopicLabel: string;
+		readonly learningContentLabel: string;
+		readonly discardProposalsOnReject: string;
+		readonly proposalsApprovedBadge: string;
+		readonly proposalsExcludedBadge: string;
+		readonly proposalAttributionBy: string;
+		readonly committedMemoryNoticeSingular: string;
+		readonly committedMemoryNoticePlural: string;
 		readonly userDirective: string;
 		readonly cancel: string;
 		readonly copyCodeSnippet: string;
@@ -526,6 +540,24 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			stageQa: "QA Verification",
 			stageDocumentation: "Technical Documentation",
 			deliverablesForSignOff: "Deliverables For Sign-Off:",
+			teamMemoryProposalsTitle: "Proposed Team Memory Updates",
+			teamMemoryProposalsDesc:
+				"Review operational learnings discovered during this run before committing to persistent memory.",
+			editProposal: "Edit",
+			saveProposal: "Save",
+			approveProposal: "Approve",
+			excludeProposal: "Exclude",
+			learningTopicLabel: "Topic",
+			learningContentLabel: "Learning",
+			discardProposalsOnReject:
+				"Discard memory proposals on change request",
+			proposalsApprovedBadge: "Approved for Commit",
+			proposalsExcludedBadge: "Excluded",
+			proposalAttributionBy: "by",
+			committedMemoryNoticeSingular:
+				"(1 team memory learning committed)",
+			committedMemoryNoticePlural:
+				"({count} team memory learnings committed)",
 			userDirective: "User Directive:",
 			cancel: "Cancel",
 			copyCodeSnippet: "Copy code snippet",
@@ -826,6 +858,24 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			stageQa: "فحص الجودة",
 			stageDocumentation: "التوثيق الفني",
 			deliverablesForSignOff: "المخرجات المطلوبة للاعتماد:",
+			teamMemoryProposalsTitle: "تحديثات ذاكرة الفريق المقترحة",
+			teamMemoryProposalsDesc:
+				"راجع الدروس التشغيلية المكتشفة خلال هذه الجلسة قبل تثبيتها في الذاكرة الدائمة.",
+			editProposal: "تعديل",
+			saveProposal: "حفظ",
+			approveProposal: "موافقة",
+			excludeProposal: "استبعاد",
+			learningTopicLabel: "الموضوع",
+			learningContentLabel: "الدرس المستفاد",
+			discardProposalsOnReject:
+				"تجاهل مقترحات الذاكرة عند طلب التعديلات",
+			proposalsApprovedBadge: "معتمد للحفظ",
+			proposalsExcludedBadge: "مستبعد",
+			proposalAttributionBy: "بواسطة",
+			committedMemoryNoticeSingular:
+				"(تم اعتماد توثيق واحد في ذاكرة الفريق)",
+			committedMemoryNoticePlural:
+				"(تم اعتماد {count} توثيقات في ذاكرة الفريق)",
 			userDirective: "توجيه المستخدم:",
 			cancel: "إلغاء",
 			copyCodeSnippet: "نسخ الكود",

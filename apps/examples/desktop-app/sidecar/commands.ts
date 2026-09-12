@@ -1457,6 +1457,37 @@ export async function handleCommand(
 		const { deleteCustomPersona } = await import("./personas");
 		return await deleteCustomPersona(workspaceRoot, id, scope);
 	}
+	if (command === "lens_team_memory_commit") {
+		if (!options?.connection?.data?.canApproveTools) {
+			throw new Error("team memory operations require a trusted desktop connection");
+		}
+		const { CommitTeamMemoryInputSchema } = await import("@cline/shared");
+		const parsed = CommitTeamMemoryInputSchema.parse(args ?? {});
+		const { getTeamMemoryService } = await import("./context");
+		const service = await getTeamMemoryService(ctx);
+		const count = await service.commitStagedLearnings(parsed.approvedLearnings);
+		return { ok: true, count };
+	}
+	if (command === "lens_team_memory_clear") {
+		if (!options?.connection?.data?.canApproveTools) {
+			throw new Error("team memory operations require a trusted desktop connection");
+		}
+		const { getTeamMemoryService } = await import("./context");
+		const service = await getTeamMemoryService(ctx);
+		service.clearStagedLearnings();
+		return { ok: true };
+	}
+	if (command === "lens_team_memory_read") {
+		if (!options?.connection?.data?.canApproveTools) {
+			throw new Error("team memory operations require a trusted desktop connection");
+		}
+		const { TeamMemoryCategorySchema } = await import("@cline/shared");
+		const category = TeamMemoryCategorySchema.parse(args?.category);
+		const { getTeamMemoryService } = await import("./context");
+		const service = await getTeamMemoryService(ctx);
+		const content = await service.readCategory(category);
+		return { ok: true, category, content };
+	}
 
 	// ── Session data reading ──────────────────────────────────────────
 	if (command === "read_session_messages") {

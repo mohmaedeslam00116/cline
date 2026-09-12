@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { CheckpointGateCard } from "./checkpoint-gate-card";
 import type {
 	WarRoomCheckpointGate,
+	WarRoomCheckpointMemoryProposal,
 	WarRoomMessage,
 	WarRoomStage,
 } from "./types";
@@ -35,8 +36,15 @@ import type {
 export interface AgentMessageBubbleProps {
 	message: WarRoomMessage;
 	associatedGate?: WarRoomCheckpointGate;
-	onApproveGate?: (gateId: string) => void;
-	onRejectGate?: (gateId: string, feedback: string) => void;
+	onApproveGate?: (
+		gateId: string,
+		approvedLearnings?: WarRoomCheckpointMemoryProposal[],
+	) => void;
+	onRejectGate?: (
+		gateId: string,
+		feedback: string,
+		options?: { discardProposals?: boolean },
+	) => void;
 	onOpenArtifact?: (uri: string) => void;
 	className?: string;
 }

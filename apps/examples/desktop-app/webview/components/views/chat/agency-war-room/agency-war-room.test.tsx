@@ -3,6 +3,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getLensTranslations } from "@/lib/lens-i18n";
 import {
 	AgencyWarRoomPanel,
 	AgentMessageBubble,
@@ -12,6 +13,8 @@ import {
 	type WarRoomMessage,
 	WarRoomProvider,
 } from "./index";
+
+const t = getLensTranslations().ultraAgency;
 
 let container: HTMLDivElement;
 let root: Root;
@@ -74,8 +77,10 @@ describe("Agency War Room Suite", () => {
 		expect(container.textContent).toContain("Approve & Proceed");
 
 		// Click Approve button
-		const approveBtn = container.querySelector("button.bg-emerald-600");
-		expect(approveBtn).not.toBeNull();
+		const approveBtn = Array.from(
+			container.querySelectorAll("button"),
+		).find((b) => b.textContent?.includes(t.approveAndProceed));
+		expect(approveBtn).toBeDefined();
 
 		await act(async () => {
 			approveBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -304,5 +309,344 @@ describe("Agency War Room Suite", () => {
 				ts: Date.now(),
 			});
 		});
+	});
+
+	it("renders CheckpointGateCard with Proposed Team Memory Updates and persona attribution", async () => {
+		const handleApprove = vi.fn();
+		const handleReject = vi.fn();
+
+		const gateWithProposals: WarRoomCheckpointGate = {
+			id: "gate-memory-1",
+			gateNumber: 1,
+			title: "Checkpoint 1: Architecture Sign-off",
+			description: "Reviewing architecture and team memory.",
+			personaId: "atlas",
+			status: "pending",
+			deliverables: [
+				{
+					title: "Arch Spec",
+					type: "Spec",
+					summary: "Architecture spec",
+				},
+			],
+			proposedLearnings: [
+				{
+					id: "prop-1",
+					personaId: "atlas",
+					topic: "ESM Dynamic Import",
+					learning: "Always await dynamic imports in sidecar commands",
+					timestamp: Date.now(),
+					approved: true,
+				},
+				{
+					id: "prop-2",
+					personaId: "athena",
+					topic: "Schema Strictness",
+					learning: "Use z.strictObject to avoid extra field leakage",
+					timestamp: Date.now(),
+					approved: true,
+				},
+			],
+			timestamp: Date.now(),
+		};
+
+		await act(async () => {
+			root.render(
+				<CheckpointGateCard
+					gate={gateWithProposals}
+					onApprove={handleApprove}
+					onReject={handleReject}
+				/>,
+			);
+		});
+
+		expect(container.textContent).toContain("Proposed Team Memory Updates");
+		expect(container.textContent).toContain("ESM Dynamic Import");
+		expect(container.textContent).toContain(
+			"Always await dynamic imports in sidecar commands",
+		);
+		expect(container.textContent).toContain("Schema Strictness");
+		expect(container.textContent).toContain("Atlas");
+		expect(container.textContent).toContain("Athena");
+		expect(container.textContent).toContain("2 / 2");
+		expect(container.textContent).toContain("Approved for Commit");
+	});
+
+	it("allows toggling memory proposal approval and commits only approved proposals", async () => {
+		const handleApprove = vi.fn();
+		const handleReject = vi.fn();
+
+		const gateWithProposals: WarRoomCheckpointGate = {
+			id: "gate-memory-2",
+			gateNumber: 1,
+			title: "Checkpoint 1: PRD Sign-off",
+			description: "Sign off PRD",
+			personaId: "atlas",
+			status: "pending",
+			deliverables: [],
+			proposedLearnings: [
+				{
+					id: "prop-toggle-1",
+					personaId: "atlas",
+					topic: "Keep This",
+					learning: "This learning is accurate",
+					timestamp: Date.now(),
+					approved: true,
+				},
+				{
+					id: "prop-toggle-2",
+					personaId: "vector",
+					topic: "Exclude This",
+					learning: "This learning is hallucinated",
+					timestamp: Date.now(),
+					approved: true,
+				},
+			],
+			timestamp: Date.now(),
+		};
+
+		await act(async () => {
+			root.render(
+				<CheckpointGateCard
+					gate={gateWithProposals}
+					onApprove={handleApprove}
+					onReject={handleReject}
+				/>,
+			);
+		});
+
+		// Toggle off the second proposal ("Exclude This")
+		const toggleBtn2 = container.querySelector(
+			'button[data-testid="toggle-proposal-prop-toggle-2"]',
+		);
+		expect(toggleBtn2).not.toBeNull();
+
+		await act(async () => {
+			toggleBtn2?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		});
+
+		// Proposal 2 is now excluded
+		expect(container.textContent).toContain("1 / 2");
+		expect(container.textContent).toContain("Excluded");
+
+		// Click Approve & Proceed
+		const approveBtn = Array.from(
+			container.querySelectorAll("button"),
+		).find((b) => b.textContent?.includes(t.approveAndProceed));
+		expect(approveBtn).toBeDefined();
+		await act(async () => {
+			approveBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		});
+
+		expect(handleApprove).toHaveBeenCalledWith(
+			"gate-memory-2",
+			expect.arrayContaining([
+				expect.objectContaining({
+					id: "prop-toggle-1",
+					topic: "Keep This",
+					approved: true,
+				}),
+			]),
+		);
+		// Second proposal must NOT be in the approved list
+		const passedList = handleApprove.mock.calls[0][1];
+		expect(passedList).toHaveLength(1);
+		expect(passedList[0].topic).toBe("Keep This");
+	});
+
+	it("allows inline editing of proposal topic and learning in CheckpointGateCard", async () => {
+		const handleApprove = vi.fn();
+		const handleReject = vi.fn();
+
+		const gateWithProposals: WarRoomCheckpointGate = {
+			id: "gate-memory-3",
+			gateNumber: 2,
+			title: "Checkpoint 2: Pre-Ship",
+			description: "Pre-ship audit",
+			personaId: "sentinel",
+			status: "pending",
+			deliverables: [],
+			proposedLearnings: [
+				{
+					id: "prop-edit-1",
+					personaId: "sentinel",
+					topic: "Raw Topic",
+					learning: "Raw learning text",
+					timestamp: Date.now(),
+					approved: true,
+				},
+			],
+			timestamp: Date.now(),
+		};
+
+		await act(async () => {
+			root.render(
+				<CheckpointGateCard
+					gate={gateWithProposals}
+					onApprove={handleApprove}
+					onReject={handleReject}
+				/>,
+			);
+		});
+
+		// Click "Edit" button
+		const editBtn = container.querySelector(
+			'button[aria-label="Edit Raw Topic"]',
+		);
+		expect(editBtn).not.toBeNull();
+
+		await act(async () => {
+			editBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		});
+
+		// Inputs should now be visible
+		const topicInput = container.querySelector(
+			'input[aria-label="Topic"]',
+		) as HTMLInputElement;
+		const learningTextarea = container.querySelector(
+			'textarea[aria-label="Learning"]',
+		) as HTMLTextAreaElement;
+
+		expect(topicInput).not.toBeNull();
+		expect(learningTextarea).not.toBeNull();
+		expect(topicInput.value).toBe("Raw Topic");
+
+		// Modify values
+		await act(async () => {
+			const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+				window.HTMLInputElement.prototype,
+				"value",
+			)?.set;
+			nativeInputValueSetter?.call(topicInput, "Polished Topic");
+			topicInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+			const nativeTextareaValueSetter = Object.getOwnPropertyDescriptor(
+				window.HTMLTextAreaElement.prototype,
+				"value",
+			)?.set;
+			nativeTextareaValueSetter?.call(
+				learningTextarea,
+				"Polished and verified learning content.",
+			);
+			learningTextarea.dispatchEvent(new Event("input", { bubbles: true }));
+		});
+
+		// Click "Save" button
+		const saveBtn = Array.from(container.querySelectorAll("button")).find((b) =>
+			b.textContent?.includes("Save"),
+		);
+		expect(saveBtn).toBeDefined();
+
+		await act(async () => {
+			saveBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		});
+
+		// Verify card now shows the polished text
+		expect(container.textContent).toContain("Polished Topic");
+		expect(container.textContent).toContain(
+			"Polished and verified learning content.",
+		);
+
+		// Click Approve & Proceed
+		const approveBtn = Array.from(
+			container.querySelectorAll("button"),
+		).find((b) => b.textContent?.includes(t.approveAndProceed));
+		expect(approveBtn).toBeDefined();
+		await act(async () => {
+			approveBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		});
+
+		expect(handleApprove).toHaveBeenCalledWith("gate-memory-3", [
+			expect.objectContaining({
+				id: "prop-edit-1",
+				topic: "Polished Topic",
+				learning: "Polished and verified learning content.",
+				approved: true,
+			}),
+		]);
+	});
+
+	it("allows requesting changes with option to discard proposals without modifying memory", async () => {
+		const handleApprove = vi.fn();
+		const handleReject = vi.fn();
+
+		const gateWithProposals: WarRoomCheckpointGate = {
+			id: "gate-memory-4",
+			gateNumber: 1,
+			title: "Checkpoint 1: PRD Sign-off",
+			description: "Sign off PRD",
+			personaId: "atlas",
+			status: "pending",
+			deliverables: [],
+			proposedLearnings: [
+				{
+					id: "prop-reject-1",
+					personaId: "atlas",
+					topic: "Flawed Idea",
+					learning: "Do not persist this",
+					timestamp: Date.now(),
+					approved: true,
+				},
+			],
+			timestamp: Date.now(),
+		};
+
+		await act(async () => {
+			root.render(
+				<CheckpointGateCard
+					gate={gateWithProposals}
+					onApprove={handleApprove}
+					onReject={handleReject}
+				/>,
+			);
+		});
+
+		// Click "Request Changes" button
+		const requestChangesBtn = Array.from(
+			container.querySelectorAll("button"),
+		).find((b) => b.textContent?.includes("Request Changes"));
+		expect(requestChangesBtn).toBeDefined();
+
+		await act(async () => {
+			requestChangesBtn?.dispatchEvent(
+				new MouseEvent("click", { bubbles: true }),
+			);
+		});
+
+		// Enter feedback
+		const feedbackTextarea = container.querySelector(
+			"textarea.resize-none",
+		) as HTMLTextAreaElement;
+		expect(feedbackTextarea).not.toBeNull();
+
+		await act(async () => {
+			const nativeTextareaValueSetter = Object.getOwnPropertyDescriptor(
+				window.HTMLTextAreaElement.prototype,
+				"value",
+			)?.set;
+			nativeTextareaValueSetter?.call(
+				feedbackTextarea,
+				"Revise architecture completely before proceeding.",
+			);
+			feedbackTextarea.dispatchEvent(new Event("input", { bubbles: true }));
+		});
+
+		// Click Send Feedback button
+		const sendFeedbackBtn = Array.from(
+			container.querySelectorAll("button"),
+		).find((b) => b.textContent?.includes(t.sendFeedback));
+		expect(sendFeedbackBtn).toBeDefined();
+
+		await act(async () => {
+			sendFeedbackBtn?.dispatchEvent(
+				new MouseEvent("click", { bubbles: true }),
+			);
+		});
+
+		expect(handleReject).toHaveBeenCalledWith(
+			"gate-memory-4",
+			"Revise architecture completely before proceeding.",
+			{ discardProposals: true },
+		);
 	});
 });

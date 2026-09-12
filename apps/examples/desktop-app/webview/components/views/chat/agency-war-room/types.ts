@@ -55,6 +55,15 @@ export interface WarRoomDeliverable {
 	badge?: string;
 }
 
+export interface WarRoomCheckpointMemoryProposal {
+	id: string;
+	personaId: SpecialistPersonaId;
+	topic: string;
+	learning: string;
+	timestamp: string | number;
+	approved?: boolean;
+}
+
 export interface WarRoomCheckpointGate {
 	id: string;
 	gateNumber: 1 | 2;
@@ -63,6 +72,7 @@ export interface WarRoomCheckpointGate {
 	personaId: SpecialistPersonaId;
 	status: "pending" | "approved" | "rejected";
 	deliverables: WarRoomDeliverable[];
+	proposedLearnings?: WarRoomCheckpointMemoryProposal[];
 	feedback?: string;
 	timestamp: number;
 }
