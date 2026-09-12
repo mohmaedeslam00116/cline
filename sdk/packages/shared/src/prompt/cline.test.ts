@@ -157,4 +157,18 @@ describe("buildClineSystemPrompt mode instructions", () => {
 		);
 		expect(prompt).toContain(".lens/ultra/");
 	});
+
+	it("injects stratified team memory section into rules when teamMemorySummary is provided", () => {
+		const prompt = buildClineSystemPrompt({
+			...BASE_OPTIONS,
+			teamMemorySummary: "### Decisions\n- ADR 0006 accepted\n\n### Conventions\n- Use Bun 1.3.13",
+		});
+
+		expect(prompt).toContain("# Agent Team Institutional Memory (.lens/memory/)");
+		expect(prompt).toContain("<team_memory>");
+		expect(prompt).toContain("ADR 0006 accepted");
+		expect(prompt).toContain("Use Bun 1.3.13");
+		expect(prompt).toContain("read_team_memory(category)");
+		expect(prompt).toContain("record_team_learning(topic, learning)");
+	});
 });

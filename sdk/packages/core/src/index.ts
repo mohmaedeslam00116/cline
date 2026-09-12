@@ -1164,3 +1164,14 @@ export {
 	formatValidationDiagnostics,
 	POST_EDIT_VALIDATION_EXTENSION_NAME,
 } from "./validation";
+export {
+	TeamMemoryService,
+	type TeamMemoryServiceOptions,
+} from "./services/team-memory/team-memory-service";
+export {
+	createReadTeamMemoryTool,
+	createRecordTeamLearningTool,
+	createTeamMemoryTools,
+	type ReadTeamMemoryToolResult,
+	type RecordTeamLearningToolResult,
+} from "./services/team-memory/team-memory-tools";
