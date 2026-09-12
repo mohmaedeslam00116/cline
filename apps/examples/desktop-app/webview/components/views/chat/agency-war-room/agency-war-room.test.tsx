@@ -3,6 +3,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getLensTranslations } from "@/lib/lens-i18n";
 import {
 	AgencyWarRoomPanel,
 	AgentMessageBubble,
@@ -12,6 +13,8 @@ import {
 	type WarRoomMessage,
 	WarRoomProvider,
 } from "./index";
+
+const t = getLensTranslations().ultraAgency;
 
 let container: HTMLDivElement;
 let root: Root;
@@ -74,8 +77,10 @@ describe("Agency War Room Suite", () => {
 		expect(container.textContent).toContain("Approve & Proceed");
 
 		// Click Approve button
-		const approveBtn = container.querySelector("button.bg-emerald-600");
-		expect(approveBtn).not.toBeNull();
+		const approveBtn = Array.from(
+			container.querySelectorAll("button"),
+		).find((b) => b.textContent?.includes(t.approveAndProceed));
+		expect(approveBtn).toBeDefined();
 
 		await act(async () => {
 			approveBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -425,7 +430,10 @@ describe("Agency War Room Suite", () => {
 		expect(container.textContent).toContain("Excluded");
 
 		// Click Approve & Proceed
-		const approveBtn = container.querySelector("button.bg-emerald-600");
+		const approveBtn = Array.from(
+			container.querySelectorAll("button"),
+		).find((b) => b.textContent?.includes(t.approveAndProceed));
+		expect(approveBtn).toBeDefined();
 		await act(async () => {
 			approveBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 		});
@@ -540,7 +548,10 @@ describe("Agency War Room Suite", () => {
 		);
 
 		// Click Approve & Proceed
-		const approveBtn = container.querySelector("button.bg-emerald-600");
+		const approveBtn = Array.from(
+			container.querySelectorAll("button"),
+		).find((b) => b.textContent?.includes(t.approveAndProceed));
+		expect(approveBtn).toBeDefined();
 		await act(async () => {
 			approveBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 		});
@@ -620,10 +631,10 @@ describe("Agency War Room Suite", () => {
 			feedbackTextarea.dispatchEvent(new Event("input", { bubbles: true }));
 		});
 
-		// Click "Send Feedback" button
+		// Click Send Feedback button
 		const sendFeedbackBtn = Array.from(
 			container.querySelectorAll("button"),
-		).find((b) => b.textContent?.includes("Send Feedback"));
+		).find((b) => b.textContent?.includes(t.sendFeedback));
 		expect(sendFeedbackBtn).toBeDefined();
 
 		await act(async () => {

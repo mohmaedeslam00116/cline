@@ -77,11 +77,10 @@ export function createRecordTeamLearningTool(
 		execute: async (input, context) => {
 			try {
 				const personaId =
-					input.personaId ||
 					(context?.metadata?.personaId as string) ||
 					context?.agentId;
 				const proposal = service.stageLearning(input.topic, input.learning, {
-					personaId,
+					...(personaId ? { personaId } : {}),
 				});
 				return {
 					ok: true,

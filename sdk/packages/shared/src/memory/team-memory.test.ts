@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+	ApprovedTeamLearningInputSchema,
+	CommitTeamMemoryInputSchema,
 	DEFAULT_TEAM_MEMORY_BUDGET_CHARS,
 	formatTeamMemoryPromptSection,
 	formatTeamMemorySummary,
@@ -35,19 +37,20 @@ describe("Team Memory Domain & Schemas", () => {
 		expect(missingCategory.success).toBe(false);
 	});
 
-	it("validates RecordTeamLearningInputSchema strictly", () => {
+	it("validates RecordTeamLearningInputSchema strictly and prevents spoofed personaId input", () => {
 		const valid = RecordTeamLearningInputSchema.safeParse({
 			topic: "Vitest Configuration",
 			learning: "Use native ESM config in package.json to avoid warnings",
 		});
 		expect(valid.success).toBe(true);
 
-		const validWithPersona = RecordTeamLearningInputSchema.safeParse({
+		// personaId must NOT be accepted in tool input (derived strictly from context)
+		const spoofedPersona = RecordTeamLearningInputSchema.safeParse({
 			topic: "Vitest Configuration",
 			learning: "Use native ESM config in package.json to avoid warnings",
 			personaId: "sentinel",
 		});
-		expect(validWithPersona.success).toBe(true);
+		expect(spoofedPersona.success).toBe(false);
 
 		const emptyTopic = RecordTeamLearningInputSchema.safeParse({
 			topic: "",
@@ -61,6 +64,31 @@ describe("Team Memory Domain & Schemas", () => {
 			unauthorized: true,
 		});
 		expect(extraField.success).toBe(false);
+	});
+
+	it("validates ApprovedTeamLearningInputSchema and CommitTeamMemoryInputSchema", () => {
+		const validProposal = {
+			id: "prop-1",
+			topic: "Topic",
+			learning: "Learned something important",
+			timestamp: "2026-09-13T00:00:00.000Z",
+			personaId: "sentinel",
+		};
+		expect(ApprovedTeamLearningInputSchema.safeParse(validProposal).success).toBe(true);
+
+		const validCommit = CommitTeamMemoryInputSchema.safeParse({
+			approvedLearnings: [validProposal],
+		});
+		expect(validCommit.success).toBe(true);
+
+		// Rejects non-string types or extra keys
+		const invalidProposal = {
+			id: "prop-1",
+			topic: { bad: "type" },
+			learning: "Learned something",
+			timestamp: "2026-09-13T00:00:00.000Z",
+		};
+		expect(ApprovedTeamLearningInputSchema.safeParse(invalidProposal).success).toBe(false);
 	});
 
 	it("validates StagedTeamLearningSchema with optional id and personaId", () => {

@@ -213,6 +213,33 @@ describe("TeamMemoryService", () => {
 		expect(diskContent).not.toContain("Hallucinated Rule");
 	});
 
+	it("ignores proposals with unknown IDs during reconciliation when staged proposals exist", async () => {
+		await service.initialize();
+
+		const prop = service.stageLearning("Real Topic", "Real learning", {
+			personaId: "sentinel",
+		});
+
+		const result = await service.commitStagedLearnings([
+			{
+				id: "unknown-hacked-id",
+				topic: "Spoofed Topic",
+				learning: "Spoofed Content",
+				timestamp: new Date().toISOString(),
+				personaId: "orion",
+			},
+			prop,
+		]);
+
+		expect(result).toBe(1);
+		const diskContent = await readFile(
+			join(testDir, ".lens", "memory", "learnings.md"),
+			"utf-8",
+		);
+		expect(diskContent).toContain("### Real Topic [sentinel]");
+		expect(diskContent).not.toContain("Spoofed Topic");
+	});
+
 	it("propagates non-ENOENT read errors when generating stratified summary", async () => {
 		const permissionError = Object.assign(new Error("Permission denied"), {
 			code: "EACCES",
@@ -300,22 +327,24 @@ describe("Team Memory Runtime Tools", () => {
 		expect(diskContent).not.toContain("Zod Schema Mismatch");
 	});
 
-	it("record_team_learning records personaId from input or context", async () => {
+	it("record_team_learning derives personaId strictly from execution context", async () => {
 		const recordTool = createRecordTeamLearningTool(service);
 
-		// With input.personaId
+		// With context.metadata.personaId
 		const res1 = await recordTool.execute(
 			{
 				topic: "AST Parser Quirk",
 				learning: "Always handle JSX fragments",
-				personaId: "lyra",
 			},
-			mockToolContext,
+			{
+				...mockToolContext,
+				metadata: { personaId: "lyra" },
+			},
 		);
 		expect(res1.ok).toBe(true);
 		expect(res1.proposal?.personaId).toBe("lyra");
 
-		// With context.metadata.personaId
+		// With fallback to context.agentId
 		const res2 = await recordTool.execute(
 			{
 				topic: "Build Step",
@@ -323,11 +352,12 @@ describe("Team Memory Runtime Tools", () => {
 			},
 			{
 				...mockToolContext,
-				metadata: { personaId: "athena" },
+				agentId: "sentinel",
+				metadata: undefined,
 			},
 		);
 		expect(res2.ok).toBe(true);
-		expect(res2.proposal?.personaId).toBe("athena");
+		expect(res2.proposal?.personaId).toBe("sentinel");
 	});
 
 	it("createTeamMemoryTools returns both tools", () => {

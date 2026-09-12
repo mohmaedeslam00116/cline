@@ -625,7 +625,20 @@ export function createSidecarContext(
 		telemetryUser: observability.telemetryUser,
 		unsubscribeSessionEvents: null,
 		hubBuildMismatch: null,
+		teamMemoryService: null,
 	};
+}
+
+export async function getTeamMemoryService(
+	ctx: SidecarContext,
+): Promise<any> {
+	if (!ctx.teamMemoryService) {
+		const { TeamMemoryService } = await import("@cline/core");
+		ctx.teamMemoryService = new TeamMemoryService({
+			workspaceRoot: ctx.workspaceRoot,
+		});
+	}
+	return ctx.teamMemoryService;
 }
 
 export async function disposeSidecarContext(

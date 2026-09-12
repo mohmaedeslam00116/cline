@@ -245,8 +245,9 @@ export interface LensTranslations {
 		readonly discardProposalsOnReject: string;
 		readonly proposalsApprovedBadge: string;
 		readonly proposalsExcludedBadge: string;
-		readonly sendFeedback: string;
-		readonly feedbackPlaceholder: string;
+		readonly proposalAttributionBy: string;
+		readonly committedMemoryNoticeSingular: string;
+		readonly committedMemoryNoticePlural: string;
 		readonly userDirective: string;
 		readonly cancel: string;
 		readonly copyCodeSnippet: string;
@@ -552,9 +553,11 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 				"Discard memory proposals on change request",
 			proposalsApprovedBadge: "Approved for Commit",
 			proposalsExcludedBadge: "Excluded",
-			sendFeedback: "Send Feedback",
-			feedbackPlaceholder:
-				"Specify required changes or directions for the swarm...",
+			proposalAttributionBy: "by",
+			committedMemoryNoticeSingular:
+				"(1 team memory learning committed)",
+			committedMemoryNoticePlural:
+				"({count} team memory learnings committed)",
 			userDirective: "User Directive:",
 			cancel: "Cancel",
 			copyCodeSnippet: "Copy code snippet",
@@ -868,8 +871,11 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 				"تجاهل مقترحات الذاكرة عند طلب التعديلات",
 			proposalsApprovedBadge: "معتمد للحفظ",
 			proposalsExcludedBadge: "مستبعد",
-			sendFeedback: "إرسال الملاحظات",
-			feedbackPlaceholder: "حدد التعديلات أو التوجيهات المطلوبة للسرب...",
+			proposalAttributionBy: "بواسطة",
+			committedMemoryNoticeSingular:
+				"(تم اعتماد توثيق واحد في ذاكرة الفريق)",
+			committedMemoryNoticePlural:
+				"(تم اعتماد {count} توثيقات في ذاكرة الفريق)",
 			userDirective: "توجيه المستخدم:",
 			cancel: "إلغاء",
 			copyCodeSnippet: "نسخ الكود",

@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import {
+	ApprovedTeamLearningInputSchema,
 	DEFAULT_TEAM_MEMORY_BUDGET_CHARS,
 	formatTeamMemorySummary,
 	type StagedTeamLearning,
@@ -183,7 +184,36 @@ export class TeamMemoryService {
 	async commitStagedLearnings(
 		approvedLearnings?: StagedTeamLearning[],
 	): Promise<number> {
-		const toCommit = approvedLearnings ?? this.stagedLearnings;
+		let toCommit: StagedTeamLearning[] = [];
+
+		if (approvedLearnings) {
+			if (this.stagedLearnings.length > 0) {
+				// Reconcile approved items against legitimate staged proposals
+				for (const item of approvedLearnings) {
+					const match = this.stagedLearnings.find(
+						(s) => s.id && item.id && s.id === item.id,
+					);
+					if (match) {
+						toCommit.push({
+							id: match.id,
+							topic: item.topic.trim() || match.topic,
+							learning: item.learning.trim() || match.learning,
+							timestamp: match.timestamp,
+							personaId: match.personaId,
+						});
+					}
+				}
+			} else {
+				// Fallback when approvedLearnings are passed directly (e.g. seeded in tests or standalone)
+				for (const item of approvedLearnings) {
+					const parsed = ApprovedTeamLearningInputSchema.parse(item);
+					toCommit.push(parsed);
+				}
+			}
+		} else {
+			toCommit = [...this.stagedLearnings];
+		}
+
 		if (toCommit.length === 0) {
 			this.stagedLearnings = [];
 			return 0;

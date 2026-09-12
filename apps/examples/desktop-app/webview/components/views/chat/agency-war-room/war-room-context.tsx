@@ -533,12 +533,6 @@ export function WarRoomProvider({
 			gateId: string,
 			approvedLearnings?: WarRoomCheckpointMemoryProposal[],
 		) => {
-			setCheckpointGates((prev) =>
-				prev.map((gate) =>
-					gate.id === gateId ? { ...gate, status: "approved" as const } : gate,
-				),
-			);
-
 			// Commit approved memory proposals to persistent disk memory via desktop sidecar
 			if (approvedLearnings && approvedLearnings.length > 0) {
 				try {
@@ -555,19 +549,39 @@ export function WarRoomProvider({
 						})),
 					});
 				} catch (error) {
-					console.warn(
+					console.error(
 						"[WarRoom] Failed to commit approved team memory proposals:",
 						error,
 					);
+					// Keep checkpoint gate pending on persistence failure
+					setMessages((prev) => [
+						...prev,
+						{
+							id: `msg-err-${Date.now()}`,
+							senderPersonaId: "sentinel",
+							recipientPersonaId: "all",
+							stage: "strategy",
+							type: "chat",
+							content: `[Security Alert] Failed to commit team memory proposals to disk: ${error instanceof Error ? error.message : String(error)}. Checkpoint approval halted.`,
+							timestamp: Date.now(),
+						},
+					]);
+					return;
 				}
 			}
+
+			setCheckpointGates((prev) =>
+				prev.map((gate) =>
+					gate.id === gateId ? { ...gate, status: "approved" as const } : gate,
+				),
+			);
 
 			const gateTitle =
 				gateId === "gate-1" ? t.checkpointGate1Title : t.checkpointGate2Title;
 
 			const memoryNotice =
 				approvedLearnings && approvedLearnings.length > 0
-					? ` (${approvedLearnings.length} team memory learning${approvedLearnings.length > 1 ? "s" : ""} committed)`
+					? ` ${approvedLearnings.length === 1 ? t.committedMemoryNoticeSingular : t.committedMemoryNoticePlural.replace("{count}", String(approvedLearnings.length))}`
 					: "";
 
 			const approvalMessage: WarRoomMessage = {
@@ -627,6 +641,30 @@ export function WarRoomProvider({
 			feedback: string,
 			options?: { discardProposals?: boolean },
 		) => {
+			if (options?.discardProposals) {
+				try {
+					await desktopClient.invoke("lens_team_memory_clear");
+				} catch (error) {
+					console.error(
+						"[WarRoom] Failed to clear staged team memory proposals:",
+						error,
+					);
+					setMessages((prev) => [
+						...prev,
+						{
+							id: `msg-err-${Date.now()}`,
+							senderPersonaId: "sentinel",
+							recipientPersonaId: "all",
+							stage: "strategy",
+							type: "chat",
+							content: `[Security Alert] Failed to clear team memory proposals: ${error instanceof Error ? error.message : String(error)}.`,
+							timestamp: Date.now(),
+						},
+					]);
+					return;
+				}
+			}
+
 			setCheckpointGates((prev) =>
 				prev.map((gate) =>
 					gate.id === gateId
@@ -639,17 +677,6 @@ export function WarRoomProvider({
 						: gate,
 				),
 			);
-
-			if (options?.discardProposals) {
-				try {
-					await desktopClient.invoke("lens_team_memory_clear");
-				} catch (error) {
-					console.warn(
-						"[WarRoom] Failed to clear staged team memory proposals:",
-						error,
-					);
-				}
-			}
 
 			setMessages((prev) => [
 				...prev,

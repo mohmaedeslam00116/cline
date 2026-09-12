@@ -1458,27 +1458,33 @@ export async function handleCommand(
 		return await deleteCustomPersona(workspaceRoot, id, scope);
 	}
 	if (command === "lens_team_memory_commit") {
-		const workspaceRoot = ctx.workspaceRoot;
-		const { TeamMemoryService } = await import("@cline/core");
-		const service = new TeamMemoryService({ workspaceRoot });
-		const approvedLearnings = Array.isArray(args?.approvedLearnings)
-			? args.approvedLearnings
-			: undefined;
-		const count = await service.commitStagedLearnings(approvedLearnings);
+		if (!options?.connection?.data?.canApproveTools) {
+			throw new Error("team memory operations require a trusted desktop connection");
+		}
+		const { CommitTeamMemoryInputSchema } = await import("@cline/shared");
+		const parsed = CommitTeamMemoryInputSchema.parse(args ?? {});
+		const { getTeamMemoryService } = await import("./context");
+		const service = await getTeamMemoryService(ctx);
+		const count = await service.commitStagedLearnings(parsed.approvedLearnings);
 		return { ok: true, count };
 	}
 	if (command === "lens_team_memory_clear") {
-		const workspaceRoot = ctx.workspaceRoot;
-		const { TeamMemoryService } = await import("@cline/core");
-		const service = new TeamMemoryService({ workspaceRoot });
+		if (!options?.connection?.data?.canApproveTools) {
+			throw new Error("team memory operations require a trusted desktop connection");
+		}
+		const { getTeamMemoryService } = await import("./context");
+		const service = await getTeamMemoryService(ctx);
 		service.clearStagedLearnings();
 		return { ok: true };
 	}
 	if (command === "lens_team_memory_read") {
-		const workspaceRoot = ctx.workspaceRoot;
-		const category = args?.category as "decisions" | "conventions" | "learnings";
-		const { TeamMemoryService } = await import("@cline/core");
-		const service = new TeamMemoryService({ workspaceRoot });
+		if (!options?.connection?.data?.canApproveTools) {
+			throw new Error("team memory operations require a trusted desktop connection");
+		}
+		const { TeamMemoryCategorySchema } = await import("@cline/shared");
+		const category = TeamMemoryCategorySchema.parse(args?.category);
+		const { getTeamMemoryService } = await import("./context");
+		const service = await getTeamMemoryService(ctx);
 		const content = await service.readCategory(category);
 		return { ok: true, category, content };
 	}

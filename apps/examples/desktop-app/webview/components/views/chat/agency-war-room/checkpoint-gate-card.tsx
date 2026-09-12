@@ -285,14 +285,14 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 				<div className="mt-4 pt-3 border-t border-slate-800/80 space-y-2.5">
 					<div className="flex items-center justify-between gap-2">
 						<div className="flex items-center gap-2">
-							<BookOpen className="size-3.5 text-amber-400 shrink-0" />
+							<BookOpen className="size-3.5 text-muted-foreground shrink-0" />
 							<span className="text-[11px] font-mono uppercase text-slate-300 font-semibold tracking-wider">
 								{t.teamMemoryProposalsTitle}
 							</span>
 						</div>
 						<Badge
 							variant="outline"
-							className="text-[10px] font-mono px-2 py-0.5 border-slate-700 bg-slate-900/80 text-amber-400"
+							className="text-[10px] font-mono px-2 py-0.5 border-border bg-[#161616] text-foreground"
 						>
 							{proposals.filter((p) => p.approved).length} / {proposals.length}
 						</Badge>
@@ -319,8 +319,8 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 									className={cn(
 										"p-3 rounded-lg border transition-all duration-200",
 										item.approved
-											? "bg-slate-950/80 border-slate-800/90 shadow-sm"
-											: "bg-slate-950/40 border-slate-900/60 opacity-60",
+											? "bg-[#161616] border-border/80 shadow-sm"
+											: "bg-[#111111]/60 border-border/40 opacity-60",
 									)}
 								>
 									{isEditing ? (
@@ -332,7 +332,7 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 												<Input
 													value={editTopic}
 													onChange={(e) => setEditTopic(e.target.value)}
-													className="text-xs h-7 bg-slate-900 border-slate-700 text-slate-100"
+													className="text-xs h-7 bg-[#111111] border-border text-foreground"
 													aria-label={t.learningTopicLabel}
 												/>
 											</div>
@@ -344,7 +344,7 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 													value={editLearning}
 													onChange={(e) => setEditLearning(e.target.value)}
 													rows={2}
-													className="text-xs bg-slate-900 border-slate-700 text-slate-100 resize-none"
+													className="text-xs bg-[#111111] border-border text-foreground resize-none"
 													aria-label={t.learningContentLabel}
 												/>
 											</div>
@@ -363,7 +363,7 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 													size="sm"
 													onClick={() => handleSaveEdit(item.id)}
 													disabled={!editTopic.trim() || !editLearning.trim()}
-													className="text-xs h-6 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium gap-1"
+													className="text-xs h-6 px-2.5 bg-[#1E1E1E] hover:bg-border text-foreground border border-border/60 font-medium gap-1"
 												>
 													<Check className="size-3" />
 													{t.saveProposal}
@@ -378,7 +378,7 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 													type="button"
 													data-testid={`toggle-proposal-${item.id}`}
 													onClick={() => handleToggleProposal(item.id)}
-													className="mt-0.5 text-slate-400 hover:text-amber-400 cursor-pointer transition-colors shrink-0"
+													className="mt-0.5 text-muted-foreground hover:text-foreground cursor-pointer transition-colors shrink-0"
 													aria-label={
 														item.approved
 															? `${t.excludeProposal}: ${item.topic}`
@@ -386,9 +386,9 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 													}
 												>
 													{item.approved ? (
-														<CheckSquare className="size-4 text-emerald-400" />
+														<CheckSquare className="size-4 text-foreground" />
 													) : (
-														<Square className="size-4 text-slate-600" />
+														<Square className="size-4 text-muted-foreground" />
 													)}
 												</button>
 											)}
@@ -411,7 +411,8 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 															{item.topic}
 														</span>
 														<span className="text-[10px] text-slate-400 font-mono">
-															by {persona?.name || item.personaId} ·{" "}
+															{t.proposalAttributionBy}{" "}
+															{persona?.name || item.personaId} ·{" "}
 															{formattedDate}
 														</span>
 													</div>
@@ -421,8 +422,8 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 															className={cn(
 																"text-[9px] font-mono px-1.5 py-0.2",
 																item.approved
-																	? "border-emerald-500/40 text-emerald-400 bg-emerald-950/30"
-																	: "border-slate-800 text-slate-500 bg-slate-900/50",
+																	? "border-border text-foreground bg-[#1E1E1E]"
+																	: "border-border/40 text-muted-foreground bg-[#111111]",
 															)}
 														>
 															{item.approved
@@ -500,7 +501,7 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 							type="button"
 							size="sm"
 							onClick={handleApprove}
-							className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs shadow-lg shadow-emerald-950/50 border border-emerald-400/30 gap-1.5 transition-all cursor-pointer"
+							className="bg-[#1E1E1E] hover:bg-border text-foreground font-medium text-xs border border-border/60 gap-1.5 transition-all cursor-pointer"
 						>
 							<ShieldCheck className="size-4" />
 							<span>{t.approveAndProceed}</span>
@@ -517,7 +518,7 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 						onChange={(e) => setFeedback(e.target.value)}
 						placeholder={t.feedbackPlaceholder}
 						rows={2}
-						className="text-xs bg-slate-950/80 border-slate-800 text-slate-100 resize-none focus-visible:ring-amber-500/50"
+						className="text-xs bg-[#111111] border-border text-foreground resize-none focus-visible:ring-border"
 					/>
 					<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-1">
 						{proposals.length > 0 ? (
@@ -528,7 +529,7 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 									onChange={(e) =>
 										setDiscardProposalsOnReject(e.target.checked)
 									}
-									className="rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-0"
+									className="rounded border-border bg-[#111111] text-foreground focus:ring-0"
 								/>
 								<span>{t.discardProposalsOnReject}</span>
 							</label>
