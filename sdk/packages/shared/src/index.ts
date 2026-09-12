@@ -597,4 +597,5 @@ export * from "./types";
 export { AUTH_ERROR_PATTERNS, isLikelyAuthError } from "./types/auth";
 export * from "./planning";
 export * from "./ultra/personas";
+export * from "./personas/agent-specification";
 export { initVcr } from "./vcr";

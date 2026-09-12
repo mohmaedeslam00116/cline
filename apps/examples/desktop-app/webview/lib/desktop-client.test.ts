@@ -407,3 +407,81 @@ describe("writeDesktopDebugLog", () => {
 		expect(debugSpy).not.toHaveBeenCalled();
 	});
 });
+
+describe("DesktopClient custom personas", () => {
+	it("invokes lens_personas_list, lens_persona_read, lens_persona_save, lens_persona_delete with correct wire payload", async () => {
+		const { desktopClient } = await import("./desktop-client");
+
+		// 1. listPersonas
+		const listPromise = desktopClient.listPersonas("/test/ws");
+		const socket = await connectLatestSocket();
+		expect(socket.lastRequest()).toMatchObject({
+			command: "lens_personas_list",
+			args: { workspaceRoot: "/test/ws" },
+		});
+		socket.respond({ personas: [] });
+		await expect(listPromise).resolves.toEqual([]);
+
+		// 2. savePersona
+		const savePromise = desktopClient.savePersona(
+			{
+				id: "audit-bot",
+				name: "Audit Bot",
+				version: "1.0.0",
+				description: "Auditor",
+				role: "Auditor",
+				stage: "qa",
+				avatar: { chassis: "sentinel", accentColor: "#10b981" },
+				tools: ["read_file"],
+				toolPolicy: "require_approval",
+			},
+			"Auditor prompt instructions",
+			"workspace",
+			"/test/ws",
+		);
+		await Promise.resolve();
+		expect(socket.lastRequest()).toMatchObject({
+			command: "lens_persona_save",
+			args: {
+				frontmatter: { id: "audit-bot" },
+				instructions: "Auditor prompt instructions",
+				scope: "workspace",
+				workspaceRoot: "/test/ws",
+			},
+		});
+		socket.respond({
+			success: true,
+			filePath: "/test/ws/.lens/personas/audit-bot.agent.md",
+		});
+		await expect(savePromise).resolves.toEqual({
+			success: true,
+			filePath: "/test/ws/.lens/personas/audit-bot.agent.md",
+		});
+
+		// 3. readPersona
+		const readPromise = desktopClient.readPersona("audit-bot", "/test/ws");
+		await Promise.resolve();
+		expect(socket.lastRequest()).toMatchObject({
+			command: "lens_persona_read",
+			args: { id: "audit-bot", workspaceRoot: "/test/ws" },
+		});
+		socket.respond({ persona: { frontmatter: { id: "audit-bot" } } });
+		await expect(readPromise).resolves.toEqual({
+			frontmatter: { id: "audit-bot" },
+		});
+
+		// 4. deletePersona
+		const deletePromise = desktopClient.deletePersona(
+			"audit-bot",
+			"workspace",
+			"/test/ws",
+		);
+		await Promise.resolve();
+		expect(socket.lastRequest()).toMatchObject({
+			command: "lens_persona_delete",
+			args: { id: "audit-bot", scope: "workspace", workspaceRoot: "/test/ws" },
+		});
+		socket.respond({ success: true });
+		await expect(deletePromise).resolves.toEqual({ success: true });
+	});
+});

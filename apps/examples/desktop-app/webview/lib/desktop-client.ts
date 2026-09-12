@@ -5,6 +5,8 @@ import type {
 	AgendaTaskListInput,
 	AgendaTaskRecord,
 	AgendaTaskRunRecord,
+	AgentFrontmatter,
+	CustomPersonaRecord,
 	DesktopDebugLogPayload,
 	HubTaskCreateInput,
 	HubTaskUpdateInput,
@@ -708,6 +710,58 @@ class DesktopClient {
 			{ ...input },
 		);
 		return response.policy;
+	}
+
+	// ── Custom Specialist Personas (ADR 0006) ───────────────────
+	async listPersonas(workspaceRoot?: string): Promise<CustomPersonaRecord[]> {
+		const response = await this.invoke<{ personas: CustomPersonaRecord[] }>(
+			"lens_personas_list",
+			workspaceRoot ? { workspaceRoot } : {},
+		);
+		return response.personas ?? [];
+	}
+
+	async readPersona(
+		id: string,
+		workspaceRoot?: string,
+	): Promise<CustomPersonaRecord | null> {
+		const response = await this.invoke<{ persona: CustomPersonaRecord | null }>(
+			"lens_persona_read",
+			{ id, ...(workspaceRoot ? { workspaceRoot } : {}) },
+		);
+		return response.persona ?? null;
+	}
+
+	async savePersona(
+		frontmatter: AgentFrontmatter,
+		instructions: string,
+		scope: "workspace" | "global" = "workspace",
+		workspaceRoot?: string,
+	): Promise<{ success: boolean; filePath: string }> {
+		return await this.invoke<{ success: boolean; filePath: string }>(
+			"lens_persona_save",
+			{
+				frontmatter,
+				instructions,
+				scope,
+				...(workspaceRoot ? { workspaceRoot } : {}),
+			},
+		);
+	}
+
+	async deletePersona(
+		id: string,
+		scope?: "workspace" | "global",
+		workspaceRoot?: string,
+	): Promise<{ success: boolean }> {
+		return await this.invoke<{ success: boolean }>(
+			"lens_persona_delete",
+			{
+				id,
+				...(scope ? { scope } : {}),
+				...(workspaceRoot ? { workspaceRoot } : {}),
+			},
+		);
 	}
 }
 
