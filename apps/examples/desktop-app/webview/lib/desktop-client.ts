@@ -8,7 +8,7 @@ import type {
 	DesktopDebugLogPayload,
 	HubTaskCreateInput,
 	HubTaskUpdateInput,
-} from "@cline/shared";
+} from "@cline/shared/browser";
 import type {
 	DesktopTransportEvent,
 	DesktopTransportMessage,

@@ -1,6 +1,6 @@
 "use client";
 
-import type { AgendaTaskRecord } from "@cline/shared";
+import type { AgendaTaskRecord } from "@cline/shared/browser";
 import {
 	type AgentQuickAction,
 	AgentQuickActions,
