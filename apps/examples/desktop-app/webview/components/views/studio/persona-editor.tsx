@@ -1,10 +1,14 @@
+import type { AgentStage } from "@cline/shared/browser";
 import { Copy, LockKeyhole, Save } from "lucide-react";
 import { PersonaAvatar } from "@/components/personas/svg/persona-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { LensTranslations } from "@/lib/lens-i18n";
 import { AvatarBuilder } from "./avatar-builder";
+import { CapabilityMatrix } from "./capability-matrix";
+import { MarkdownPromptEditor } from "./markdown-prompt-editor";
 import type { PersonaDraft, PersonaLibraryEntry } from "./persona-studio-model";
 
 interface PersonaEditorProps {
@@ -16,6 +20,15 @@ interface PersonaEditorProps {
 	readonly selectedEntry: PersonaLibraryEntry | undefined;
 	readonly translations: LensTranslations["personaStudio"];
 }
+
+const AGENT_STAGES: readonly AgentStage[] = [
+	"strategy",
+	"research",
+	"architecture",
+	"development",
+	"qa",
+	"documentation",
+];
 
 export function PersonaEditor({
 	draft,
@@ -85,7 +98,14 @@ export function PersonaEditor({
 				</Button>
 			</div>
 
-			<div className="grid grid-cols-2 gap-4 max-[760px]:grid-cols-1">
+			<section aria-labelledby="metadata-title">
+				<h3 className="text-base font-semibold" id="metadata-title">
+					{t.metadataTitle}
+				</h3>
+				<p className="mt-1 text-sm text-muted-foreground">
+					{t.metadataDescription}
+				</p>
+				<div className="mt-4 grid grid-cols-2 gap-4 max-[760px]:grid-cols-1">
 				<label className="grid gap-1.5 text-sm font-medium">
 					{t.idLabel}
 					<Input
@@ -106,7 +126,85 @@ export function PersonaEditor({
 						value={draft.name}
 					/>
 				</label>
-			</div>
+				<label className="grid gap-1.5 text-sm font-medium">
+					{t.versionLabel}
+					<Input
+						aria-label={t.versionLabel}
+						onChange={(event) =>
+							onDraftChange({ ...draft, version: event.target.value })
+						}
+						value={draft.version}
+					/>
+				</label>
+				<label className="grid gap-1.5 text-sm font-medium">
+					{t.roleLabel}
+					<Input
+						aria-label={t.roleLabel}
+						onChange={(event) =>
+							onDraftChange({ ...draft, role: event.target.value })
+						}
+						value={draft.role}
+					/>
+				</label>
+				<label className="grid gap-1.5 text-sm font-medium">
+					{t.stageLabel}
+					<select
+						aria-label={t.stageLabel}
+						className="border-input focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 text-sm outline-none focus-visible:ring-[3px]"
+						onChange={(event) =>
+							onDraftChange({
+								...draft,
+								stage: event.target.value as AgentStage,
+							})
+						}
+						value={draft.stage}
+					>
+						{AGENT_STAGES.map((stage) => (
+							<option key={stage} value={stage}>
+								{stage}
+							</option>
+						))}
+					</select>
+				</label>
+				<label className="grid gap-1.5 text-sm font-medium">
+					{t.modelLabel}
+					<Input
+						aria-label={t.modelLabel}
+						onChange={(event) =>
+							onDraftChange({ ...draft, model: event.target.value })
+						}
+						placeholder={t.modelPlaceholder}
+						value={draft.model}
+					/>
+				</label>
+				<label className="grid gap-1.5 text-sm font-medium">
+					{t.temperatureLabel}
+					<Input
+						aria-label={t.temperatureLabel}
+						max="2"
+						min="0"
+						onChange={(event) =>
+							onDraftChange({ ...draft, temperature: event.target.value })
+						}
+						placeholder={t.temperaturePlaceholder}
+						step="0.1"
+						type="number"
+						value={draft.temperature}
+					/>
+				</label>
+				<label className="col-span-2 grid gap-1.5 text-sm font-medium max-[760px]:col-span-1">
+					{t.descriptionLabel}
+					<Textarea
+						aria-label={t.descriptionLabel}
+						className="min-h-20 resize-y"
+						onChange={(event) =>
+							onDraftChange({ ...draft, description: event.target.value })
+						}
+						value={draft.description}
+					/>
+				</label>
+				</div>
+			</section>
 
 			<AvatarBuilder
 				accentColor={draft.accentColor}
@@ -116,6 +214,20 @@ export function PersonaEditor({
 				}
 				onChassisChange={(chassis) => onDraftChange({ ...draft, chassis })}
 				translations={t}
+			/>
+
+			<CapabilityMatrix
+				onToolsChange={(tools) => onDraftChange({ ...draft, tools })}
+				tools={draft.tools}
+				translations={t}
+			/>
+
+			<MarkdownPromptEditor
+				onChange={(instructions) =>
+					onDraftChange({ ...draft, instructions })
+				}
+				translations={t}
+				value={draft.instructions}
 			/>
 		</form>
 	);

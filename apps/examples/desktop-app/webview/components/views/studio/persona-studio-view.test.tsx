@@ -13,6 +13,9 @@ const clientMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/desktop-client", () => ({ desktopClient: clientMocks }));
+vi.mock("shiki", () => ({
+	codeToHtml: vi.fn(async () => '<pre class="shiki"><code>highlighted</code></pre>'),
+}));
 
 const workspacePersona: CustomPersonaRecord = {
 	frontmatter: {
@@ -43,12 +46,16 @@ async function renderStudio() {
 	});
 }
 
-async function input(element: HTMLInputElement, value: string) {
+async function input(
+	element: HTMLInputElement | HTMLTextAreaElement,
+	value: string,
+) {
 	await act(async () => {
-		const setter = Object.getOwnPropertyDescriptor(
-			HTMLInputElement.prototype,
-			"value",
-		)?.set;
+		const prototype =
+			element instanceof HTMLTextAreaElement
+				? HTMLTextAreaElement.prototype
+				: HTMLInputElement.prototype;
+		const setter = Object.getOwnPropertyDescriptor(prototype, "value")?.set;
 		setter?.call(element, value);
 		element.dispatchEvent(new Event("input", { bubbles: true }));
 		await Promise.resolve();
@@ -153,5 +160,33 @@ describe("PersonaStudioView", () => {
 		for (const preview of previews) {
 			expect(preview.innerHTML).toContain("#ff2bd6");
 		}
+	});
+
+	it("exposes least-privilege capabilities and live Markdown highlighting", async () => {
+		await renderStudio();
+		await vi.waitFor(() => expect(container.textContent).toContain("Orion"));
+		await click(buttonWithText("Duplicate to customize"));
+
+		const editFile = container.querySelector<HTMLButtonElement>(
+			'[aria-label="Allow edit_file"]',
+		);
+		expect(editFile).not.toBeNull();
+		await click(editFile as HTMLButtonElement);
+		expect(container.textContent).toContain("Human approval required");
+		expect(editFile?.getAttribute("data-state")).toBe("checked");
+
+		const prompt = container.querySelector<HTMLTextAreaElement>(
+			'textarea[aria-label="System prompt"]',
+		);
+		expect(prompt).not.toBeNull();
+		await input(
+			prompt as HTMLTextAreaElement,
+			"# Release Auditor\n\n- Verify evidence.",
+		);
+		await vi.waitFor(() => {
+			expect(
+				container.querySelector('[data-highlight-ready="true"]'),
+			).not.toBeNull();
+		});
 	});
 });

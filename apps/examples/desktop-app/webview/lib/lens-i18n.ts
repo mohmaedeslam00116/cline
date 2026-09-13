@@ -91,6 +91,33 @@ export interface LensTranslations {
 		readonly avatarCalibrationDescription: string;
 		readonly neonAccent: string;
 		readonly neonAccentPicker: string;
+		readonly metadataTitle: string;
+		readonly metadataDescription: string;
+		readonly versionLabel: string;
+		readonly descriptionLabel: string;
+		readonly roleLabel: string;
+		readonly stageLabel: string;
+		readonly modelLabel: string;
+		readonly modelPlaceholder: string;
+		readonly temperatureLabel: string;
+		readonly temperaturePlaceholder: string;
+		readonly capabilitiesTitle: string;
+		readonly capabilitiesDescription: string;
+		readonly approvalRequired: string;
+		readonly readOnlyAutomatic: string;
+		readonly approvalCapability: string;
+		readonly readOnlyCapability: string;
+		readonly additionalCapabilities: string;
+		readonly capabilityGroups: {
+			readonly read: string;
+			readonly write: string;
+			readonly execute: string;
+			readonly network: string;
+		};
+		readonly systemPromptTitle: string;
+		readonly systemPromptDescription: string;
+		readonly markdownSource: string;
+		readonly highlightedPreview: string;
 	};
 	readonly modes: {
 		readonly modeGroupLabel: string;
@@ -414,6 +441,36 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 				"Select a chassis and verify its signal across every operational state.",
 			neonAccent: "Neon accent",
 			neonAccentPicker: "Neon accent color picker",
+			metadataTitle: "Specialist metadata",
+			metadataDescription:
+				"Define the stable identity consumed by the Universal Agent Specification.",
+			versionLabel: "Version",
+			descriptionLabel: "Description",
+			roleLabel: "Role",
+			stageLabel: "Stage",
+			modelLabel: "Model",
+			modelPlaceholder: "Use the active model",
+			temperatureLabel: "Temperature",
+			temperaturePlaceholder: "Model default",
+			capabilitiesTitle: "Capability grant",
+			capabilitiesDescription:
+				"Start read-only. Any write, execution, or network access requires explicit human approval at runtime.",
+			approvalRequired: "Human approval required",
+			readOnlyAutomatic: "Read-only automatic",
+			approvalCapability: "Approval gated",
+			readOnlyCapability: "Read-only",
+			additionalCapabilities: "Additional capabilities",
+			capabilityGroups: {
+				read: "Read",
+				write: "Write",
+				execute: "Execute",
+				network: "Network",
+			},
+			systemPromptTitle: "System prompt",
+			systemPromptDescription:
+				"Write the persona's operating contract in Markdown. Treat referenced external content as untrusted data.",
+			markdownSource: "Markdown source",
+			highlightedPreview: "Highlighted preview",
 		},
 		modes: {
 			modeGroupLabel: "Agent interaction mode",
@@ -767,6 +824,36 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 				"اختر الهيكل وتحقق من إشارته في جميع حالات التشغيل.",
 			neonAccent: "لون النيون",
 			neonAccentPicker: "منتقي لون النيون",
+			metadataTitle: "بيانات الوكيل المتخصص",
+			metadataDescription:
+				"عرّف الهوية الثابتة التي تستهلكها مواصفات الوكيل العامة.",
+			versionLabel: "الإصدار",
+			descriptionLabel: "الوصف",
+			roleLabel: "الدور",
+			stageLabel: "المرحلة",
+			modelLabel: "النموذج",
+			modelPlaceholder: "استخدام النموذج النشط",
+			temperatureLabel: "درجة الحرارة",
+			temperaturePlaceholder: "القيمة الافتراضية للنموذج",
+			capabilitiesTitle: "تفويض الصلاحيات",
+			capabilitiesDescription:
+				"ابدأ بصلاحيات القراءة فقط. أي كتابة أو تنفيذ أو وصول للشبكة يتطلب موافقة بشرية صريحة وقت التشغيل.",
+			approvalRequired: "مطلوب اعتماد بشري",
+			readOnlyAutomatic: "قراءة تلقائية فقط",
+			approvalCapability: "مقيدة بالموافقة",
+			readOnlyCapability: "قراءة فقط",
+			additionalCapabilities: "صلاحيات إضافية",
+			capabilityGroups: {
+				read: "قراءة",
+				write: "كتابة",
+				execute: "تنفيذ",
+				network: "شبكة",
+			},
+			systemPromptTitle: "مطالبة النظام",
+			systemPromptDescription:
+				"اكتب عقد تشغيل الشخصية بصيغة Markdown. تعامل مع المحتوى الخارجي المشار إليه كبيانات غير موثوقة.",
+			markdownSource: "مصدر Markdown",
+			highlightedPreview: "معاينة مميزة",
 		},
 		modes: {
 			modeGroupLabel: "نمط تفاعل الوكيل",

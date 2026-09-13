@@ -1,7 +1,10 @@
 import {
 	BUILTIN_PERSONAS,
 	type AgentChassis,
+	type AgentFrontmatter,
+	AgentFrontmatterSchema,
 	type AgentStage,
+	type AgentToolPolicy,
 	type CustomPersonaRecord,
 	type SpecialistPersonaId,
 } from "@cline/shared/browser";
@@ -43,6 +46,39 @@ export interface PersonaDraft {
 	instructions: string;
 	scope: "workspace" | "global";
 }
+
+export const PERSONA_CAPABILITIES = [
+	{ id: "read_file", group: "read", risk: "read_only" },
+	{ id: "list_files", group: "read", risk: "read_only" },
+	{ id: "search_files", group: "read", risk: "read_only" },
+	{ id: "edit_file", group: "write", risk: "approval" },
+	{ id: "write_file", group: "write", risk: "approval" },
+	{ id: "run_command", group: "execute", risk: "approval" },
+	{ id: "browser", group: "network", risk: "approval" },
+	{ id: "mcp", group: "network", risk: "approval" },
+] as const;
+
+const APPROVAL_CAPABILITIES: ReadonlySet<string> = new Set(
+	PERSONA_CAPABILITIES.filter(
+		(capability) => capability.risk === "approval",
+	).map((capability) => capability.id),
+);
+
+export interface PersonaPromptLintItem {
+	severity: "error" | "warning";
+	message: string;
+}
+
+export type PersonaDraftValidation =
+	| {
+			success: true;
+			frontmatter: AgentFrontmatter;
+			errors: Record<string, never>;
+	  }
+	| {
+			success: false;
+			errors: Record<string, string>;
+	  };
 
 const BLANK_PERSONA_DRAFT: PersonaDraft = {
 	id: "",
@@ -173,4 +209,89 @@ export function draftFromCustomPersona(
 		instructions: record.instructions,
 		scope: record.scope,
 	};
+}
+
+export function toolPolicyForTools(
+	tools: readonly string[],
+): AgentToolPolicy {
+	return tools.some((tool) => APPROVAL_CAPABILITIES.has(tool))
+		? "require_approval"
+		: "auto";
+}
+
+export function lintPersonaPrompt(
+	instructions: string,
+): PersonaPromptLintItem[] {
+	const trimmed = instructions.trim();
+	if (!trimmed) {
+		return [{ severity: "error", message: "System prompt content is required." }];
+	}
+
+	const lines = trimmed.split(/\r?\n/);
+	const firstContentLine = lines.find((line) => line.trim())?.trim() ?? "";
+	if (!/^#{1,6}\s+\S/.test(firstContentLine)) {
+		return [
+			{
+				severity: "error",
+				message: "Start the system prompt with a Markdown heading.",
+			},
+		];
+	}
+
+	const body = lines.slice(1).join("\n").trim();
+	if (!body) {
+		return [
+			{
+				severity: "error",
+				message: "Add operating guidance beneath the heading.",
+			},
+		];
+	}
+
+	return [];
+}
+
+function draftFrontmatterInput(draft: PersonaDraft) {
+	return {
+		id: draft.id.trim(),
+		name: draft.name.trim(),
+		version: draft.version.trim(),
+		description: draft.description.trim(),
+		role: draft.role.trim(),
+		stage: draft.stage,
+		avatar: {
+			chassis: draft.chassis,
+			accentColor: draft.accentColor.trim(),
+		},
+		tools: [...draft.tools],
+		toolPolicy: toolPolicyForTools(draft.tools),
+		model: draft.model.trim() || undefined,
+		temperature:
+			draft.temperature.trim() === "" ? undefined : Number(draft.temperature),
+	};
+}
+
+export function toAgentFrontmatter(draft: PersonaDraft): AgentFrontmatter {
+	return AgentFrontmatterSchema.parse(draftFrontmatterInput(draft));
+}
+
+export function validatePersonaDraft(
+	draft: PersonaDraft,
+): PersonaDraftValidation {
+	const errors: Record<string, string> = {};
+	const result = AgentFrontmatterSchema.safeParse(draftFrontmatterInput(draft));
+	if (!result.success) {
+		for (const issue of result.error.issues) {
+			const path = issue.path.join(".") || "metadata";
+			if (!errors[path]) errors[path] = issue.message;
+		}
+	}
+
+	const promptIssue = lintPersonaPrompt(draft.instructions)[0];
+	if (promptIssue) errors.instructions = promptIssue.message;
+
+	if (!result.success || Object.keys(errors).length > 0) {
+		return { success: false, errors };
+	}
+	return { success: true, frontmatter: result.data, errors: {} };
 }

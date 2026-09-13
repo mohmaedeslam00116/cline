@@ -6,6 +6,9 @@ import {
 	draftFromCustomPersona,
 	duplicateBuiltinPersona,
 	filterPersonaLibrary,
+	lintPersonaPrompt,
+	toolPolicyForTools,
+	validatePersonaDraft,
 } from "./persona-studio-model";
 
 const workspacePersona: CustomPersonaRecord = {
@@ -101,5 +104,44 @@ describe("Persona Studio library model", () => {
 		expect(draft.model).toBe("anthropic/claude-sonnet");
 		expect(draft.temperature).toBe("0.4");
 		expect(draft.instructions).toBe(workspacePersona.instructions);
+	});
+
+	it("requires approval for every mutation, execution, or network capability", () => {
+		expect(toolPolicyForTools(["read_file"])).toBe("auto");
+		expect(toolPolicyForTools(["read_file", "edit_file"])).toBe(
+			"require_approval",
+		);
+		expect(toolPolicyForTools(["browser"])).toBe("require_approval");
+	});
+
+	it("lints Markdown prompts deterministically", () => {
+		expect(
+			lintPersonaPrompt("").some((item) => item.severity === "error"),
+		).toBe(true);
+		expect(
+			lintPersonaPrompt("# Operational Guidelines\n\n- Verify evidence first."),
+		).toEqual([]);
+	});
+
+	it("validates metadata through the Universal Agent Specification", () => {
+		const invalid = createBlankPersonaDraft();
+		expect(validatePersonaDraft(invalid).success).toBe(false);
+
+		const valid = {
+			...invalid,
+			id: "release-auditor",
+			name: "Release Auditor",
+			description: "Checks release evidence",
+			role: "QA specialist",
+			instructions: "# Release Auditor\n\nVerify evidence before approval.",
+		};
+		const result = validatePersonaDraft(valid);
+		expect(result.success).toBe(true);
+		if (!result.success) return;
+		expect(result.frontmatter).toMatchObject({
+			id: "release-auditor",
+			toolPolicy: "auto",
+			tools: ["read_file"],
+		});
 	});
 });
