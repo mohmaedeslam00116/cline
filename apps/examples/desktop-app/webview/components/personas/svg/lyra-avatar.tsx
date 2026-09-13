@@ -7,6 +7,7 @@ export const LyraAvatar: React.FC<PersonaAvatarProps> = ({
 	className = "",
 	showGlow = true,
 	showStatusRing = true,
+	accentColor,
 	interactive = false,
 	title,
 	onClick,
@@ -460,6 +461,9 @@ export const LyraAvatar: React.FC<PersonaAvatarProps> = ({
 			>
 				LYRA // RESEARCH
 			</text>
+			{accentColor ? (
+				<rect fill="none" height="120" opacity="0.7" rx="12" stroke={accentColor} strokeWidth="2" width="120" x="4" y="4" />
+			) : null}
 		</svg>
 	);
 };

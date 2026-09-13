@@ -7,9 +7,15 @@ import { PageHeader } from "@/components/views/page-layout";
 import { desktopClient } from "@/lib/desktop-client";
 import { getLensTranslations } from "@/lib/lens-i18n";
 import { PersonaLibraryPanel } from "./persona-library-panel";
+import { PersonaEditor } from "./persona-editor";
 import {
 	buildPersonaLibrary,
+	createBlankPersonaDraft,
+	draftFromCustomPersona,
+	duplicateBuiltinPersona,
 	filterPersonaLibrary,
+	type PersonaDraft,
+	type PersonaLibraryEntry,
 } from "./persona-studio-model";
 
 export interface PersonaStudioViewProps {
@@ -25,6 +31,7 @@ export function PersonaStudioView({ workspaceRoot }: PersonaStudioViewProps) {
 	);
 	const [query, setQuery] = useState("");
 	const [selectedKey, setSelectedKey] = useState("builtin:orion");
+	const [draft, setDraft] = useState<PersonaDraft | null>(null);
 	const requestIdRef = useRef(0);
 
 	const reloadPersonas = useCallback(async () => {
@@ -63,6 +70,23 @@ export function PersonaStudioView({ workspaceRoot }: PersonaStudioViewProps) {
 		query && !filteredEntries.some((entry) => entry.key === selectedKey)
 			? filteredEntries[0]
 			: selectedEntry;
+	const handleSelect = useCallback(
+		(key: PersonaLibraryEntry["key"]) => {
+			const entry = entries.find((candidate) => candidate.key === key);
+			setSelectedKey(key);
+			setDraft(
+				entry?.kind === "custom" ? draftFromCustomPersona(entry.record) : null,
+			);
+		},
+		[entries],
+	);
+	const handleNew = useCallback(() => {
+		setSelectedKey("new");
+		setDraft({
+			...createBlankPersonaDraft(),
+			scope: workspaceRoot ? "workspace" : "global",
+		});
+	}, [workspaceRoot]);
 
 	return (
 		<div className="flex h-full min-h-0 flex-col bg-background">
@@ -79,26 +103,28 @@ export function PersonaStudioView({ workspaceRoot }: PersonaStudioViewProps) {
 					entries={filteredEntries}
 					loadError={loadError}
 					loadState={loadState}
-					onNew={() => setSelectedKey("new")}
+					onNew={handleNew}
 					onRetry={() => void reloadPersonas()}
-					onSelect={setSelectedKey}
+					onSelect={handleSelect}
 					query={query}
 					selectedKey={selectedKey}
 					setQuery={setQuery}
 					translations={t}
 				/>
 				<section className="min-h-0 overflow-auto p-8 max-[760px]:p-4">
-					<div className="mx-auto max-w-4xl">
-						<p className="font-mono text-xs text-muted-foreground">
-							{workspaceRoot || t.globalOnly}
-						</p>
-						<h2 className="mt-5 text-2xl font-semibold tracking-[-0.02em]">
-							{visibleSelectedEntry?.name ?? t.newPersona}
-						</h2>
-						<p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-							{visibleSelectedEntry?.role ?? t.newPersonaDescription}
-						</p>
-					</div>
+					<p className="mx-auto mb-5 max-w-5xl font-mono text-xs text-muted-foreground">
+						{workspaceRoot || t.globalOnly}
+					</p>
+					<PersonaEditor
+						draft={draft}
+						onDraftChange={setDraft}
+						onDuplicate={(entry) => {
+							setSelectedKey("new");
+							setDraft(duplicateBuiltinPersona(entry));
+						}}
+						selectedEntry={visibleSelectedEntry}
+						translations={t}
+					/>
 				</section>
 			</div>
 		</div>

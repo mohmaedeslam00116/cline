@@ -80,6 +80,17 @@ export interface LensTranslations {
 		readonly loadError: string;
 		readonly retry: string;
 		readonly emptyLibrary: string;
+		readonly builtinTemplate: string;
+		readonly builtinTemplateDescription: string;
+		readonly duplicateToCustomize: string;
+		readonly savePersona: string;
+		readonly draftDescription: string;
+		readonly idLabel: string;
+		readonly nameLabel: string;
+		readonly avatarCalibration: string;
+		readonly avatarCalibrationDescription: string;
+		readonly neonAccent: string;
+		readonly neonAccentPicker: string;
 	};
 	readonly modes: {
 		readonly modeGroupLabel: string;
@@ -389,6 +400,20 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			loadError: "Unable to load custom personas.",
 			retry: "Retry",
 			emptyLibrary: "No personas match this filter.",
+			builtinTemplate: "Built-in template",
+			builtinTemplateDescription:
+				"Built-in personas are immutable. Duplicate this template to tune its identity, access, and operating prompt.",
+			duplicateToCustomize: "Duplicate to customize",
+			savePersona: "Save persona",
+			draftDescription:
+				"Configure the specialist contract before it enters an execution loop.",
+			idLabel: "ID",
+			nameLabel: "Name",
+			avatarCalibration: "Avatar calibration",
+			avatarCalibrationDescription:
+				"Select a chassis and verify its signal across every operational state.",
+			neonAccent: "Neon accent",
+			neonAccentPicker: "Neon accent color picker",
 		},
 		modes: {
 			modeGroupLabel: "Agent interaction mode",
@@ -728,6 +753,20 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			loadError: "تعذر تحميل الشخصيات المخصصة.",
 			retry: "إعادة المحاولة",
 			emptyLibrary: "لا توجد شخصيات تطابق عامل التصفية.",
+			builtinTemplate: "قالب مدمج",
+			builtinTemplateDescription:
+				"الشخصيات المدمجة غير قابلة للتعديل. أنشئ نسخة لضبط الهوية والصلاحيات ومطالبة التشغيل.",
+			duplicateToCustomize: "إنشاء نسخة للتخصيص",
+			savePersona: "حفظ الشخصية",
+			draftDescription:
+				"اضبط عقد الوكيل المتخصص قبل دخوله في حلقة التنفيذ.",
+			idLabel: "المعرف",
+			nameLabel: "الاسم",
+			avatarCalibration: "معايرة الصورة الرمزية",
+			avatarCalibrationDescription:
+				"اختر الهيكل وتحقق من إشارته في جميع حالات التشغيل.",
+			neonAccent: "لون النيون",
+			neonAccentPicker: "منتقي لون النيون",
 		},
 		modes: {
 			modeGroupLabel: "نمط تفاعل الوكيل",

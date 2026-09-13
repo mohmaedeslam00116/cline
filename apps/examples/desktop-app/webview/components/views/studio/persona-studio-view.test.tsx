@@ -55,6 +55,26 @@ async function input(element: HTMLInputElement, value: string) {
 	});
 }
 
+async function click(element: Element) {
+	await act(async () => {
+		element.dispatchEvent(
+			new MouseEvent("pointerdown", { bubbles: true, cancelable: true }),
+		);
+		element.dispatchEvent(
+			new MouseEvent("click", { bubbles: true, cancelable: true }),
+		);
+		await Promise.resolve();
+	});
+}
+
+function buttonWithText(text: string, rootNode: ParentNode = container) {
+	const button = [
+		...rootNode.querySelectorAll<HTMLButtonElement>("button"),
+	].find((candidate) => candidate.textContent?.includes(text));
+	expect(button).toBeDefined();
+	return button as HTMLButtonElement;
+}
+
 beforeEach(() => {
 	Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 	clientMocks.listPersonas.mockReset();
@@ -99,5 +119,39 @@ describe("PersonaStudioView", () => {
 
 		expect(container.textContent).not.toContain("Orion");
 		expect(container.textContent).toContain("Audit Bot");
+	});
+
+	it("duplicates immutable built-ins and previews the chosen avatar in every state", async () => {
+		await renderStudio();
+		await vi.waitFor(() => expect(container.textContent).toContain("Orion"));
+
+		await click(buttonWithText("Orion"));
+		expect(container.textContent).toContain("Built-in template");
+		expect(buttonWithText("Save persona").disabled).toBe(true);
+
+		await click(buttonWithText("Duplicate to customize"));
+		const idInput = container.querySelector<HTMLInputElement>('[aria-label="ID"]');
+		const nameInput = container.querySelector<HTMLInputElement>(
+			'[aria-label="Name"]',
+		);
+		expect(idInput?.value).toBe("orion-custom");
+		expect(nameInput?.value).toBe("Orion Custom");
+
+		await click(
+			container.querySelector('[aria-label="Lyra chassis"]') as Element,
+		);
+		const accentInput = container.querySelector<HTMLInputElement>(
+			'[aria-label="Neon accent"]',
+		);
+		expect(accentInput).not.toBeNull();
+		await input(accentInput as HTMLInputElement, "#ff2bd6");
+
+		const previews = container.querySelectorAll(
+			'[data-testid="persona-state-preview"] svg',
+		);
+		expect(previews).toHaveLength(5);
+		for (const preview of previews) {
+			expect(preview.innerHTML).toContain("#ff2bd6");
+		}
 	});
 });

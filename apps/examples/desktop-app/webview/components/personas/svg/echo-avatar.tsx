@@ -7,6 +7,7 @@ export const EchoAvatar: React.FC<PersonaAvatarProps> = ({
 	className = "",
 	showGlow = true,
 	showStatusRing = true,
+	accentColor,
 	interactive = false,
 	title,
 	onClick,
@@ -404,6 +405,9 @@ export const EchoAvatar: React.FC<PersonaAvatarProps> = ({
 			>
 				ECHO // DOCS
 			</text>
+			{accentColor ? (
+				<rect fill="none" height="120" opacity="0.7" rx="12" stroke={accentColor} strokeWidth="2" width="120" x="4" y="4" />
+			) : null}
 		</svg>
 	);
 };
