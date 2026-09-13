@@ -1,5 +1,5 @@
 import type { AgentStage } from "@cline/shared/browser";
-import { Copy, LockKeyhole, Save } from "lucide-react";
+import { Copy, LockKeyhole, Save, Trash2 } from "lucide-react";
 import { PersonaAvatar } from "@/components/personas/svg/persona-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ interface PersonaEditorProps {
 		entry: Extract<PersonaLibraryEntry, { kind: "builtin" }>,
 	) => void;
 	readonly onSave: () => void;
+	readonly onRequestDelete: () => void;
 	readonly selectedEntry: PersonaLibraryEntry | undefined;
 	readonly saving: boolean;
 	readonly translations: LensTranslations["personaStudio"];
@@ -39,6 +40,7 @@ export function PersonaEditor({
 	onDraftChange,
 	onDuplicate,
 	onSave,
+	onRequestDelete,
 	selectedEntry,
 	saving,
 	translations: t,
@@ -130,6 +132,18 @@ export function PersonaEditor({
 							? t.saveAsNewPersona
 							: t.savePersona}
 				</Button>
+				{selectedEntry?.kind === "custom" ? (
+					<Button
+						aria-label={t.deletePersona}
+						disabled={saving}
+						onClick={onRequestDelete}
+						type="button"
+						variant="destructive"
+					>
+						<Trash2 className="size-4" />
+						{t.deletePersona}
+					</Button>
+				) : null}
 				</div>
 			</div>
 

@@ -124,6 +124,13 @@ export interface LensTranslations {
 		readonly savedToWorkspace: string;
 		readonly savedToGlobal: string;
 		readonly saveError: string;
+		readonly deletePersona: string;
+		readonly deletingPersona: string;
+		readonly deleteConfirmation: string;
+		readonly deleteDescription: string;
+		readonly deletedPersona: string;
+		readonly deleteError: string;
+		readonly cancel: string;
 	};
 	readonly modes: {
 		readonly modeGroupLabel: string;
@@ -483,6 +490,14 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			savedToWorkspace: "Saved to Workspace",
 			savedToGlobal: "Saved to Global",
 			saveError: "Unable to save persona",
+			deletePersona: "Delete persona",
+			deletingPersona: "Deleting persona…",
+			deleteConfirmation: "Delete {name} from {scope}?",
+			deleteDescription:
+				"This removes the custom .agent.md file from the selected scope. Built-in templates are never affected.",
+			deletedPersona: "Deleted persona",
+			deleteError: "Unable to delete persona",
+			cancel: "Cancel",
 		},
 		modes: {
 			modeGroupLabel: "Agent interaction mode",
@@ -872,6 +887,14 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			savedToWorkspace: "تم الحفظ في مساحة العمل",
 			savedToGlobal: "تم الحفظ بشكل عام",
 			saveError: "تعذر حفظ الشخصية",
+			deletePersona: "حذف الشخصية",
+			deletingPersona: "جارٍ حذف الشخصية…",
+			deleteConfirmation: "حذف {name} من {scope}؟",
+			deleteDescription:
+				"يؤدي هذا إلى إزالة ملف .agent.md المخصص من النطاق المحدد. لا تتأثر القوالب المدمجة.",
+			deletedPersona: "تم حذف الشخصية",
+			deleteError: "تعذر حذف الشخصية",
+			cancel: "إلغاء",
 		},
 		modes: {
 			modeGroupLabel: "نمط تفاعل الوكيل",

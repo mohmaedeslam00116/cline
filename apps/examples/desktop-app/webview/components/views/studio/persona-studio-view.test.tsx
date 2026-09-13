@@ -104,6 +104,7 @@ beforeEach(() => {
 		filePath: "/home/dev/.lens/personas/audit-bot.agent.md",
 	});
 	clientMocks.deletePersona.mockReset();
+	clientMocks.deletePersona.mockResolvedValue({ success: true });
 	vi.stubGlobal(
 		"ResizeObserver",
 		class {
@@ -259,5 +260,48 @@ describe("PersonaStudioView", () => {
 		expect(
 			container.querySelector<HTMLInputElement>('[aria-label="Name"]')?.value,
 		).toBe("Unsaved Audit Bot");
+	});
+
+	it("deletes only custom personas after exact-scope confirmation", async () => {
+		await renderStudio();
+		await vi.waitFor(() => expect(container.textContent).toContain("Orion"));
+		expect(container.querySelector('[aria-label="Delete persona"]')).toBeNull();
+
+		await click(buttonWithText("Audit Bot"));
+		await click(
+			container.querySelector('[aria-label="Delete persona"]') as Element,
+		);
+		const dialog = document.querySelector('[role="alertdialog"]');
+		expect(dialog?.textContent).toContain("Delete Audit Bot from Workspace?");
+		expect(clientMocks.deletePersona).not.toHaveBeenCalled();
+
+		await click(buttonWithText("Delete persona", dialog as ParentNode));
+		await vi.waitFor(() => {
+			expect(clientMocks.deletePersona).toHaveBeenCalledWith(
+				"audit-bot",
+				"workspace",
+				"/workspace",
+			);
+		});
+	});
+
+	it("keeps a custom persona selected when deletion fails", async () => {
+		clientMocks.deletePersona.mockRejectedValueOnce(new Error("Access denied"));
+		await renderStudio();
+		await vi.waitFor(() => expect(container.textContent).toContain("Audit Bot"));
+		await click(buttonWithText("Audit Bot"));
+		await click(
+			container.querySelector('[aria-label="Delete persona"]') as Element,
+		);
+		const dialog = document.querySelector('[role="alertdialog"]');
+		await click(buttonWithText("Delete persona", dialog as ParentNode));
+
+		await vi.waitFor(() => {
+			expect(container.textContent).toContain("Unable to delete persona");
+			expect(document.querySelector('[role="alertdialog"]')).toBeNull();
+		});
+		expect(
+			container.querySelector<HTMLInputElement>('[aria-label="Name"]')?.value,
+		).toBe("Audit Bot");
 	});
 });

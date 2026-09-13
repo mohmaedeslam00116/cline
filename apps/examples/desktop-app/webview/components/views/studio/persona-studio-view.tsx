@@ -4,6 +4,16 @@ import type { CustomPersonaRecord } from "@cline/shared/browser";
 import { Bot } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PageHeader } from "@/components/views/page-layout";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { desktopClient } from "@/lib/desktop-client";
 import { getLensTranslations } from "@/lib/lens-i18n";
 import { PersonaLibraryPanel } from "./persona-library-panel";
@@ -48,7 +58,12 @@ export function PersonaStudioView({ workspaceRoot }: PersonaStudioViewProps) {
 	const [draft, setDraft] = useState<PersonaDraft | null>(null);
 	const [operationError, setOperationError] = useState<string | null>(null);
 	const [operationNotice, setOperationNotice] = useState<string | null>(null);
-	const [pendingAction, setPendingAction] = useState<"save" | null>(null);
+	const [pendingAction, setPendingAction] = useState<
+		"save" | "delete" | null
+	>(null);
+	const [deleteTarget, setDeleteTarget] = useState<
+		Extract<PersonaLibraryEntry, { kind: "custom" }> | undefined
+	>();
 	const [validationErrors, setValidationErrors] = useState<
 		Record<string, string>
 	>({});
@@ -165,6 +180,32 @@ export function PersonaStudioView({ workspaceRoot }: PersonaStudioViewProps) {
 			setPendingAction(null);
 		}
 	}, [draft, pendingAction, reloadPersonas, t, workspaceRoot]);
+	const handleDelete = useCallback(async () => {
+		if (!deleteTarget || pendingAction) return;
+		const target = deleteTarget;
+		setPendingAction("delete");
+		setOperationError(null);
+		setOperationNotice(null);
+		try {
+			const result = await desktopClient.deletePersona(
+				target.record.frontmatter.id,
+				target.record.scope,
+				workspaceRoot,
+			);
+			if (!result.success) throw new Error("The sidecar rejected the deletion.");
+			await reloadPersonas();
+			setSelectedKey("builtin:orion");
+			setDraft(null);
+			setValidationErrors({});
+			setOperationNotice(`${t.deletedPersona}: ${target.name}`);
+		} catch (error) {
+			const detail = error instanceof Error ? error.message : String(error);
+			setOperationError(`${t.deleteError}: ${detail}`);
+		} finally {
+			setDeleteTarget(undefined);
+			setPendingAction(null);
+		}
+	}, [deleteTarget, pendingAction, reloadPersonas, t, workspaceRoot]);
 
 	return (
 		<div className="flex h-full min-h-0 flex-col bg-background">
@@ -219,15 +260,60 @@ export function PersonaStudioView({ workspaceRoot }: PersonaStudioViewProps) {
 							setOperationError(null);
 							setOperationNotice(null);
 						}}
+						onRequestDelete={() => {
+							if (visibleSelectedEntry?.kind === "custom") {
+								setDeleteTarget(visibleSelectedEntry);
+							}
+						}}
 						onSave={() => void handleSave()}
 						selectedEntry={visibleSelectedEntry}
-						saving={pendingAction === "save"}
+						saving={pendingAction !== null}
 						translations={t}
 						validationErrors={validationErrors}
 						workspaceAvailable={Boolean(workspaceRoot)}
 					/>
 				</section>
 			</div>
+			<AlertDialog
+				onOpenChange={(open) => {
+					if (!open && pendingAction !== "delete") setDeleteTarget(undefined);
+				}}
+				open={Boolean(deleteTarget)}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							{deleteTarget
+								? t.deleteConfirmation
+										.replace("{name}", deleteTarget.name)
+										.replace(
+											"{scope}",
+											deleteTarget.scope === "workspace"
+												? t.workspaceBadge
+												: t.globalBadge,
+										)
+								: t.deletePersona}
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							{t.deleteDescription}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={pendingAction === "delete"}>
+							{t.cancel}
+						</AlertDialogCancel>
+						<AlertDialogAction
+							disabled={pendingAction === "delete"}
+							onClick={(event) => {
+								event.preventDefault();
+								void handleDelete();
+							}}
+						>
+							{pendingAction === "delete" ? t.deletingPersona : t.deletePersona}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }
