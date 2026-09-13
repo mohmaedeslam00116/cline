@@ -64,11 +64,11 @@
 - Export pure `readStoredSquadPresets`, `writeStoredSquadPresets`, `normalizeSquadPreset`, and name-validation helpers.
 - Export a shared hook/model that supports select, save, overwrite, and delete without touching persona files.
 
-- [ ] Write failing tests for round-trip persistence, malformed JSON fallback, duplicate IDs, Orion omission, unavailable persona references, case-insensitive name uniqueness, overwrite, and deletion.
-- [ ] Run `bunx vitest run webview/hooks/use-squad-config.test.tsx webview/lib/squad-presets.test.ts --config vitest.config.ts` from `apps/examples/desktop-app` and confirm red.
-- [ ] Implement the smallest pure storage and normalization layer, then wire the hook to storage and cross-component update events.
-- [ ] Re-run the focused tests and confirm green.
-- [ ] Commit as `feat(ultra): persist named squad presets`.
+- [x] Write failing tests for round-trip persistence, malformed JSON fallback, duplicate IDs, Orion omission, unavailable persona references, case-insensitive name uniqueness, overwrite, and deletion.
+- [x] Run `bunx vitest run webview/hooks/use-squad-config.test.tsx webview/lib/squad-presets.test.ts --config vitest.config.ts` from `apps/examples/desktop-app` and confirm red.
+- [x] Implement the smallest pure storage and normalization layer, then wire the hook to storage and cross-component update events.
+- [x] Re-run the focused tests and confirm green.
+- [x] Commit as `feat(ultra): persist named squad presets`.
 
 ---
 
