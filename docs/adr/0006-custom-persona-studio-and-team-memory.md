@@ -47,6 +47,8 @@ Rather than introducing proprietary configuration formats or opaque vector store
      - Markdown System Prompt Editor with live linting and syntax highlighting.
      - Squad Preset Builder: Assemble and save custom squads (`SquadConfig`) alongside default presets (`core`, `full`, `rapid`).
 
+   Named squad presets persist only persona identifiers and checkpoint preferences in the desktop profile. At Ultra session start, the privileged Sidecar resolves those identifiers from validated built-in and `.agent.md` definitions, applies workspace-over-global precedence, and passes an immutable `ResolvedSquadSnapshot` into the runtime. Orion remains the required leader; every other specialist may be replaced. Persona prompts can narrow behavior but cannot widen the runtime's tool availability or approval policy.
+
 4. **Structured Agent Team Memory (`<workspace>/.lens/memory/`)**:
    - Institutional memory is maintained in transparent, version-controlled Markdown files:
      - `decisions.md`: Architectural decisions, technical trade-offs, and design constraints.

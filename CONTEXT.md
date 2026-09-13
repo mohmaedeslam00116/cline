@@ -52,6 +52,14 @@ _Avoid_: character, sub-prompt
 A configured group of specialist personas selected to collaborate on an Ultra Mode mission, coordinated by an Orchestrator (Orion).
 _Avoid_: agent swarm, crew, team leader
 
+**Squad Preset**:
+A named desktop-profile configuration containing persona identifiers and checkpoint preferences. It references authoritative persona definitions rather than copying their prompts or capabilities. Orion is always present.
+_Avoid_: embedded persona bundle, agent snapshot file
+
+**Resolved Squad Snapshot**:
+The immutable, session-scoped set of validated persona definitions resolved by the Sidecar when an Ultra session starts. Workspace personas override global personas, and the snapshot cannot expand the runtime's available tools or approval rules.
+_Avoid_: browser squad state, live persona files, mutable roster
+
 **Checkpoint Gate**:
 The human-in-the-loop review point orchestrated by the Orchestrator where execution pauses for user validation before advancing to the next engineering milestone.
 _Avoid_: breakpoint, prompt stop, team leader review
