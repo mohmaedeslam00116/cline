@@ -69,6 +69,7 @@ export function AvatarBuilder({
 						<Input
 							aria-label={t.neonAccent}
 							className="w-28 font-mono uppercase"
+							data-studio-field="avatar.accentColor"
 							onChange={(event) => onAccentColorChange(event.target.value)}
 							spellCheck={false}
 							value={accentColor}

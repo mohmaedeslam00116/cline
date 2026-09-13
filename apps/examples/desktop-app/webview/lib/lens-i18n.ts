@@ -118,6 +118,12 @@ export interface LensTranslations {
 		readonly systemPromptDescription: string;
 		readonly markdownSource: string;
 		readonly highlightedPreview: string;
+		readonly saveDestination: string;
+		readonly savingPersona: string;
+		readonly saveAsNewPersona: string;
+		readonly savedToWorkspace: string;
+		readonly savedToGlobal: string;
+		readonly saveError: string;
 	};
 	readonly modes: {
 		readonly modeGroupLabel: string;
@@ -471,6 +477,12 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 				"Write the persona's operating contract in Markdown. Treat referenced external content as untrusted data.",
 			markdownSource: "Markdown source",
 			highlightedPreview: "Highlighted preview",
+			saveDestination: "Save destination",
+			savingPersona: "Saving persona…",
+			saveAsNewPersona: "Save as a new persona",
+			savedToWorkspace: "Saved to Workspace",
+			savedToGlobal: "Saved to Global",
+			saveError: "Unable to save persona",
 		},
 		modes: {
 			modeGroupLabel: "Agent interaction mode",
@@ -854,6 +866,12 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 				"اكتب عقد تشغيل الشخصية بصيغة Markdown. تعامل مع المحتوى الخارجي المشار إليه كبيانات غير موثوقة.",
 			markdownSource: "مصدر Markdown",
 			highlightedPreview: "معاينة مميزة",
+			saveDestination: "وجهة الحفظ",
+			savingPersona: "جارٍ حفظ الشخصية…",
+			saveAsNewPersona: "الحفظ كشخصية جديدة",
+			savedToWorkspace: "تم الحفظ في مساحة العمل",
+			savedToGlobal: "تم الحفظ بشكل عام",
+			saveError: "تعذر حفظ الشخصية",
 		},
 		modes: {
 			modeGroupLabel: "نمط تفاعل الوكيل",

@@ -46,7 +46,9 @@ export function MarkdownPromptEditor({
 					</div>
 					<Textarea
 						aria-label={t.systemPromptTitle}
+						aria-invalid={lintItems.length > 0 ? true : undefined}
 						className="min-h-72 resize-y rounded-none border-0 bg-transparent font-mono text-xs leading-6 shadow-none focus-visible:ring-0"
+						data-studio-field="instructions"
 						onChange={(event) => onChange(event.target.value)}
 						spellCheck
 						value={value}

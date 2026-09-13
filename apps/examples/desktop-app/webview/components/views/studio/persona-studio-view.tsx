@@ -16,11 +16,25 @@ import {
 	filterPersonaLibrary,
 	type PersonaDraft,
 	type PersonaLibraryEntry,
+	validatePersonaDraft,
 } from "./persona-studio-model";
 
 export interface PersonaStudioViewProps {
 	readonly workspaceRoot?: string;
 }
+
+const FIELD_FOCUS_ORDER = [
+	"id",
+	"name",
+	"version",
+	"description",
+	"role",
+	"stage",
+	"model",
+	"temperature",
+	"avatar.accentColor",
+	"instructions",
+] as const;
 
 export function PersonaStudioView({ workspaceRoot }: PersonaStudioViewProps) {
 	const t = getLensTranslations().personaStudio;
@@ -32,6 +46,12 @@ export function PersonaStudioView({ workspaceRoot }: PersonaStudioViewProps) {
 	const [query, setQuery] = useState("");
 	const [selectedKey, setSelectedKey] = useState("builtin:orion");
 	const [draft, setDraft] = useState<PersonaDraft | null>(null);
+	const [operationError, setOperationError] = useState<string | null>(null);
+	const [operationNotice, setOperationNotice] = useState<string | null>(null);
+	const [pendingAction, setPendingAction] = useState<"save" | null>(null);
+	const [validationErrors, setValidationErrors] = useState<
+		Record<string, string>
+	>({});
 	const requestIdRef = useRef(0);
 
 	const reloadPersonas = useCallback(async () => {
@@ -77,6 +97,9 @@ export function PersonaStudioView({ workspaceRoot }: PersonaStudioViewProps) {
 			setDraft(
 				entry?.kind === "custom" ? draftFromCustomPersona(entry.record) : null,
 			);
+			setValidationErrors({});
+			setOperationError(null);
+			setOperationNotice(null);
 		},
 		[entries],
 	);
@@ -86,7 +109,62 @@ export function PersonaStudioView({ workspaceRoot }: PersonaStudioViewProps) {
 			...createBlankPersonaDraft(),
 			scope: workspaceRoot ? "workspace" : "global",
 		});
+		setValidationErrors({});
+		setOperationError(null);
+		setOperationNotice(null);
 	}, [workspaceRoot]);
+	const handleDraftChange = useCallback((nextDraft: PersonaDraft) => {
+		setDraft(nextDraft);
+		setValidationErrors({});
+		setOperationError(null);
+		setOperationNotice(null);
+	}, []);
+	const handleSave = useCallback(async () => {
+		if (!draft || pendingAction) return;
+		const validation = validatePersonaDraft(draft);
+		if (!validation.success) {
+			setValidationErrors(validation.errors);
+			setOperationError(null);
+			setOperationNotice(null);
+			const firstInvalidField = FIELD_FOCUS_ORDER.find(
+				(field) => validation.errors[field],
+			);
+			if (firstInvalidField) {
+				setTimeout(() => {
+					document
+						.querySelector<HTMLElement>(
+							`[data-studio-field="${firstInvalidField}"]`,
+						)
+						?.focus();
+				}, 0);
+			}
+			return;
+		}
+
+		setPendingAction("save");
+		setValidationErrors({});
+		setOperationError(null);
+		setOperationNotice(null);
+		try {
+			const result = await desktopClient.savePersona(
+				validation.frontmatter,
+				draft.instructions,
+				draft.scope,
+				workspaceRoot,
+			);
+			if (!result.success) throw new Error("The sidecar rejected the save.");
+			setSelectedKey(`custom:${draft.scope}:${draft.id}`);
+			setOperationNotice(
+				`${draft.scope === "workspace" ? t.savedToWorkspace : t.savedToGlobal}: ${result.filePath}`,
+			);
+			await reloadPersonas();
+		} catch (error) {
+			const detail = error instanceof Error ? error.message : String(error);
+			setOperationError(`${t.saveError}: ${detail}`);
+		} finally {
+			setPendingAction(null);
+		}
+	}, [draft, pendingAction, reloadPersonas, t, workspaceRoot]);
 
 	return (
 		<div className="flex h-full min-h-0 flex-col bg-background">
@@ -115,15 +193,38 @@ export function PersonaStudioView({ workspaceRoot }: PersonaStudioViewProps) {
 					<p className="mx-auto mb-5 max-w-5xl font-mono text-xs text-muted-foreground">
 						{workspaceRoot || t.globalOnly}
 					</p>
+					{operationNotice ? (
+						<p
+							className="mx-auto mb-5 max-w-5xl rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600 dark:text-emerald-400"
+							role="status"
+						>
+							{operationNotice}
+						</p>
+					) : null}
+					{operationError ? (
+						<p
+							className="mx-auto mb-5 max-w-5xl rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+							role="alert"
+						>
+							{operationError}
+						</p>
+					) : null}
 					<PersonaEditor
 						draft={draft}
-						onDraftChange={setDraft}
+						onDraftChange={handleDraftChange}
 						onDuplicate={(entry) => {
 							setSelectedKey("new");
 							setDraft(duplicateBuiltinPersona(entry));
+							setValidationErrors({});
+							setOperationError(null);
+							setOperationNotice(null);
 						}}
+						onSave={() => void handleSave()}
 						selectedEntry={visibleSelectedEntry}
+						saving={pendingAction === "save"}
 						translations={t}
+						validationErrors={validationErrors}
+						workspaceAvailable={Boolean(workspaceRoot)}
 					/>
 				</section>
 			</div>

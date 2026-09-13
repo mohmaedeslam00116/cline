@@ -74,6 +74,18 @@ async function click(element: Element) {
 	});
 }
 
+async function select(element: HTMLSelectElement, value: string) {
+	await act(async () => {
+		const setter = Object.getOwnPropertyDescriptor(
+			HTMLSelectElement.prototype,
+			"value",
+		)?.set;
+		setter?.call(element, value);
+		element.dispatchEvent(new Event("change", { bubbles: true }));
+		await Promise.resolve();
+	});
+}
+
 function buttonWithText(text: string, rootNode: ParentNode = container) {
 	const button = [
 		...rootNode.querySelectorAll<HTMLButtonElement>("button"),
@@ -87,6 +99,10 @@ beforeEach(() => {
 	clientMocks.listPersonas.mockReset();
 	clientMocks.listPersonas.mockResolvedValue([workspacePersona]);
 	clientMocks.savePersona.mockReset();
+	clientMocks.savePersona.mockResolvedValue({
+		success: true,
+		filePath: "/home/dev/.lens/personas/audit-bot.agent.md",
+	});
 	clientMocks.deletePersona.mockReset();
 	vi.stubGlobal(
 		"ResizeObserver",
@@ -188,5 +204,60 @@ describe("PersonaStudioView", () => {
 				container.querySelector('[data-highlight-ready="true"]'),
 			).not.toBeNull();
 		});
+	});
+
+	it("saves a validated persona to the explicitly selected scope", async () => {
+		await renderStudio();
+		await vi.waitFor(() => expect(container.textContent).toContain("Audit Bot"));
+		await click(buttonWithText("Audit Bot"));
+
+		const name = container.querySelector<HTMLInputElement>('[aria-label="Name"]');
+		expect(name).not.toBeNull();
+		await input(name as HTMLInputElement, "Audit Bot v2");
+		const destination = container.querySelector<HTMLSelectElement>(
+			'[aria-label="Save destination"]',
+		);
+		expect(destination).not.toBeNull();
+		await select(destination as HTMLSelectElement, "global");
+		await click(buttonWithText("Save persona"));
+
+		await vi.waitFor(() => {
+			expect(clientMocks.savePersona).toHaveBeenCalledWith(
+				expect.objectContaining({
+					id: "audit-bot",
+					name: "Audit Bot v2",
+					tools: ["read_file"],
+					toolPolicy: "auto",
+				}),
+				"# Audit Bot\n\nReview release evidence.",
+				"global",
+				"/workspace",
+			);
+		});
+		expect(container.textContent).toContain("Saved to Global");
+	});
+
+	it("blocks invalid saves and keeps failed edits in place", async () => {
+		await renderStudio();
+		await vi.waitFor(() => expect(container.textContent).toContain("New persona"));
+		await click(buttonWithText("New persona"));
+		await click(buttonWithText("Save persona"));
+		expect(clientMocks.savePersona).not.toHaveBeenCalled();
+		await vi.waitFor(() => {
+			expect(document.activeElement?.getAttribute("aria-label")).toBe("ID");
+		});
+
+		await click(buttonWithText("Audit Bot"));
+		const name = container.querySelector<HTMLInputElement>('[aria-label="Name"]');
+		await input(name as HTMLInputElement, "Unsaved Audit Bot");
+		clientMocks.savePersona.mockRejectedValueOnce(new Error("Disk is read-only"));
+		await click(buttonWithText("Save persona"));
+
+		await vi.waitFor(() => {
+			expect(container.textContent).toContain("Unable to save persona");
+		});
+		expect(
+			container.querySelector<HTMLInputElement>('[aria-label="Name"]')?.value,
+		).toBe("Unsaved Audit Bot");
 	});
 });

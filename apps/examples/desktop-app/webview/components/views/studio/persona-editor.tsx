@@ -17,8 +17,12 @@ interface PersonaEditorProps {
 	readonly onDuplicate: (
 		entry: Extract<PersonaLibraryEntry, { kind: "builtin" }>,
 	) => void;
+	readonly onSave: () => void;
 	readonly selectedEntry: PersonaLibraryEntry | undefined;
+	readonly saving: boolean;
 	readonly translations: LensTranslations["personaStudio"];
+	readonly validationErrors: Readonly<Record<string, string>>;
+	readonly workspaceAvailable: boolean;
 }
 
 const AGENT_STAGES: readonly AgentStage[] = [
@@ -34,8 +38,12 @@ export function PersonaEditor({
 	draft,
 	onDraftChange,
 	onDuplicate,
+	onSave,
 	selectedEntry,
+	saving,
 	translations: t,
+	validationErrors,
+	workspaceAvailable,
 }: PersonaEditorProps) {
 	if (selectedEntry?.kind === "builtin" && !draft) {
 		return (
@@ -92,10 +100,37 @@ export function PersonaEditor({
 						{t.draftDescription}
 					</p>
 				</div>
-				<Button type="button">
+				<div className="flex flex-wrap items-end gap-3">
+					<label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
+						{t.saveDestination}
+						<select
+							aria-label={t.saveDestination}
+							className="border-input focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-[3px]"
+							disabled={saving}
+							onChange={(event) =>
+								onDraftChange({
+									...draft,
+									scope: event.target.value as "workspace" | "global",
+								})
+							}
+							value={draft.scope}
+						>
+							<option disabled={!workspaceAvailable} value="workspace">
+								{t.workspaceBadge}
+							</option>
+							<option value="global">{t.globalBadge}</option>
+						</select>
+					</label>
+				<Button disabled={saving} onClick={onSave} type="button">
 					<Save className="size-4" />
-					{t.savePersona}
+					{saving
+						? t.savingPersona
+						: selectedEntry?.kind === "custom" &&
+							selectedEntry.id !== draft.id
+							? t.saveAsNewPersona
+							: t.savePersona}
 				</Button>
+				</div>
 			</div>
 
 			<section aria-labelledby="metadata-title">
@@ -110,46 +145,74 @@ export function PersonaEditor({
 					{t.idLabel}
 					<Input
 						aria-label={t.idLabel}
+						aria-invalid={validationErrors.id ? true : undefined}
+						data-studio-field="id"
 						onChange={(event) =>
 							onDraftChange({ ...draft, id: event.target.value })
 						}
 						value={draft.id}
 					/>
+					{validationErrors.id ? (
+						<span className="text-xs text-destructive">{validationErrors.id}</span>
+					) : null}
 				</label>
 				<label className="grid gap-1.5 text-sm font-medium">
 					{t.nameLabel}
 					<Input
 						aria-label={t.nameLabel}
+						aria-invalid={validationErrors.name ? true : undefined}
+						data-studio-field="name"
 						onChange={(event) =>
 							onDraftChange({ ...draft, name: event.target.value })
 						}
 						value={draft.name}
 					/>
+					{validationErrors.name ? (
+						<span className="text-xs text-destructive">
+							{validationErrors.name}
+						</span>
+					) : null}
 				</label>
 				<label className="grid gap-1.5 text-sm font-medium">
 					{t.versionLabel}
 					<Input
 						aria-label={t.versionLabel}
+						aria-invalid={validationErrors.version ? true : undefined}
+						data-studio-field="version"
 						onChange={(event) =>
 							onDraftChange({ ...draft, version: event.target.value })
 						}
 						value={draft.version}
 					/>
+					{validationErrors.version ? (
+						<span className="text-xs text-destructive">
+							{validationErrors.version}
+						</span>
+					) : null}
 				</label>
 				<label className="grid gap-1.5 text-sm font-medium">
 					{t.roleLabel}
 					<Input
 						aria-label={t.roleLabel}
+						aria-invalid={validationErrors.role ? true : undefined}
+						data-studio-field="role"
 						onChange={(event) =>
 							onDraftChange({ ...draft, role: event.target.value })
 						}
 						value={draft.role}
 					/>
+					{validationErrors.role ? (
+						<span className="text-xs text-destructive">
+							{validationErrors.role}
+						</span>
+					) : null}
 				</label>
 				<label className="grid gap-1.5 text-sm font-medium">
 					{t.stageLabel}
 					<select
 						aria-label={t.stageLabel}
+						aria-invalid={validationErrors.stage ? true : undefined}
+						data-studio-field="stage"
 						className="border-input focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 text-sm outline-none focus-visible:ring-[3px]"
 						onChange={(event) =>
 							onDraftChange({
@@ -170,6 +233,8 @@ export function PersonaEditor({
 					{t.modelLabel}
 					<Input
 						aria-label={t.modelLabel}
+						aria-invalid={validationErrors.model ? true : undefined}
+						data-studio-field="model"
 						onChange={(event) =>
 							onDraftChange({ ...draft, model: event.target.value })
 						}
@@ -181,6 +246,8 @@ export function PersonaEditor({
 					{t.temperatureLabel}
 					<Input
 						aria-label={t.temperatureLabel}
+						aria-invalid={validationErrors.temperature ? true : undefined}
+						data-studio-field="temperature"
 						max="2"
 						min="0"
 						onChange={(event) =>
@@ -191,17 +258,29 @@ export function PersonaEditor({
 						type="number"
 						value={draft.temperature}
 					/>
+					{validationErrors.temperature ? (
+						<span className="text-xs text-destructive">
+							{validationErrors.temperature}
+						</span>
+					) : null}
 				</label>
 				<label className="col-span-2 grid gap-1.5 text-sm font-medium max-[760px]:col-span-1">
 					{t.descriptionLabel}
 					<Textarea
 						aria-label={t.descriptionLabel}
+						aria-invalid={validationErrors.description ? true : undefined}
 						className="min-h-20 resize-y"
+						data-studio-field="description"
 						onChange={(event) =>
 							onDraftChange({ ...draft, description: event.target.value })
 						}
 						value={draft.description}
 					/>
+					{validationErrors.description ? (
+						<span className="text-xs text-destructive">
+							{validationErrors.description}
+						</span>
+					) : null}
 				</label>
 				</div>
 			</section>
