@@ -89,11 +89,11 @@
 - Convert built-ins and `CustomPersonaRecord` values into one display/runtime-safe shape without duplicating authoring logic.
 - Expose selection operations that lock Orion, allow every other persona to toggle, and identify unavailable preset references.
 
-- [ ] Write failing hook/model tests for built-ins during loading, workspace/global custom entries, workspace precedence, retry after error, Orion locking, non-Orion replacement, and unavailable references.
-- [ ] Run the focused tests and confirm the missing catalog/model behavior fails.
-- [ ] Implement the catalog adapter and selection model with stable memoized maps and neutral unknown identity data.
-- [ ] Re-run focused tests and confirm green.
-- [ ] Commit as `feat(ultra): add shared persona catalog`.
+- [x] Write failing hook/model tests for built-ins during loading, workspace/global custom entries, workspace precedence, retry after error, Orion locking, non-Orion replacement, and unavailable references.
+- [x] Run the focused tests and confirm the missing catalog/model behavior fails.
+- [x] Implement the catalog adapter and selection model with stable memoized maps and neutral unknown identity data.
+- [x] Re-run focused tests and confirm green.
+- [x] Commit as `feat(ultra): add shared persona catalog`.
 
 ---
 

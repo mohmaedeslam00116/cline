@@ -400,6 +400,23 @@ function getBuiltinAgencyPromptPersona(
 	};
 }
 
+export function getBuiltinRuntimePersona(
+	id: BuiltinPersonaId,
+): RuntimePersonaDefinition {
+	const persona = BUILTIN_PERSONAS[id];
+	return {
+		id,
+		name: persona.name,
+		role: persona.role,
+		stage: BUILTIN_PERSONA_STAGES[id],
+		avatar: { chassis: id, accentColor: persona.color },
+		instructions: persona.systemPromptSnippet,
+		tools: [],
+		toolPolicy: "auto",
+		scope: "builtin",
+	};
+}
+
 function getRuntimeAgencyPromptPersona(
 	persona: RuntimePersonaDefinition,
 ): AgencyPromptPersona {
