@@ -4,6 +4,7 @@
 
 ### Added
 
+- **Persona Studio & Cyberpunk Avatar Customizer**: Added a dedicated desktop Persona Studio for discovering built-in and custom Specialist Personas, duplicating immutable templates, calibrating all eight vector chassis across five operational states, editing Universal Agent Specification metadata and Markdown prompts, enforcing least-privilege tool policies, and safely saving or deleting workspace/global `.agent.md` files.
 - **Structured Agent Team Memory Engine & Runtime Tools**: Added persistent institutional memory under `<workspace>/.lens/memory/` (`decisions.md`, `conventions.md`, `learnings.md`) with `TeamMemoryService` in `@cline/core`. Provides token-budgeted stratified summaries in system prompt rules (`<team_memory>`) to keep agents in the smart zone (~150k tokens), on-demand historical section retrieval via `read_team_memory`, and in-memory staged proposals via `record_team_learning` governed by Checkpoint Gates without direct disk mutations during execution.
 - **Universal Agent Specification (.agent.md) & Hybrid Persona Storage**: Implemented the universal open Agent Specification standard (YAML frontmatter + Markdown body) in `@cline/shared` with strict Zod validation, error diagnostics, and round-trip serialization. Added a hybrid storage resolver in the desktop sidecar resolving custom personas across `<workspace>/.lens/personas/` and `~/.lens/personas/` with workspace precedence, exposed via `lens_personas_*` IPC commands and `desktopClient` methods.
 - **Subagent Event Bridge & Live Streaming in Agency War Room**: Bridged child agent sessions (`spawn_agent` / `createDelegatedAgent`) to the Desktop Sidecar over the `/transport` WebSocket (`agency_war_room_event`), isolating subagent dialogue, tool execution telemetry, and artifacts from primary user chat while streaming live activity states (`thinking`, `speaking`, `working`, `checkpoint`) to the split-screen Agency War Room.
@@ -18,6 +19,7 @@
 
 ### Fixed
 
+- **Desktop War Room launcher**: Restored the missing context binding used by the chat header so the desktop shell renders instead of failing before top-level views can open.
 - **Ultra Mode Prompt Coordinator Normalization**: Fixed `formatModePrompt` to preserve `<user_input mode="ultra">` instead of falling back to `act`, ensuring the LLM activates the Ultra Mode multi-agent specialist SOP.
 
 

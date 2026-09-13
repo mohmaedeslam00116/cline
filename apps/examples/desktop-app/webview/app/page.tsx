@@ -717,6 +717,7 @@ function ChatThreadPane({
 	const {
 		isOpen: warRoomOpen,
 		viewMode: warRoomViewMode,
+		openWarRoom,
 		closeWarRoom,
 		setSessionId: setWarRoomSessionId,
 	} = useWarRoom();

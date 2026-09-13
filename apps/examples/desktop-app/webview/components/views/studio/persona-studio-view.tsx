@@ -3,7 +3,6 @@
 import type { CustomPersonaRecord } from "@cline/shared/browser";
 import { Bot } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PageHeader } from "@/components/views/page-layout";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -14,10 +13,11 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { PageHeader } from "@/components/views/page-layout";
 import { desktopClient } from "@/lib/desktop-client";
 import { getLensTranslations } from "@/lib/lens-i18n";
-import { PersonaLibraryPanel } from "./persona-library-panel";
 import { PersonaEditor } from "./persona-editor";
+import { PersonaLibraryPanel } from "./persona-library-panel";
 import {
 	buildPersonaLibrary,
 	createBlankPersonaDraft,
@@ -48,7 +48,9 @@ const FIELD_FOCUS_ORDER = [
 
 export function PersonaStudioView({ workspaceRoot }: PersonaStudioViewProps) {
 	const t = getLensTranslations().personaStudio;
-	const [customPersonas, setCustomPersonas] = useState<CustomPersonaRecord[]>([]);
+	const [customPersonas, setCustomPersonas] = useState<CustomPersonaRecord[]>(
+		[],
+	);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [loadState, setLoadState] = useState<"loading" | "ready" | "error">(
 		"loading",
@@ -58,9 +60,9 @@ export function PersonaStudioView({ workspaceRoot }: PersonaStudioViewProps) {
 	const [draft, setDraft] = useState<PersonaDraft | null>(null);
 	const [operationError, setOperationError] = useState<string | null>(null);
 	const [operationNotice, setOperationNotice] = useState<string | null>(null);
-	const [pendingAction, setPendingAction] = useState<
-		"save" | "delete" | null
-	>(null);
+	const [pendingAction, setPendingAction] = useState<"save" | "delete" | null>(
+		null,
+	);
 	const [deleteTarget, setDeleteTarget] = useState<
 		Extract<PersonaLibraryEntry, { kind: "custom" }> | undefined
 	>();
@@ -192,7 +194,8 @@ export function PersonaStudioView({ workspaceRoot }: PersonaStudioViewProps) {
 				target.record.scope,
 				workspaceRoot,
 			);
-			if (!result.success) throw new Error("The sidecar rejected the deletion.");
+			if (!result.success)
+				throw new Error("The sidecar rejected the deletion.");
 			await reloadPersonas();
 			setSelectedKey("builtin:orion");
 			setDraft(null);
@@ -217,7 +220,7 @@ export function PersonaStudioView({ workspaceRoot }: PersonaStudioViewProps) {
 					title={t.title}
 				/>
 			</div>
-			<div className="grid min-h-0 flex-1 grid-cols-[minmax(17rem,22rem)_minmax(0,1fr)] max-[760px]:grid-cols-1">
+			<div className="grid min-h-0 flex-1 grid-cols-[minmax(17rem,22rem)_minmax(0,1fr)] max-[760px]:grid-cols-1 max-[760px]:grid-rows-[minmax(14rem,38vh)_minmax(0,1fr)]">
 				<PersonaLibraryPanel
 					entries={filteredEntries}
 					loadError={loadError}
@@ -235,12 +238,9 @@ export function PersonaStudioView({ workspaceRoot }: PersonaStudioViewProps) {
 						{workspaceRoot || t.globalOnly}
 					</p>
 					{operationNotice ? (
-						<p
-							className="mx-auto mb-5 max-w-5xl rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600 dark:text-emerald-400"
-							role="status"
-						>
+						<output className="mx-auto mb-5 max-w-5xl rounded-lg border border-success-border bg-success-surface px-3 py-2 text-sm text-success-text">
 							{operationNotice}
-						</p>
+						</output>
 					) : null}
 					{operationError ? (
 						<p

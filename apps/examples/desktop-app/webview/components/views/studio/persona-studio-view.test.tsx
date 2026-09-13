@@ -14,7 +14,9 @@ const clientMocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/desktop-client", () => ({ desktopClient: clientMocks }));
 vi.mock("shiki", () => ({
-	codeToHtml: vi.fn(async () => '<pre class="shiki"><code>highlighted</code></pre>'),
+	codeToTokensBase: vi.fn(async () => [
+		[{ color: "#ffffff", content: "highlighted" }],
+	]),
 }));
 
 const workspacePersona: CustomPersonaRecord = {
@@ -154,7 +156,8 @@ describe("PersonaStudioView", () => {
 		expect(buttonWithText("Save persona").disabled).toBe(true);
 
 		await click(buttonWithText("Duplicate to customize"));
-		const idInput = container.querySelector<HTMLInputElement>('[aria-label="ID"]');
+		const idInput =
+			container.querySelector<HTMLInputElement>('[aria-label="ID"]');
 		const nameInput = container.querySelector<HTMLInputElement>(
 			'[aria-label="Name"]',
 		);
@@ -209,10 +212,14 @@ describe("PersonaStudioView", () => {
 
 	it("saves a validated persona to the explicitly selected scope", async () => {
 		await renderStudio();
-		await vi.waitFor(() => expect(container.textContent).toContain("Audit Bot"));
+		await vi.waitFor(() =>
+			expect(container.textContent).toContain("Audit Bot"),
+		);
 		await click(buttonWithText("Audit Bot"));
 
-		const name = container.querySelector<HTMLInputElement>('[aria-label="Name"]');
+		const name = container.querySelector<HTMLInputElement>(
+			'[aria-label="Name"]',
+		);
 		expect(name).not.toBeNull();
 		await input(name as HTMLInputElement, "Audit Bot v2");
 		const destination = container.querySelector<HTMLSelectElement>(
@@ -240,18 +247,30 @@ describe("PersonaStudioView", () => {
 
 	it("blocks invalid saves and keeps failed edits in place", async () => {
 		await renderStudio();
-		await vi.waitFor(() => expect(container.textContent).toContain("New persona"));
+		await vi.waitFor(() =>
+			expect(container.textContent).toContain("New persona"),
+		);
 		await click(buttonWithText("New persona"));
 		await click(buttonWithText("Save persona"));
 		expect(clientMocks.savePersona).not.toHaveBeenCalled();
 		await vi.waitFor(() => {
 			expect(document.activeElement?.getAttribute("aria-label")).toBe("ID");
 		});
+		const idField =
+			container.querySelector<HTMLInputElement>('[aria-label="ID"]');
+		expect(idField?.getAttribute("aria-describedby")).toBe("persona-id-error");
+		expect(container.querySelector("#persona-id-error")?.textContent).not.toBe(
+			"",
+		);
 
 		await click(buttonWithText("Audit Bot"));
-		const name = container.querySelector<HTMLInputElement>('[aria-label="Name"]');
+		const name = container.querySelector<HTMLInputElement>(
+			'[aria-label="Name"]',
+		);
 		await input(name as HTMLInputElement, "Unsaved Audit Bot");
-		clientMocks.savePersona.mockRejectedValueOnce(new Error("Disk is read-only"));
+		clientMocks.savePersona.mockRejectedValueOnce(
+			new Error("Disk is read-only"),
+		);
 		await click(buttonWithText("Save persona"));
 
 		await vi.waitFor(() => {
@@ -288,7 +307,9 @@ describe("PersonaStudioView", () => {
 	it("keeps a custom persona selected when deletion fails", async () => {
 		clientMocks.deletePersona.mockRejectedValueOnce(new Error("Access denied"));
 		await renderStudio();
-		await vi.waitFor(() => expect(container.textContent).toContain("Audit Bot"));
+		await vi.waitFor(() =>
+			expect(container.textContent).toContain("Audit Bot"),
+		);
 		await click(buttonWithText("Audit Bot"));
 		await click(
 			container.querySelector('[aria-label="Delete persona"]') as Element,

@@ -26,8 +26,15 @@ export const EchoAvatar: React.FC<PersonaAvatarProps> = ({
 				interactive ? "hover:scale-105 cursor-pointer" : ""
 			} ${className}`}
 			onClick={onClick}
-			role="img"
-			aria-label={title}
+			onKeyDown={(event) => {
+				if (onClick && (event.key === "Enter" || event.key === " ")) {
+					event.preventDefault();
+					onClick();
+				}
+			}}
+			role={onClick ? "button" : "img"}
+			tabIndex={onClick ? 0 : undefined}
+			aria-label={title ?? (onClick ? "Echo avatar" : undefined)}
 			xmlns="http://www.w3.org/2000/svg"
 		>
 			<defs>
@@ -403,10 +410,20 @@ export const EchoAvatar: React.FC<PersonaAvatarProps> = ({
 				fontWeight="bold"
 				letterSpacing="1.5"
 			>
-				ECHO // DOCS
+				{"ECHO // DOCS"}
 			</text>
 			{accentColor ? (
-				<rect fill="none" height="120" opacity="0.7" rx="12" stroke={accentColor} strokeWidth="2" width="120" x="4" y="4" />
+				<rect
+					fill="none"
+					height="120"
+					opacity="0.7"
+					rx="12"
+					stroke={accentColor}
+					strokeWidth="2"
+					width="120"
+					x="4"
+					y="4"
+				/>
 			) : null}
 		</svg>
 	);

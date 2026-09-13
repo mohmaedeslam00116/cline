@@ -1,5 +1,5 @@
-import { codeToHtml } from "shiki";
 import { useEffect, useState } from "react";
+import { codeToTokensBase } from "shiki";
 import { Textarea } from "@/components/ui/textarea";
 import type { LensTranslations } from "@/lib/lens-i18n";
 import { lintPersonaPrompt } from "./persona-studio-model";
@@ -15,16 +15,18 @@ export function MarkdownPromptEditor({
 	translations: t,
 	value,
 }: MarkdownPromptEditorProps) {
-	const [highlightedHtml, setHighlightedHtml] = useState("");
+	const [highlightedTokens, setHighlightedTokens] = useState<
+		Awaited<ReturnType<typeof codeToTokensBase>>
+	>([]);
 	const lintItems = lintPersonaPrompt(value);
 
 	useEffect(() => {
 		let active = true;
-		void codeToHtml(value || " ", {
+		void codeToTokensBase(value || " ", {
 			lang: "markdown",
 			theme: "github-dark-default",
-		}).then((html) => {
-			if (active) setHighlightedHtml(html);
+		}).then((tokens) => {
+			if (active) setHighlightedTokens(tokens);
 		});
 		return () => {
 			active = false;
@@ -54,16 +56,28 @@ export function MarkdownPromptEditor({
 						value={value}
 					/>
 				</div>
-				<div className="min-h-72 bg-[#0d1117] text-slate-100">
+				<div className="min-h-72 bg-[#111111] text-slate-100">
 					<div className="border-b border-white/10 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-400">
 						{t.highlightedPreview}
 					</div>
-					<div
+					<pre
 						aria-hidden="true"
-						className="h-72 overflow-auto p-3 text-xs leading-6 [&_.shiki]:!bg-transparent [&_code]:whitespace-pre-wrap"
-						data-highlight-ready={highlightedHtml ? "true" : "false"}
-						dangerouslySetInnerHTML={{ __html: highlightedHtml }}
-					/>
+						className="h-72 overflow-auto whitespace-pre-wrap p-3 font-mono text-xs leading-6"
+						data-highlight-ready={highlightedTokens.length ? "true" : "false"}
+					>
+						{highlightedTokens.map((line, lineIndex) => (
+							<span className="block min-h-6" key={`line-${lineIndex}`}>
+								{line.map((token, tokenIndex) => (
+									<span
+										key={`${lineIndex}-${tokenIndex}`}
+										style={{ color: token.color }}
+									>
+										{token.content}
+									</span>
+								))}
+							</span>
+						))}
+					</pre>
 				</div>
 			</div>
 			<div aria-live="polite" className="mt-2 min-h-5">

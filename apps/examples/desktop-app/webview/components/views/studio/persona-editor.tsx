@@ -92,8 +92,11 @@ export function PersonaEditor({
 	if (!draft) return null;
 
 	return (
-		<form className="mx-auto max-w-5xl space-y-8" onSubmit={(event) => event.preventDefault()}>
-			<div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5">
+		<form
+			className="mx-auto max-w-5xl space-y-8"
+			onSubmit={(event) => event.preventDefault()}
+		>
+			<div className="sticky top-0 z-20 flex flex-wrap items-start justify-between gap-4 border-b border-border bg-background/95 py-4 backdrop-blur-sm">
 				<div>
 					<h2 className="text-2xl font-semibold tracking-[-0.02em]">
 						{draft.name || t.newPersona}
@@ -103,12 +106,16 @@ export function PersonaEditor({
 					</p>
 				</div>
 				<div className="flex flex-wrap items-end gap-3">
-					<label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
+					<label
+						className="grid gap-1.5 text-xs font-medium text-muted-foreground"
+						htmlFor="persona-save-destination"
+					>
 						{t.saveDestination}
 						<select
 							aria-label={t.saveDestination}
 							className="border-input focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 text-sm text-foreground outline-none focus-visible:ring-[3px]"
 							disabled={saving}
+							id="persona-save-destination"
 							onChange={(event) =>
 								onDraftChange({
 									...draft,
@@ -123,27 +130,27 @@ export function PersonaEditor({
 							<option value="global">{t.globalBadge}</option>
 						</select>
 					</label>
-				<Button disabled={saving} onClick={onSave} type="button">
-					<Save className="size-4" />
-					{saving
-						? t.savingPersona
-						: selectedEntry?.kind === "custom" &&
-							selectedEntry.id !== draft.id
-							? t.saveAsNewPersona
-							: t.savePersona}
-				</Button>
-				{selectedEntry?.kind === "custom" ? (
-					<Button
-						aria-label={t.deletePersona}
-						disabled={saving}
-						onClick={onRequestDelete}
-						type="button"
-						variant="destructive"
-					>
-						<Trash2 className="size-4" />
-						{t.deletePersona}
+					<Button disabled={saving} onClick={onSave} type="button">
+						<Save className="size-4" />
+						{saving
+							? t.savingPersona
+							: selectedEntry?.kind === "custom" &&
+									selectedEntry.id !== draft.id
+								? t.saveAsNewPersona
+								: t.savePersona}
 					</Button>
-				) : null}
+					{selectedEntry?.kind === "custom" ? (
+						<Button
+							aria-label={t.deletePersona}
+							disabled={saving}
+							onClick={onRequestDelete}
+							type="button"
+							variant="destructive"
+						>
+							<Trash2 className="size-4" />
+							{t.deletePersona}
+						</Button>
+					) : null}
 				</div>
 			</div>
 
@@ -155,147 +162,240 @@ export function PersonaEditor({
 					{t.metadataDescription}
 				</p>
 				<div className="mt-4 grid grid-cols-2 gap-4 max-[760px]:grid-cols-1">
-				<label className="grid gap-1.5 text-sm font-medium">
-					{t.idLabel}
-					<Input
-						aria-label={t.idLabel}
-						aria-invalid={validationErrors.id ? true : undefined}
-						data-studio-field="id"
-						onChange={(event) =>
-							onDraftChange({ ...draft, id: event.target.value })
-						}
-						value={draft.id}
-					/>
-					{validationErrors.id ? (
-						<span className="text-xs text-destructive">{validationErrors.id}</span>
-					) : null}
-				</label>
-				<label className="grid gap-1.5 text-sm font-medium">
-					{t.nameLabel}
-					<Input
-						aria-label={t.nameLabel}
-						aria-invalid={validationErrors.name ? true : undefined}
-						data-studio-field="name"
-						onChange={(event) =>
-							onDraftChange({ ...draft, name: event.target.value })
-						}
-						value={draft.name}
-					/>
-					{validationErrors.name ? (
-						<span className="text-xs text-destructive">
-							{validationErrors.name}
-						</span>
-					) : null}
-				</label>
-				<label className="grid gap-1.5 text-sm font-medium">
-					{t.versionLabel}
-					<Input
-						aria-label={t.versionLabel}
-						aria-invalid={validationErrors.version ? true : undefined}
-						data-studio-field="version"
-						onChange={(event) =>
-							onDraftChange({ ...draft, version: event.target.value })
-						}
-						value={draft.version}
-					/>
-					{validationErrors.version ? (
-						<span className="text-xs text-destructive">
-							{validationErrors.version}
-						</span>
-					) : null}
-				</label>
-				<label className="grid gap-1.5 text-sm font-medium">
-					{t.roleLabel}
-					<Input
-						aria-label={t.roleLabel}
-						aria-invalid={validationErrors.role ? true : undefined}
-						data-studio-field="role"
-						onChange={(event) =>
-							onDraftChange({ ...draft, role: event.target.value })
-						}
-						value={draft.role}
-					/>
-					{validationErrors.role ? (
-						<span className="text-xs text-destructive">
-							{validationErrors.role}
-						</span>
-					) : null}
-				</label>
-				<label className="grid gap-1.5 text-sm font-medium">
-					{t.stageLabel}
-					<select
-						aria-label={t.stageLabel}
-						aria-invalid={validationErrors.stage ? true : undefined}
-						data-studio-field="stage"
-						className="border-input focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 text-sm outline-none focus-visible:ring-[3px]"
-						onChange={(event) =>
-							onDraftChange({
-								...draft,
-								stage: event.target.value as AgentStage,
-							})
-						}
-						value={draft.stage}
+					<label
+						className="grid gap-1.5 text-sm font-medium"
+						htmlFor="persona-id"
 					>
-						{AGENT_STAGES.map((stage) => (
-							<option key={stage} value={stage}>
-								{stage}
-							</option>
-						))}
-					</select>
-				</label>
-				<label className="grid gap-1.5 text-sm font-medium">
-					{t.modelLabel}
-					<Input
-						aria-label={t.modelLabel}
-						aria-invalid={validationErrors.model ? true : undefined}
-						data-studio-field="model"
-						onChange={(event) =>
-							onDraftChange({ ...draft, model: event.target.value })
-						}
-						placeholder={t.modelPlaceholder}
-						value={draft.model}
-					/>
-				</label>
-				<label className="grid gap-1.5 text-sm font-medium">
-					{t.temperatureLabel}
-					<Input
-						aria-label={t.temperatureLabel}
-						aria-invalid={validationErrors.temperature ? true : undefined}
-						data-studio-field="temperature"
-						max="2"
-						min="0"
-						onChange={(event) =>
-							onDraftChange({ ...draft, temperature: event.target.value })
-						}
-						placeholder={t.temperaturePlaceholder}
-						step="0.1"
-						type="number"
-						value={draft.temperature}
-					/>
-					{validationErrors.temperature ? (
-						<span className="text-xs text-destructive">
-							{validationErrors.temperature}
-						</span>
-					) : null}
-				</label>
-				<label className="col-span-2 grid gap-1.5 text-sm font-medium max-[760px]:col-span-1">
-					{t.descriptionLabel}
-					<Textarea
-						aria-label={t.descriptionLabel}
-						aria-invalid={validationErrors.description ? true : undefined}
-						className="min-h-20 resize-y"
-						data-studio-field="description"
-						onChange={(event) =>
-							onDraftChange({ ...draft, description: event.target.value })
-						}
-						value={draft.description}
-					/>
-					{validationErrors.description ? (
-						<span className="text-xs text-destructive">
-							{validationErrors.description}
-						</span>
-					) : null}
-				</label>
+						{t.idLabel}
+						<Input
+							aria-describedby={
+								validationErrors.id ? "persona-id-error" : undefined
+							}
+							aria-label={t.idLabel}
+							aria-invalid={validationErrors.id ? true : undefined}
+							data-studio-field="id"
+							id="persona-id"
+							onChange={(event) =>
+								onDraftChange({ ...draft, id: event.target.value })
+							}
+							value={draft.id}
+						/>
+						{validationErrors.id ? (
+							<span className="text-xs text-destructive" id="persona-id-error">
+								{validationErrors.id}
+							</span>
+						) : null}
+					</label>
+					<label
+						className="grid gap-1.5 text-sm font-medium"
+						htmlFor="persona-name"
+					>
+						{t.nameLabel}
+						<Input
+							aria-describedby={
+								validationErrors.name ? "persona-name-error" : undefined
+							}
+							aria-label={t.nameLabel}
+							aria-invalid={validationErrors.name ? true : undefined}
+							data-studio-field="name"
+							id="persona-name"
+							onChange={(event) =>
+								onDraftChange({ ...draft, name: event.target.value })
+							}
+							value={draft.name}
+						/>
+						{validationErrors.name ? (
+							<span
+								className="text-xs text-destructive"
+								id="persona-name-error"
+							>
+								{validationErrors.name}
+							</span>
+						) : null}
+					</label>
+					<label
+						className="grid gap-1.5 text-sm font-medium"
+						htmlFor="persona-version"
+					>
+						{t.versionLabel}
+						<Input
+							aria-describedby={
+								validationErrors.version ? "persona-version-error" : undefined
+							}
+							aria-label={t.versionLabel}
+							aria-invalid={validationErrors.version ? true : undefined}
+							data-studio-field="version"
+							id="persona-version"
+							onChange={(event) =>
+								onDraftChange({ ...draft, version: event.target.value })
+							}
+							value={draft.version}
+						/>
+						{validationErrors.version ? (
+							<span
+								className="text-xs text-destructive"
+								id="persona-version-error"
+							>
+								{validationErrors.version}
+							</span>
+						) : null}
+					</label>
+					<label
+						className="grid gap-1.5 text-sm font-medium"
+						htmlFor="persona-role"
+					>
+						{t.roleLabel}
+						<Input
+							aria-describedby={
+								validationErrors.role ? "persona-role-error" : undefined
+							}
+							aria-label={t.roleLabel}
+							aria-invalid={validationErrors.role ? true : undefined}
+							data-studio-field="role"
+							id="persona-role"
+							onChange={(event) =>
+								onDraftChange({ ...draft, role: event.target.value })
+							}
+							value={draft.role}
+						/>
+						{validationErrors.role ? (
+							<span
+								className="text-xs text-destructive"
+								id="persona-role-error"
+							>
+								{validationErrors.role}
+							</span>
+						) : null}
+					</label>
+					<label
+						className="grid gap-1.5 text-sm font-medium"
+						htmlFor="persona-stage"
+					>
+						{t.stageLabel}
+						<select
+							aria-describedby={
+								validationErrors.stage ? "persona-stage-error" : undefined
+							}
+							aria-label={t.stageLabel}
+							aria-invalid={validationErrors.stage ? true : undefined}
+							data-studio-field="stage"
+							id="persona-stage"
+							className="border-input focus-visible:border-ring focus-visible:ring-ring/50 h-9 rounded-md border bg-transparent px-3 text-sm outline-none focus-visible:ring-[3px]"
+							onChange={(event) =>
+								onDraftChange({
+									...draft,
+									stage: event.target.value as AgentStage,
+								})
+							}
+							value={draft.stage}
+						>
+							{AGENT_STAGES.map((stage) => (
+								<option key={stage} value={stage}>
+									{stage}
+								</option>
+							))}
+						</select>
+						{validationErrors.stage ? (
+							<span
+								className="text-xs text-destructive"
+								id="persona-stage-error"
+							>
+								{validationErrors.stage}
+							</span>
+						) : null}
+					</label>
+					<label
+						className="grid gap-1.5 text-sm font-medium"
+						htmlFor="persona-model"
+					>
+						{t.modelLabel}
+						<Input
+							aria-describedby={
+								validationErrors.model ? "persona-model-error" : undefined
+							}
+							aria-label={t.modelLabel}
+							aria-invalid={validationErrors.model ? true : undefined}
+							data-studio-field="model"
+							id="persona-model"
+							onChange={(event) =>
+								onDraftChange({ ...draft, model: event.target.value })
+							}
+							placeholder={t.modelPlaceholder}
+							value={draft.model}
+						/>
+						{validationErrors.model ? (
+							<span
+								className="text-xs text-destructive"
+								id="persona-model-error"
+							>
+								{validationErrors.model}
+							</span>
+						) : null}
+					</label>
+					<label
+						className="grid gap-1.5 text-sm font-medium"
+						htmlFor="persona-temperature"
+					>
+						{t.temperatureLabel}
+						<Input
+							aria-describedby={
+								validationErrors.temperature
+									? "persona-temperature-error"
+									: undefined
+							}
+							aria-label={t.temperatureLabel}
+							aria-invalid={validationErrors.temperature ? true : undefined}
+							data-studio-field="temperature"
+							id="persona-temperature"
+							max="2"
+							min="0"
+							onChange={(event) =>
+								onDraftChange({ ...draft, temperature: event.target.value })
+							}
+							placeholder={t.temperaturePlaceholder}
+							step="0.1"
+							type="number"
+							value={draft.temperature}
+						/>
+						{validationErrors.temperature ? (
+							<span
+								className="text-xs text-destructive"
+								id="persona-temperature-error"
+							>
+								{validationErrors.temperature}
+							</span>
+						) : null}
+					</label>
+					<label
+						className="col-span-2 grid gap-1.5 text-sm font-medium max-[760px]:col-span-1"
+						htmlFor="persona-description"
+					>
+						{t.descriptionLabel}
+						<Textarea
+							aria-describedby={
+								validationErrors.description
+									? "persona-description-error"
+									: undefined
+							}
+							aria-label={t.descriptionLabel}
+							aria-invalid={validationErrors.description ? true : undefined}
+							className="min-h-20 resize-y"
+							data-studio-field="description"
+							id="persona-description"
+							onChange={(event) =>
+								onDraftChange({ ...draft, description: event.target.value })
+							}
+							value={draft.description}
+						/>
+						{validationErrors.description ? (
+							<span
+								className="text-xs text-destructive"
+								id="persona-description-error"
+							>
+								{validationErrors.description}
+							</span>
+						) : null}
+					</label>
 				</div>
 			</section>
 
@@ -316,9 +416,7 @@ export function PersonaEditor({
 			/>
 
 			<MarkdownPromptEditor
-				onChange={(instructions) =>
-					onDraftChange({ ...draft, instructions })
-				}
+				onChange={(instructions) => onDraftChange({ ...draft, instructions })}
 				translations={t}
 				value={draft.instructions}
 			/>

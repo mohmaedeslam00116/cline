@@ -983,8 +983,7 @@ export function AgentSidebar({
 							aria-current={view === "studio" ? "page" : undefined}
 							aria-label={lensI18n.personaStudio.navigationLabel}
 							className={cn(
-								view === "studio" &&
-									"bg-surface-hover text-sidebar-foreground",
+								view === "studio" && "bg-surface-hover text-sidebar-foreground",
 							)}
 							onClick={() => {
 								setView("studio");
@@ -1030,8 +1029,7 @@ export function AgentSidebar({
 							aria-label={lensI18n.personaStudio.navigationLabel}
 							className={cn(
 								"size-9 justify-center px-0",
-								view === "studio" &&
-									"bg-surface-hover text-sidebar-foreground",
+								view === "studio" && "bg-surface-hover text-sidebar-foreground",
 							)}
 							onClick={() => {
 								setView("studio");

@@ -1273,7 +1273,9 @@ describe("AgentSidebar session organization", () => {
 		expect(
 			container.querySelector('[aria-label="Sidebar actions"]'),
 		).toBeNull();
-		const studioButton = container.querySelector('[aria-label="Persona Studio"]');
+		const studioButton = container.querySelector(
+			'[aria-label="Persona Studio"]',
+		);
 		expect(studioButton).not.toBeNull();
 		expect(studioButton?.getAttribute("aria-current")).toBe("page");
 		expect(

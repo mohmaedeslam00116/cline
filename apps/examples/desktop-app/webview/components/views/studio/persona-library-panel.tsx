@@ -44,19 +44,20 @@ export function PersonaLibraryPanel({
 	return (
 		<aside
 			aria-label={t.libraryLabel}
-			className="flex min-h-0 flex-col border-r border-border bg-sidebar/35"
+			className="flex min-h-0 flex-col border-r border-border bg-sidebar/35 max-[760px]:border-b max-[760px]:border-r-0"
 		>
 			<div className="space-y-3 border-b border-border p-4">
 				<Button className="w-full justify-center" onClick={onNew} type="button">
 					<Plus className="size-4" />
 					{t.newPersona}
 				</Button>
-				<label className="relative block">
+				<label className="relative block" htmlFor="persona-library-search">
 					<span className="sr-only">{t.searchLabel}</span>
 					<Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 					<Input
 						aria-label={t.searchLabel}
 						className="pl-9"
+						id="persona-library-search"
 						onChange={(event) => setQuery(event.target.value)}
 						placeholder={t.searchPlaceholder}
 						value={query}
@@ -95,8 +96,7 @@ export function PersonaLibraryPanel({
 							aria-current={entry.key === selectedKey ? "true" : undefined}
 							className={cn(
 								"group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left outline-none transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-ring",
-								entry.key === selectedKey &&
-									"bg-surface-hover text-foreground",
+								entry.key === selectedKey && "bg-surface-hover text-foreground",
 							)}
 							key={entry.key}
 							onClick={() => onSelect(entry.key)}
@@ -127,7 +127,7 @@ export function PersonaLibraryPanel({
 							</Badge>
 						</button>
 					))}
-					{entries.length === 0 ? (
+					{loadState === "ready" && entries.length === 0 ? (
 						<p className="px-3 py-8 text-center text-sm text-muted-foreground">
 							{t.emptyLibrary}
 						</p>

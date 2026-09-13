@@ -1,10 +1,10 @@
 import {
-	BUILTIN_PERSONAS,
 	type AgentChassis,
 	type AgentFrontmatter,
 	AgentFrontmatterSchema,
 	type AgentStage,
 	type AgentToolPolicy,
+	BUILTIN_PERSONAS,
 	type CustomPersonaRecord,
 	type SpecialistPersonaId,
 } from "@cline/shared/browser";
@@ -211,9 +211,7 @@ export function draftFromCustomPersona(
 	};
 }
 
-export function toolPolicyForTools(
-	tools: readonly string[],
-): AgentToolPolicy {
+export function toolPolicyForTools(tools: readonly string[]): AgentToolPolicy {
 	return tools.some((tool) => APPROVAL_CAPABILITIES.has(tool))
 		? "require_approval"
 		: "auto";
@@ -224,7 +222,9 @@ export function lintPersonaPrompt(
 ): PersonaPromptLintItem[] {
 	const trimmed = instructions.trim();
 	if (!trimmed) {
-		return [{ severity: "error", message: "System prompt content is required." }];
+		return [
+			{ severity: "error", message: "System prompt content is required." },
+		];
 	}
 
 	const lines = trimmed.split(/\r?\n/);

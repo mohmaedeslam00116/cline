@@ -431,7 +431,8 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			searchLabel: "Search personas",
 			searchPlaceholder: "Search ID, name, or role",
 			newPersona: "New persona",
-			newPersonaDescription: "Start from a least-privilege specialist template.",
+			newPersonaDescription:
+				"Start from a least-privilege specialist template.",
 			builtinBadge: "Built-in",
 			workspaceBadge: "Workspace",
 			globalBadge: "Global",
@@ -842,8 +843,7 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 				"الشخصيات المدمجة غير قابلة للتعديل. أنشئ نسخة لضبط الهوية والصلاحيات ومطالبة التشغيل.",
 			duplicateToCustomize: "إنشاء نسخة للتخصيص",
 			savePersona: "حفظ الشخصية",
-			draftDescription:
-				"اضبط عقد الوكيل المتخصص قبل دخوله في حلقة التنفيذ.",
+			draftDescription: "اضبط عقد الوكيل المتخصص قبل دخوله في حلقة التنفيذ.",
 			idLabel: "المعرف",
 			nameLabel: "الاسم",
 			avatarCalibration: "معايرة الصورة الرمزية",

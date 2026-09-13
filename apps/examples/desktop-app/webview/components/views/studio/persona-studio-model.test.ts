@@ -62,13 +62,12 @@ describe("Persona Studio library model", () => {
 	it("filters by persona id, name, or role without changing order", () => {
 		const entries = buildPersonaLibrary([workspacePersona]);
 
-		expect(filterPersonaLibrary(entries, "audit").map((entry) => entry.id)).toEqual([
-			"audit-bot",
-		]);
-		expect(filterPersonaLibrary(entries, "architect").map((entry) => entry.id)).toEqual([
-			"atlas",
-			"vector",
-		]);
+		expect(
+			filterPersonaLibrary(entries, "audit").map((entry) => entry.id),
+		).toEqual(["audit-bot"]);
+		expect(
+			filterPersonaLibrary(entries, "architect").map((entry) => entry.id),
+		).toEqual(["atlas", "vector"]);
 	});
 
 	it("creates new and duplicated drafts with read-only capability", () => {

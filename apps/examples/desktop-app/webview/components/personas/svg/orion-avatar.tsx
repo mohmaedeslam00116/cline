@@ -26,8 +26,15 @@ export const OrionAvatar: React.FC<PersonaAvatarProps> = ({
 				interactive ? "hover:scale-105 cursor-pointer" : ""
 			} ${className}`}
 			onClick={onClick}
-			role="img"
-			aria-label={title}
+			onKeyDown={(event) => {
+				if (onClick && (event.key === "Enter" || event.key === " ")) {
+					event.preventDefault();
+					onClick();
+				}
+			}}
+			role={onClick ? "button" : "img"}
+			tabIndex={onClick ? 0 : undefined}
+			aria-label={title ?? (onClick ? "Orion avatar" : undefined)}
 			xmlns="http://www.w3.org/2000/svg"
 		>
 			<defs>

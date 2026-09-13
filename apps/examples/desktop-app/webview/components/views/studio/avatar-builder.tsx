@@ -56,8 +56,8 @@ export function AvatarBuilder({
 						{t.avatarCalibrationDescription}
 					</p>
 				</div>
-				<label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
-					{t.neonAccent}
+				<div className="grid gap-1.5 text-xs font-medium text-muted-foreground">
+					<span>{t.neonAccent}</span>
 					<span className="flex items-center gap-2">
 						<Input
 							aria-label={t.neonAccentPicker}
@@ -75,7 +75,7 @@ export function AvatarBuilder({
 							value={accentColor}
 						/>
 					</span>
-				</label>
+				</div>
 			</div>
 
 			<div className="mt-4 grid grid-cols-4 gap-2 max-[980px]:grid-cols-2">

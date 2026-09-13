@@ -72,7 +72,7 @@ export function CapabilityMatrix({
 						).map((capability) => {
 							const checked = tools.includes(capability.id);
 							return (
-								<label
+								<div
 									className="flex items-center justify-between gap-4 rounded-lg px-2 py-2 hover:bg-surface-hover"
 									key={capability.id}
 								>
@@ -90,12 +90,10 @@ export function CapabilityMatrix({
 										aria-label={`Allow ${capability.id}`}
 										checked={checked}
 										onCheckedChange={(enabled) =>
-											onToolsChange(
-												toggleTool(tools, capability.id, enabled),
-											)
+											onToolsChange(toggleTool(tools, capability.id, enabled))
 										}
 									/>
-								</label>
+								</div>
 							);
 						})}
 					</fieldset>
@@ -108,7 +106,7 @@ export function CapabilityMatrix({
 						{t.additionalCapabilities}
 					</legend>
 					{unknownTools.map((tool) => (
-						<label
+						<div
 							className="flex items-center justify-between gap-4 rounded-lg px-2 py-2 hover:bg-surface-hover"
 							key={tool}
 						>
@@ -120,7 +118,7 @@ export function CapabilityMatrix({
 									onToolsChange(toggleTool(tools, tool, enabled))
 								}
 							/>
-						</label>
+						</div>
 					))}
 				</fieldset>
 			) : null}
