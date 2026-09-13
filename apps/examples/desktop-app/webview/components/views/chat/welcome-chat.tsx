@@ -190,6 +190,7 @@ export function WelcomeScreen({
 							<UltraSquadShowcase
 								onOpenPanel={onOpenUltraPanel}
 								onOpenWarRoom={onOpenWarRoom}
+								workspaceRoot={workspaceRoot}
 							/>
 						</div>
 					) : null}

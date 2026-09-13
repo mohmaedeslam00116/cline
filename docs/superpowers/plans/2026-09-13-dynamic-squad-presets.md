@@ -118,12 +118,12 @@
 - Keep built-ins usable when catalog loading fails and surface a retry action.
 - Render unknown identities with a neutral fallback rather than Orion.
 
-- [ ] Read `D:\ai\New folder (3)\.agents\skills\impeccable\reference\craft-floor.md` completely immediately before production UI changes.
-- [ ] Write failing component tests covering custom display, Orion lock, Cipher removal, preset save/select/delete, missing-reference start block, catalog retry, keyboard labels, and neutral fallback.
-- [ ] Run the focused component tests and verify red.
-- [ ] Implement one shared selection/preset model in both surfaces using LENS graphite layers, violet control accent, Inter/Geist Mono, compact density, semantic states, visible focus, and no gradients or glass effects.
-- [ ] Re-run focused tests and `bun run typecheck`.
-- [ ] Commit as `feat(ultra): configure custom persona squads`.
+- [x] Read `D:\ai\New folder (3)\.agents\skills\impeccable\reference\craft-floor.md` completely immediately before production UI changes.
+- [x] Write failing component tests covering custom display, Orion lock, Cipher removal, preset save/select/delete, missing-reference start block, catalog retry, keyboard labels, and neutral fallback.
+- [x] Run the focused component tests and verify red.
+- [x] Implement one shared selection/preset model in both surfaces using LENS graphite layers, violet control accent, Inter/Geist Mono, compact density, semantic states, visible focus, and no gradients or glass effects.
+- [x] Re-run focused tests and `bun run typecheck`.
+- [x] Commit as `feat(ultra): configure custom persona squads`.
 
 ---
 

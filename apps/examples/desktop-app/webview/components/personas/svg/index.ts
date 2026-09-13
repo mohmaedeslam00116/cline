@@ -7,4 +7,5 @@ export * from "./orion-avatar";
 export * from "./persona-avatar";
 export * from "./sentinel-avatar";
 export * from "./types";
+export * from "./unknown-persona-avatar";
 export * from "./vector-avatar";

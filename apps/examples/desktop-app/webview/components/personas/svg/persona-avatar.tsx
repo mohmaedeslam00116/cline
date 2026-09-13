@@ -1,4 +1,4 @@
-import type { SpecialistPersonaId } from "@cline/shared/browser";
+import type { AgentChassis, SpecialistPersonaId } from "@cline/shared/browser";
 import type React from "react";
 import { AthenaAvatar } from "./athena-avatar";
 import { AtlasAvatar } from "./atlas-avatar";
@@ -8,17 +8,20 @@ import { LyraAvatar } from "./lyra-avatar";
 import { OrionAvatar } from "./orion-avatar";
 import { SentinelAvatar } from "./sentinel-avatar";
 import type { PersonaAvatarProps } from "./types";
+import { UnknownPersonaAvatar } from "./unknown-persona-avatar";
 import { VectorAvatar } from "./vector-avatar";
 
 export interface UnifiedPersonaAvatarProps extends PersonaAvatarProps {
 	personaId: SpecialistPersonaId | string;
+	chassis?: AgentChassis;
 }
 
 export const PersonaAvatar: React.FC<UnifiedPersonaAvatarProps> = ({
 	personaId,
+	chassis,
 	...props
 }) => {
-	switch (personaId?.toLowerCase()) {
+	switch ((chassis ?? personaId)?.toLowerCase()) {
 		case "orion":
 			return <OrionAvatar {...props} />;
 		case "lyra":
@@ -36,6 +39,6 @@ export const PersonaAvatar: React.FC<UnifiedPersonaAvatarProps> = ({
 		case "echo":
 			return <EchoAvatar {...props} />;
 		default:
-			return <OrionAvatar {...props} />;
+			return <UnknownPersonaAvatar {...props} />;
 	}
 };

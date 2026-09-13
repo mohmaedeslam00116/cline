@@ -1829,6 +1829,7 @@ function ChatThreadPane({
 				<UltraPersonasSidePanel
 					open={ultraPanelOpen}
 					onOpenChange={setUltraPanelOpen}
+					workspaceRoot={config.workspaceRoot}
 				/>
 			</AttachmentDropZone>
 			<AlertDialog

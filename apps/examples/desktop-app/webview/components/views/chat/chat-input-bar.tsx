@@ -23,7 +23,6 @@ import {
 	SpeechInput,
 	type SpeechTranscriptionSource,
 } from "@/components/ai-elements/speech-input";
-import { SquadConfigPopover } from "./squad-config-popover";
 import { Button } from "@/components/ui/button";
 import {
 	Popover,
@@ -66,10 +65,10 @@ import {
 } from "@/lib/provider-model-catalog";
 import type { ProviderModel } from "@/lib/provider-schema";
 import { cn } from "@/lib/utils";
-
 import { startVercelStreamingTranscription } from "@/lib/vercel-streaming-transcription";
 import { MAX_RECORDED_AUDIO_BYTES } from "@/lib/voice-input-limits";
 import { PullRequestBar } from "./pull-request-bar";
+import { SquadConfigPopover } from "./squad-config-popover";
 import { WorkspaceSelector as WorkspaceSelectorImpl } from "./workspace-selector";
 
 // Memoized: the workspace/branch selector fans out into popovers and lists
@@ -425,7 +424,7 @@ export const ModeSwitcher = memo(function ModeSwitcher({
 				</button>
 			</div>
 			{mode === "ultra" && !disabled && (
-				<SquadConfigPopover />
+				<SquadConfigPopover workspaceRoot={workspaceRoot} />
 			)}
 		</div>
 	);
