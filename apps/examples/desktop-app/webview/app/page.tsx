@@ -134,6 +134,14 @@ const SettingsView = dynamic(
 	{ loading: viewLoading, ssr: false },
 );
 
+const PersonaStudioView = dynamic(
+	() =>
+		import("@/components/views/studio").then(
+			(module) => module.PersonaStudioView,
+		),
+	{ loading: viewLoading, ssr: false },
+);
+
 const SessionsView = dynamic(
 	() =>
 		import("@/components/views/sessions/sessions-view").then(
@@ -323,6 +331,11 @@ function HomeContent() {
 			?.sessionId ?? null;
 	const activeThread =
 		threads.find((thread) => thread.id === activeThreadId) ?? threads[0];
+	const studioWorkspaceRoot =
+		activeThread?.historySession?.workspaceRoot ||
+		activeThread?.historySession?.cwd ||
+		readWorkspaceSelectionFromWindow().lastWorkspace ||
+		undefined;
 	const handleHome = useCallback(() => {
 		if (activeThread?.historySession || activeThread?.hasStarted) {
 			handleNewThread();
@@ -509,13 +522,17 @@ function HomeContent() {
 								) : activeThread ? (
 									<div
 										aria-hidden={
-											view === "settings" || view === "evidence"
+											view === "settings" ||
+											view === "evidence" ||
+											view === "studio"
 												? true
 												: undefined
 										}
 										className="flex min-h-0 flex-1 flex-col"
 										inert={
-											view === "settings" || view === "evidence"
+											view === "settings" ||
+											view === "evidence" ||
+											view === "studio"
 												? true
 												: undefined
 										}
@@ -563,6 +580,11 @@ function HomeContent() {
 											}
 											onBackToChat={() => handleViewChange("chat")}
 										/>
+									</div>
+								) : null}
+								{view === "studio" ? (
+									<div className="absolute inset-0 z-30 bg-background text-foreground">
+										<PersonaStudioView workspaceRoot={studioWorkspaceRoot} />
 									</div>
 								) : null}
 							</div>

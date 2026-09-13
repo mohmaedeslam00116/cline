@@ -17,6 +17,18 @@ function createSession(sessionId: string): SessionHistoryItem {
 }
 
 describe("desktopAppReducer", () => {
+	it("keeps Persona Studio in desktop navigation history", () => {
+		let state = createDesktopAppState("welcome", settingsSection);
+		state = desktopAppReducer(state, {
+			type: "navigate",
+			destination: { ...state.navigation.current, view: "studio" },
+		});
+
+		expect(state.navigation.current.view).toBe("studio");
+		state = desktopAppReducer(state, { type: "back" });
+		expect(state.navigation.current.view).toBe("chat");
+	});
+
 	it("hands an edited prompt to a fork exactly once", () => {
 		let state = createDesktopAppState("welcome", settingsSection);
 		state = desktopAppReducer(state, {

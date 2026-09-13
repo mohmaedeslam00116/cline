@@ -62,6 +62,12 @@ export interface LensTranslations {
 		readonly evidenceAndClaims: string;
 		readonly evidenceTooltip: string;
 	};
+	readonly personaStudio: {
+		readonly navigationLabel: string;
+		readonly navigationTooltip: string;
+		readonly title: string;
+		readonly description: string;
+	};
 	readonly modes: {
 		readonly modeGroupLabel: string;
 		readonly actName: string;
@@ -351,6 +357,12 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 		sidebar: {
 			evidenceAndClaims: "Evidence & Claims",
 			evidenceTooltip: "View research evidence bundles and policy checkpoints",
+		},
+		personaStudio: {
+			navigationLabel: "Persona Studio",
+			navigationTooltip: "Create and manage specialist personas",
+			title: "Persona Studio",
+			description: "Calibrate identity, capabilities, and system prompts.",
 		},
 		modes: {
 			modeGroupLabel: "Agent interaction mode",
@@ -671,6 +683,12 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 		sidebar: {
 			evidenceAndClaims: "الأدلة والادعاءات",
 			evidenceTooltip: "عرض حزم أدلة البحث ونقاط تفتيش السياسة",
+		},
+		personaStudio: {
+			navigationLabel: "استوديو الشخصيات",
+			navigationTooltip: "إنشاء شخصيات وكلاء متخصصة وإدارتها",
+			title: "استوديو الشخصيات",
+			description: "معايرة الهوية والصلاحيات ومطالبات النظام.",
 		},
 		modes: {
 			modeGroupLabel: "نمط تفاعل الوكيل",
