@@ -13,6 +13,7 @@ import {
 	getThoughtDurationMilliseconds,
 } from "../components/views/chat/messages/group-messages";
 import { useChatSession } from "./use-chat-session";
+import { SQUAD_CONFIG_STORAGE_KEY } from "./use-squad-config";
 
 const { invokeMock, subscribeMock } = vi.hoisted(() => ({
 	invokeMock: vi.fn(),
@@ -83,6 +84,45 @@ afterEach(async () => {
 });
 
 describe("useChatSession", () => {
+	it("sends the stored squad identifiers when starting Ultra mode", async () => {
+		const squadConfig = {
+			presetId: "custom:release-review",
+			activePersonaIds: ["orion", "audit-bot"],
+			checkpointGatesEnabled: true,
+		};
+		window.localStorage.setItem(
+			SQUAD_CONFIG_STORAGE_KEY,
+			JSON.stringify(squadConfig),
+		);
+		invokeMock.mockImplementation(
+			async (command: string, args?: Record<string, unknown>) => {
+				if (command === "get_process_context") {
+					return { cwd: "/workspace/cline", workspaceRoot: "/workspace/cline" };
+				}
+				if (command === "chat_session_command") {
+					const request = args?.request as { action?: string } | undefined;
+					if (request?.action === "start") {
+						return {
+							sessionId: "ultra-session",
+							cwd: "/workspace/cline",
+							workspaceRoot: "/workspace/cline",
+						};
+					}
+				}
+				return [];
+			},
+		);
+
+		await act(async () => current.start({ ...current.config, mode: "ultra" }));
+
+		expect(invokeMock).toHaveBeenCalledWith("chat_session_command", {
+			request: expect.objectContaining({
+				action: "start",
+				config: expect.objectContaining({ mode: "ultra", squadConfig }),
+			}),
+		});
+	});
+
 	it("restores an idle parent when aborting its child fails", async () => {
 		invokeMock.mockImplementation(
 			async (command: string, args?: Record<string, unknown>) => {

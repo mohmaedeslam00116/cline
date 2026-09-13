@@ -1,13 +1,14 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { AgentFrontmatter } from "@cline/shared";
+import type { AgentFrontmatter, SquadConfig } from "@cline/shared";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
 	deleteCustomPersona,
 	listCustomPersonas,
 	readCustomPersona,
 	resolveGlobalPersonasDir,
+	resolveSquadSnapshot,
 	resolveWorkspacePersonasDir,
 	saveCustomPersona,
 } from "./personas";
@@ -150,11 +151,98 @@ describe("Custom Personas Hybrid Storage Resolver", () => {
 		const allPersonas = await listCustomPersonas(testWorkspaceRoot);
 		expect(allPersonas.length).toBe(1);
 
-		const auditor = allPersonas.find((p) => p.frontmatter.id === "solidity-auditor");
+		const auditor = allPersonas.find(
+			(p) => p.frontmatter.id === "solidity-auditor",
+		);
 		expect(auditor).toBeDefined();
 		expect(auditor?.frontmatter.name).toBe("Workspace Solidity Auditor");
 		expect(auditor?.scope).toBe("workspace");
 		expect(auditor?.frontmatter.avatar.chassis).toBe("sentinel");
+	});
+
+	it("resolves and freezes a workspace-preferred Ultra squad snapshot", async () => {
+		const globalAgent: AgentFrontmatter = {
+			id: "audit-bot",
+			name: "Global Audit Bot",
+			version: "1.0.0",
+			description: "Global release auditor",
+			role: "Global Auditor",
+			stage: "qa",
+			avatar: { chassis: "echo", accentColor: "#f59e0b" },
+			tools: ["read_file"],
+			toolPolicy: "auto",
+		};
+		const workspaceAgent: AgentFrontmatter = {
+			...globalAgent,
+			name: "Workspace Audit Bot",
+			role: "Release Auditor",
+			avatar: { chassis: "sentinel", accentColor: "#10b981" },
+			model: "audit-model",
+			temperature: 0.2,
+		};
+		await saveCustomPersona(testWorkspaceRoot, {
+			frontmatter: globalAgent,
+			instructions: "Global instructions.",
+			scope: "global",
+		});
+		await saveCustomPersona(testWorkspaceRoot, {
+			frontmatter: workspaceAgent,
+			instructions: "Workspace instructions.",
+			scope: "workspace",
+		});
+
+		const config: SquadConfig = {
+			presetId: "custom:release-review",
+			activePersonaIds: ["orion", "audit-bot"],
+			checkpointGatesEnabled: true,
+		};
+		const snapshot = await resolveSquadSnapshot(testWorkspaceRoot, config);
+		expect(snapshot.personas.map((persona) => persona.id)).toEqual([
+			"orion",
+			"audit-bot",
+		]);
+		expect(snapshot.personas[1]).toMatchObject({
+			name: "Workspace Audit Bot",
+			instructions: "Workspace instructions.",
+			scope: "workspace",
+			model: "audit-model",
+			temperature: 0.2,
+		});
+		expect(Object.isFrozen(snapshot)).toBe(true);
+		expect(Object.isFrozen(snapshot.config)).toBe(true);
+		expect(Object.isFrozen(snapshot.config.activePersonaIds)).toBe(true);
+		expect(Object.isFrozen(snapshot.personas)).toBe(true);
+		expect(Object.isFrozen(snapshot.personas[1].tools)).toBe(true);
+
+		await saveCustomPersona(testWorkspaceRoot, {
+			frontmatter: { ...workspaceAgent, name: "Changed Later" },
+			instructions: "Changed later.",
+			scope: "workspace",
+		});
+		expect(snapshot.personas[1].name).toBe("Workspace Audit Bot");
+	});
+
+	it("rejects unsafe or unavailable Ultra squad identifiers", async () => {
+		const base: SquadConfig = {
+			presetId: "custom:invalid",
+			activePersonaIds: ["orion", "missing"],
+			checkpointGatesEnabled: true,
+		};
+		await expect(resolveSquadSnapshot(testWorkspaceRoot, base)).rejects.toThrow(
+			'Persona "missing" is unavailable',
+		);
+		await expect(
+			resolveSquadSnapshot(testWorkspaceRoot, {
+				...base,
+				activePersonaIds: ["orion", "orion"],
+			}),
+		).rejects.toThrow("duplicate persona identifiers");
+		await expect(
+			resolveSquadSnapshot(testWorkspaceRoot, {
+				...base,
+				activePersonaIds: ["missing"],
+			}),
+		).rejects.toThrow("Orion is required");
 	});
 
 	it("reads a specific persona by ID respecting precedence", async () => {
@@ -194,15 +282,24 @@ describe("Custom Personas Hybrid Storage Resolver", () => {
 			scope: "global",
 		});
 
-		const auditor = await readCustomPersona(testWorkspaceRoot, "solidity-auditor");
+		const auditor = await readCustomPersona(
+			testWorkspaceRoot,
+			"solidity-auditor",
+		);
 		expect(auditor?.scope).toBe("workspace");
 		expect(auditor?.frontmatter.name).toBe("Workspace Solidity Auditor");
 
-		const researcher = await readCustomPersona(testWorkspaceRoot, "deep-researcher");
+		const researcher = await readCustomPersona(
+			testWorkspaceRoot,
+			"deep-researcher",
+		);
 		expect(researcher?.scope).toBe("global");
 		expect(researcher?.frontmatter.name).toBe("Global Deep Researcher");
 
-		const nonExistent = await readCustomPersona(testWorkspaceRoot, "unknown-agent");
+		const nonExistent = await readCustomPersona(
+			testWorkspaceRoot,
+			"unknown-agent",
+		);
 		expect(nonExistent).toBeNull();
 	});
 
@@ -225,8 +322,17 @@ describe("Custom Personas Hybrid Storage Resolver", () => {
 			scope: "workspace",
 		});
 
-		const badFilePath = join(testWorkspaceRoot, ".lens", "personas", "corrupted.agent.md");
-		await writeFile(badFilePath, "This is not valid YAML or frontmatter", "utf8");
+		const badFilePath = join(
+			testWorkspaceRoot,
+			".lens",
+			"personas",
+			"corrupted.agent.md",
+		);
+		await writeFile(
+			badFilePath,
+			"This is not valid YAML or frontmatter",
+			"utf8",
+		);
 
 		const personas = await listCustomPersonas(testWorkspaceRoot);
 		expect(personas.length).toBe(1);
@@ -279,11 +385,20 @@ describe("Custom Personas Hybrid Storage Resolver", () => {
 			scope: "workspace",
 		});
 
-		const deleteMdResult = await deleteCustomPersona(testWorkspaceRoot, "solidity-auditor", "workspace");
+		const deleteMdResult = await deleteCustomPersona(
+			testWorkspaceRoot,
+			"solidity-auditor",
+			"workspace",
+		);
 		expect(deleteMdResult.success).toBe(true);
 
 		// 2. Test .agent.markdown deletion
-		const markdownPath = join(testWorkspaceRoot, ".lens", "personas", "solidity-auditor.agent.markdown");
+		const markdownPath = join(
+			testWorkspaceRoot,
+			".lens",
+			"personas",
+			"solidity-auditor.agent.markdown",
+		);
 		const content = `---
 id: solidity-auditor
 name: Markdown Extension Auditor
@@ -299,13 +414,21 @@ Markdown content
 		await writeFile(markdownPath, content, "utf8");
 
 		const listed = await listCustomPersonas(testWorkspaceRoot);
-		expect(listed.some((p) => p.frontmatter.id === "solidity-auditor")).toBe(true);
+		expect(listed.some((p) => p.frontmatter.id === "solidity-auditor")).toBe(
+			true,
+		);
 
-		const deleteMarkdownResult = await deleteCustomPersona(testWorkspaceRoot, "solidity-auditor", "workspace");
+		const deleteMarkdownResult = await deleteCustomPersona(
+			testWorkspaceRoot,
+			"solidity-auditor",
+			"workspace",
+		);
 		expect(deleteMarkdownResult.success).toBe(true);
 
 		const remaining = await listCustomPersonas(testWorkspaceRoot);
-		expect(remaining.every((p) => p.frontmatter.id !== "solidity-auditor")).toBe(true);
+		expect(
+			remaining.every((p) => p.frontmatter.id !== "solidity-auditor"),
+		).toBe(true);
 	});
 
 	describe("Sidecar Command Router (handleCommand)", () => {
@@ -358,7 +481,11 @@ Markdown content
 			expect(readResult.persona?.frontmatter.name).toBe("Router Test Agent");
 
 			// 4. List via command
-			const listResult = (await handleCommand(ctx, "lens_personas_list", {})) as {
+			const listResult = (await handleCommand(
+				ctx,
+				"lens_personas_list",
+				{},
+			)) as {
 				personas: Array<{ frontmatter: { id: string } }>;
 			};
 

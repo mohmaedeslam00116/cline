@@ -24,10 +24,12 @@ import {
 import type { MessageWithMetadata } from "@cline/llms";
 import {
 	buildClineSystemPrompt,
+	buildUltraAgencyPrompt,
 	type ConsecutiveMistakeLimitContext,
 	type ConsecutiveMistakeLimitDecision,
 	formatModeSwitchNotice,
 	formatUserCommandBlock,
+	type SquadConfig,
 } from "@cline/shared";
 import {
 	deleteMaterializedAttachments,
@@ -50,6 +52,7 @@ import {
 	isLensModeEnabled,
 } from "./lens-sidecar";
 import { readSessionManifest, sharedSessionDataDir } from "./paths";
+import { resolveSquadSnapshot } from "./personas";
 import { persistSessionMessages } from "./session-data/messages";
 import type {
 	ChatSessionCommandRequest,
@@ -776,7 +779,10 @@ export function hasModeChanged(
 	return currentMode !== nextMode;
 }
 
-async function resolveSystemPrompt(config: JsonRecord): Promise<string> {
+async function resolveSystemPrompt(
+	config: JsonRecord,
+	resolvedSquad?: Awaited<ReturnType<typeof resolveSquadSnapshot>>,
+): Promise<string> {
 	const cwd = String(
 		config.cwd ?? config.workspaceRoot ?? config.workspace_root ?? "",
 	).trim();
@@ -790,7 +796,7 @@ async function resolveSystemPrompt(config: JsonRecord): Promise<string> {
 		typeof config.rules === "string" && config.rules.trim().length > 0
 			? config.rules
 			: undefined;
-	return buildClineSystemPrompt({
+	const prompt = buildClineSystemPrompt({
 		ide: "Terminal Shell",
 		workspaceRoot: cwd,
 		workspaceName: basename(cwd),
@@ -808,6 +814,9 @@ async function resolveSystemPrompt(config: JsonRecord): Promise<string> {
 					: undefined,
 		platform: process.platform || "unknown",
 	});
+	return resolvedSquad
+		? `${prompt}\n\n${buildUltraAgencyPrompt(resolvedSquad.config, resolvedSquad.personas)}`
+		: prompt;
 }
 
 export function resolveToolPolicies(
@@ -904,7 +913,15 @@ async function handleStart(
 ): Promise<unknown> {
 	if (!request.config) throw new Error("config is required");
 	const manager = getSessionManager(ctx);
-	const systemPrompt = await resolveSystemPrompt(request.config);
+	const requestedWorkspaceRoot = readWorkspacePath(request.config);
+	const resolvedSquad =
+		resolveDesktopSessionMode(request.config) === "ultra"
+			? await resolveSquadSnapshot(
+					requestedWorkspaceRoot ?? "",
+					request.config.squadConfig as SquadConfig | undefined,
+				)
+			: undefined;
+	const systemPrompt = await resolveSystemPrompt(request.config, resolvedSquad);
 	const requestedSessionId = String(
 		request.config.sessionId ?? request.config.session_id ?? "",
 	).trim();
@@ -932,6 +949,7 @@ async function handleStart(
 		systemPrompt,
 		...(initialMessages ? { initialMessages } : {}),
 		...(extraTools.length > 0 ? { extraTools } : {}),
+		...(resolvedSquad ? { resolvedSquad } : {}),
 	};
 	// Note: do NOT pass `prompt` to manager.start() here. When a prompt is
 	// provided to start(), the local runtime host runs the full agent turn

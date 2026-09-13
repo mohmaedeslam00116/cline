@@ -146,12 +146,12 @@
 - Add a Sidecar resolver that validates Orion, rejects duplicates/missing/malformed definitions, honors workspace precedence, maps built-ins and custom records to `RuntimePersonaDefinition`, and returns a frozen `ResolvedSquadSnapshot`.
 - Ensure errors name only the failing persona ID and never echo prompt/file content.
 
-- [ ] Write failing webview schema/session tests proving Ultra includes squad IDs and non-Ultra requests omit them.
-- [ ] Write failing Sidecar tests for workspace-over-global resolution, missing IDs, duplicates, no Orion, malformed custom definitions, and snapshot immutability after source changes.
-- [ ] Run the focused desktop tests and confirm red.
-- [ ] Implement schema transport and Sidecar resolution without trusting browser prompt/capability fields.
-- [ ] Rebuild SDK, run focused tests, and run desktop typecheck.
-- [ ] Commit as `feat(ultra): resolve squads at session start`.
+- [x] Write failing webview schema/session tests proving Ultra includes squad IDs and non-Ultra requests omit them.
+- [x] Write failing Sidecar tests for workspace-over-global resolution, missing IDs, duplicates, no Orion, malformed custom definitions, and snapshot immutability after source changes.
+- [x] Run the focused desktop tests and confirm red.
+- [x] Implement schema transport and Sidecar resolution without trusting browser prompt/capability fields.
+- [x] Rebuild SDK, run focused tests, and run desktop typecheck.
+- [x] Commit as `feat(ultra): resolve squads at session start`.
 
 ---
 

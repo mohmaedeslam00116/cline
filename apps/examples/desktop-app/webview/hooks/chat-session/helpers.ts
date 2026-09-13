@@ -153,16 +153,21 @@ export function buildToolPayloadString(options: {
 
 export function normalizeRuntimeConfig(
 	config: ChatSessionConfig,
+	activeSquadConfig: ChatSessionConfig["squadConfig"] = config.squadConfig,
 ): ChatSessionConfig {
 	const normalizedWorkspaceRoot = config.workspaceRoot.trim();
 	const normalizedCwd = (config.cwd?.trim() || normalizedWorkspaceRoot).trim();
 	const thinking = config.reasoningEffort ? true : config.thinking;
+	const { squadConfig: _storedSquadConfig, ...baseConfig } = config;
 	return {
-		...config,
+		...baseConfig,
 		workspaceRoot: normalizedWorkspaceRoot,
 		cwd: normalizedCwd || normalizedWorkspaceRoot,
 		thinking,
 		reasoningEffort: thinking === false ? undefined : config.reasoningEffort,
+		...(config.mode === "ultra" && activeSquadConfig
+			? { squadConfig: activeSquadConfig }
+			: {}),
 	};
 }
 

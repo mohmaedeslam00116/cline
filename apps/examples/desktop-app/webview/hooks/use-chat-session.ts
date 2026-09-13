@@ -33,6 +33,7 @@ import type {
 	ToolCallStartEvent,
 	ToolCallUpdateEvent,
 } from "@/hooks/chat-session/types";
+import { readStoredSquadConfig } from "@/hooks/use-squad-config";
 import {
 	type ChatMessage,
 	ChatMessageImageSchema,
@@ -133,7 +134,10 @@ function validateConfig(
 ):
 	| { parsed: ChatSessionConfig; error: null }
 	| { parsed: null; error: string } {
-	const runtimeConfig = normalizeRuntimeConfig(config);
+	const runtimeConfig = normalizeRuntimeConfig(
+		config,
+		config.mode === "ultra" ? readStoredSquadConfig() : undefined,
+	);
 	const result = ChatSessionConfigSchema.safeParse(runtimeConfig);
 	if (!result.success) {
 		return {
