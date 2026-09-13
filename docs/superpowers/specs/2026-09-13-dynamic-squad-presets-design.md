@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed for implementation on 2026-09-13. The architecture direction is approved; the written specification awaits final review.
+Approved for implementation on 2026-09-13.
 
 ## Goal
 
