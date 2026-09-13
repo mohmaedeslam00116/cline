@@ -67,6 +67,19 @@ export interface LensTranslations {
 		readonly navigationTooltip: string;
 		readonly title: string;
 		readonly description: string;
+		readonly libraryLabel: string;
+		readonly searchLabel: string;
+		readonly searchPlaceholder: string;
+		readonly newPersona: string;
+		readonly newPersonaDescription: string;
+		readonly builtinBadge: string;
+		readonly workspaceBadge: string;
+		readonly globalBadge: string;
+		readonly globalOnly: string;
+		readonly loading: string;
+		readonly loadError: string;
+		readonly retry: string;
+		readonly emptyLibrary: string;
 	};
 	readonly modes: {
 		readonly modeGroupLabel: string;
@@ -363,6 +376,19 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			navigationTooltip: "Create and manage specialist personas",
 			title: "Persona Studio",
 			description: "Calibrate identity, capabilities, and system prompts.",
+			libraryLabel: "Persona library",
+			searchLabel: "Search personas",
+			searchPlaceholder: "Search ID, name, or role",
+			newPersona: "New persona",
+			newPersonaDescription: "Start from a least-privilege specialist template.",
+			builtinBadge: "Built-in",
+			workspaceBadge: "Workspace",
+			globalBadge: "Global",
+			globalOnly: "Global personas only",
+			loading: "Loading custom personas…",
+			loadError: "Unable to load custom personas.",
+			retry: "Retry",
+			emptyLibrary: "No personas match this filter.",
 		},
 		modes: {
 			modeGroupLabel: "Agent interaction mode",
@@ -689,6 +715,19 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 			navigationTooltip: "إنشاء شخصيات وكلاء متخصصة وإدارتها",
 			title: "استوديو الشخصيات",
 			description: "معايرة الهوية والصلاحيات ومطالبات النظام.",
+			libraryLabel: "مكتبة الشخصيات",
+			searchLabel: "البحث في الشخصيات",
+			searchPlaceholder: "البحث بالمعرف أو الاسم أو الدور",
+			newPersona: "شخصية جديدة",
+			newPersonaDescription: "ابدأ من قالب متخصص بأقل قدر من الصلاحيات.",
+			builtinBadge: "مدمجة",
+			workspaceBadge: "مساحة العمل",
+			globalBadge: "عامة",
+			globalOnly: "الشخصيات العامة فقط",
+			loading: "جارٍ تحميل الشخصيات المخصصة…",
+			loadError: "تعذر تحميل الشخصيات المخصصة.",
+			retry: "إعادة المحاولة",
+			emptyLibrary: "لا توجد شخصيات تطابق عامل التصفية.",
 		},
 		modes: {
 			modeGroupLabel: "نمط تفاعل الوكيل",
