@@ -5,6 +5,9 @@ import {
 	getDefaultSquadConfig,
 	getPersona,
 	getSquadPresets,
+	isBuiltinPersonaId,
+	normalizeSquadConfig,
+	type RuntimePersonaDefinition,
 	type SpecialistPersonaId,
 } from "./personas";
 
@@ -62,6 +65,32 @@ describe("SQUAD_PRESETS", () => {
 			"cipher",
 			"sentinel",
 		]);
+	});
+
+	it("accepts custom persona identifiers and normalizes Orion to the front", () => {
+		expect(
+			normalizeSquadConfig({
+				presetId: "release-review",
+				activePersonaIds: ["audit-bot", "orion", "audit-bot"],
+				checkpointGatesEnabled: false,
+			}),
+		).toEqual({
+			presetId: "release-review",
+			activePersonaIds: ["orion", "audit-bot"],
+			checkpointGatesEnabled: false,
+		});
+		expect(isBuiltinPersonaId("orion")).toBe(true);
+		expect(isBuiltinPersonaId("audit-bot")).toBe(false);
+	});
+
+	it("falls back to the Core squad when Orion is absent", () => {
+		expect(
+			normalizeSquadConfig({
+				presetId: "invalid",
+				activePersonaIds: ["audit-bot"],
+				checkpointGatesEnabled: false,
+			}),
+		).toEqual(getDefaultSquadConfig());
 	});
 });
 
@@ -140,5 +169,32 @@ describe("buildUltraAgencyPrompt", () => {
 		expect(prompt).toContain(
 			"CHECKPOINT 2: PRE-SHIP VERIFICATION AWAITING APPROVAL",
 		);
+	});
+
+	it("builds the manifest from resolved custom definitions only", () => {
+		const customPersona: RuntimePersonaDefinition = {
+			id: "audit-bot",
+			name: "Audit Bot",
+			role: "Release Auditor",
+			stage: "qa",
+			avatar: { chassis: "sentinel", accentColor: "#10b981" },
+			instructions: "Review release evidence and report concrete risk.",
+			tools: ["read_file"],
+			toolPolicy: "require_approval",
+			scope: "workspace",
+		};
+		const prompt = buildUltraAgencyPrompt(
+			{
+				presetId: "release-review",
+				activePersonaIds: ["orion", "audit-bot"],
+				checkpointGatesEnabled: true,
+			},
+			[customPersona],
+		);
+
+		expect(prompt).toContain("Audit Bot");
+		expect(prompt).toContain("Release Auditor");
+		expect(prompt).not.toContain("Athena");
+		expect(prompt).not.toContain("Cipher");
 	});
 });

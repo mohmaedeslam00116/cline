@@ -39,12 +39,12 @@
 - Change `buildUltraAgencyPrompt` to accept resolved runtime definitions and emit only active members.
 - Add pure normalization helpers that deduplicate IDs, force Orion first, and fall back to Core for invalid input.
 
-- [ ] Write failing shared tests for custom IDs, Orion enforcement, deterministic normalization, and a custom persona appearing in the Ultra prompt while inactive personas are omitted.
-- [ ] Run `bun -F @cline/shared test:unit -- src/ultra/personas.test.ts` and confirm the new assertions fail for the expected fixed-union or missing-definition reason.
-- [ ] Implement the minimal dynamic contracts, guards, normalization, and resolved prompt builder.
-- [ ] Re-run the focused test and confirm it passes.
-- [ ] Run `bun run build:sdk` so downstream packages consume the new `dist` exports.
-- [ ] Commit as `feat(ultra): support resolved custom squad contracts`.
+- [x] Write failing shared tests for custom IDs, Orion enforcement, deterministic normalization, and a custom persona appearing in the Ultra prompt while inactive personas are omitted.
+- [x] Run `bun -F @cline/shared test:unit -- src/ultra/personas.test.ts` and confirm the new assertions fail for the expected fixed-union or missing-definition reason.
+- [x] Implement the minimal dynamic contracts, guards, normalization, and resolved prompt builder.
+- [x] Re-run the focused test and confirm it passes.
+- [x] Run `bun run build:sdk` so downstream packages consume the new `dist` exports.
+- [x] Commit as `feat(ultra): support resolved custom squad contracts`.
 
 ---
 

@@ -7,7 +7,13 @@
  * under Orion's orchestration with 2 Golden Checkpoint Gates.
  */
 
-export type SpecialistPersonaId =
+import type {
+	AgentAvatar,
+	AgentStage,
+	AgentToolPolicy,
+} from "../personas/agent-specification";
+
+export type BuiltinPersonaId =
 	| "orion"
 	| "lyra"
 	| "athena"
@@ -17,8 +23,13 @@ export type SpecialistPersonaId =
 	| "sentinel"
 	| "echo";
 
+/** @deprecated Prefer BuiltinPersonaId for built-ins or PersonaId at runtime. */
+export type SpecialistPersonaId = BuiltinPersonaId;
+
+export type PersonaId = string;
+
 export type SpecialistPersona = {
-	id: SpecialistPersonaId;
+	id: BuiltinPersonaId;
 	name: string;
 	role: string;
 	tagline: string;
@@ -32,20 +43,57 @@ export type SpecialistPersona = {
 	systemPromptSnippet: string;
 };
 
-export type SquadPresetId = "core" | "full" | "rapid" | "custom";
+export type RuntimePersonaDefinition = {
+	id: PersonaId;
+	name: string;
+	role: string;
+	stage: AgentStage;
+	avatar: AgentAvatar;
+	instructions: string;
+	tools: string[];
+	toolPolicy: AgentToolPolicy;
+	model?: string;
+	temperature?: number;
+	scope: "builtin" | "workspace" | "global";
+};
+
+export type ResolvedSquadSnapshot = {
+	config: SquadConfig;
+	personas: RuntimePersonaDefinition[];
+};
+
+export type BuiltinSquadPresetId = "core" | "full" | "rapid";
+export type SquadPresetId = string;
 
 export type SquadPreset = {
 	id: SquadPresetId;
 	name: string;
 	description: string;
-	personaIds: SpecialistPersonaId[];
+	source: "builtin" | "custom";
+	personaIds: PersonaId[];
+	checkpointGatesEnabled: boolean;
 };
 
 export type SquadConfig = {
 	presetId: SquadPresetId;
-	activePersonaIds: SpecialistPersonaId[];
+	activePersonaIds: PersonaId[];
 	checkpointGatesEnabled: boolean;
 };
+
+const BUILTIN_PERSONA_IDS = [
+	"orion",
+	"lyra",
+	"athena",
+	"atlas",
+	"cipher",
+	"vector",
+	"sentinel",
+	"echo",
+] as const satisfies readonly BuiltinPersonaId[];
+
+export function isBuiltinPersonaId(id: string): id is BuiltinPersonaId {
+	return (BUILTIN_PERSONA_IDS as readonly string[]).includes(id);
+}
 
 export const BUILTIN_PERSONAS: Record<SpecialistPersonaId, SpecialistPersona> =
 	{
@@ -236,13 +284,16 @@ export const SQUAD_PRESETS: SquadPreset[] = [
 		name: "Core Software Squad",
 		description:
 			"Orion (Leader) + Athena (PRD) + Atlas (Architect) + Cipher (Engineer) + Sentinel (QA) for robust feature engineering & bug fixing.",
+		source: "builtin",
 		personaIds: ["orion", "athena", "atlas", "cipher", "sentinel"],
+		checkpointGatesEnabled: true,
 	},
 	{
 		id: "full",
 		name: "Full Product Agency",
 		description:
 			"Complete 8-agent squad: Orion, Lyra, Athena, Atlas, Vector, Cipher, Sentinel, and Echo for full-stack apps built from scratch.",
+		source: "builtin",
 		personaIds: [
 			"orion",
 			"lyra",
@@ -253,13 +304,16 @@ export const SQUAD_PRESETS: SquadPreset[] = [
 			"sentinel",
 			"echo",
 		],
+		checkpointGatesEnabled: true,
 	},
 	{
 		id: "rapid",
 		name: "Rapid Prototyper",
 		description:
 			"Orion + Atlas + Cipher + Sentinel for fast architectural spiking and working MVPs without extensive PRDs.",
+		source: "builtin",
 		personaIds: ["orion", "atlas", "cipher", "sentinel"],
+		checkpointGatesEnabled: true,
 	},
 ];
 
@@ -283,24 +337,112 @@ export function getSquadPresets(): SquadPreset[] {
 	return [...SQUAD_PRESETS];
 }
 
+export function normalizeSquadConfig(value: unknown): SquadConfig {
+	if (!value || typeof value !== "object") return getDefaultSquadConfig();
+
+	const candidate = value as Partial<SquadConfig>;
+	if (
+		typeof candidate.presetId !== "string" ||
+		!candidate.presetId.trim() ||
+		!Array.isArray(candidate.activePersonaIds) ||
+		typeof candidate.checkpointGatesEnabled !== "boolean"
+	) {
+		return getDefaultSquadConfig();
+	}
+
+	const personaIds = Array.from(
+		new Set(
+			candidate.activePersonaIds.filter(
+				(id): id is string => typeof id === "string" && id.trim().length > 0,
+			),
+		),
+	);
+	if (!personaIds.includes("orion")) return getDefaultSquadConfig();
+
+	return {
+		presetId: candidate.presetId.trim(),
+		activePersonaIds: [
+			"orion",
+			...personaIds.filter((personaId) => personaId !== "orion"),
+		],
+		checkpointGatesEnabled: candidate.checkpointGatesEnabled,
+	};
+}
+
+const BUILTIN_PERSONA_STAGES: Record<BuiltinPersonaId, AgentStage> = {
+	orion: "strategy",
+	lyra: "research",
+	athena: "strategy",
+	atlas: "architecture",
+	cipher: "development",
+	vector: "architecture",
+	sentinel: "qa",
+	echo: "documentation",
+};
+
+type AgencyPromptPersona = {
+	id: PersonaId;
+	name: string;
+	role: string;
+	stage: AgentStage;
+	tagline: string;
+	responsibilities: string[];
+	deliverableFile?: string;
+};
+
+function getBuiltinAgencyPromptPersona(
+	id: BuiltinPersonaId,
+): AgencyPromptPersona {
+	const persona = BUILTIN_PERSONAS[id];
+	return {
+		...persona,
+		stage: BUILTIN_PERSONA_STAGES[id],
+	};
+}
+
+function getRuntimeAgencyPromptPersona(
+	persona: RuntimePersonaDefinition,
+): AgencyPromptPersona {
+	return {
+		id: persona.id,
+		name: persona.name,
+		role: persona.role,
+		stage: persona.stage,
+		tagline: `${persona.stage} specialist`,
+		responsibilities: [
+			`Complete the delegated ${persona.stage} mission within the saved persona contract`,
+			"Publish concrete findings and handoff context to the active squad",
+		],
+	};
+}
+
 /**
  * Builds the Ultra Mode agency prompt extension reflecting the active squad members,
  * inter-agent cross-consultation protocols, and 2 Golden Checkpoint Gates.
  */
 export function buildUltraAgencyPrompt(
 	config: SquadConfig = getDefaultSquadConfig(),
+	resolvedPersonas: readonly RuntimePersonaDefinition[] = [],
 ): string {
+	const resolvedById = new Map(
+		resolvedPersonas.map((persona) => [persona.id, persona]),
+	);
 	const activePersonas = config.activePersonaIds
-		.map((id) => BUILTIN_PERSONAS[id as SpecialistPersonaId])
-		.filter(Boolean);
+		.map((id): AgencyPromptPersona | undefined => {
+			if (isBuiltinPersonaId(id)) return getBuiltinAgencyPromptPersona(id);
+			const resolved = resolvedById.get(id);
+			return resolved ? getRuntimeAgencyPromptPersona(resolved) : undefined;
+		})
+		.filter((persona): persona is AgencyPromptPersona => Boolean(persona));
 
 	const squadManifest = activePersonas
 		.map((p) => {
-			const deliv =
-				p.deliverableFile === "workspace_code"
+			const deliverable = p.deliverableFile
+				? p.deliverableFile === "workspace_code"
 					? "Production Workspace Code"
-					: `\`${p.deliverableFile}\``;
-			return `- **${p.name}** (${p.role}): ${p.tagline}\n  Deliverable: ${deliv}\n  Responsibilities:\n${p.responsibilities.map((r) => `    * ${r}`).join("\n")}`;
+					: `\`${p.deliverableFile}\``
+				: "Session contribution";
+			return `- **${p.name}** (${p.role}): ${p.tagline}\n  Deliverable: ${deliverable}\n  Responsibilities:\n${p.responsibilities.map((r) => `    * ${r}`).join("\n")}`;
 		})
 		.join("\n\n");
 
@@ -312,15 +454,17 @@ export function buildUltraAgencyPrompt(
 			if (p.id === "sentinel") {
 				return "   - **Sentinel**: Runs tests and executes up to 3 autonomous self-correction repair cycles on compiler/runtime errors.";
 			}
-			return `   - **${p.name}**: Focuses on ${p.role.toLowerCase()} and produces formal deliverable \`${p.deliverableFile}\`.`;
+			return p.deliverableFile
+				? `   - **${p.name}**: Focuses on ${p.role.toLowerCase()} and produces formal deliverable \`${p.deliverableFile}\`.`
+				: `   - **${p.name}**: Focuses on ${p.role.toLowerCase()} during the ${p.stage} stage and publishes a structured squad handoff.`;
 		})
 		.join("\n");
 
 	const hasPlanning = activePersonas.some(
-		(p) => p.id === "athena" || p.id === "atlas",
+		(p) => p.id === "athena" || p.id === "atlas" || p.stage === "architecture",
 	);
 	const hasImplementation = activePersonas.some(
-		(p) => p.id === "cipher" || p.id === "sentinel",
+		(p) => p.stage === "development" || p.stage === "qa",
 	);
 
 	let checkpointInstructions =
@@ -329,7 +473,10 @@ export function buildUltraAgencyPrompt(
 		const gates: string[] = [];
 		if (hasPlanning) {
 			const planningNames = activePersonas
-				.filter((p) => p.id === "athena" || p.id === "atlas")
+				.filter(
+					(p) =>
+						p.id === "athena" || p.id === "atlas" || p.stage === "architecture",
+				)
 				.map((p) => p.name)
 				.join(" and ");
 			const hasEarlyResearchOrSchema = activePersonas.some(
@@ -345,7 +492,7 @@ export function buildUltraAgencyPrompt(
 		}
 		if (hasImplementation) {
 			const implNames = activePersonas
-				.filter((p) => p.id === "cipher" || p.id === "sentinel")
+				.filter((p) => p.stage === "development" || p.stage === "qa")
 				.map((p) => p.name)
 				.join(" and ");
 			gates.push(`   - **CHECKPOINT 2 (Pre-Ship Verification Gate)**:
