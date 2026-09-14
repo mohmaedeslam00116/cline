@@ -14,6 +14,8 @@ import {
 	detectPersonaId,
 	type HookErrorMode,
 	type ITelemetryService,
+	type ResolvedSquadSnapshot,
+	type RuntimePersonaDefinition,
 	type ToolApprovalRequest,
 	type ToolApprovalResult,
 	type ToolPolicy,
@@ -34,20 +36,10 @@ export const SpawnAgentInputSchema = z.object({
 		.describe("System prompt defining the sub-agent's behavior"),
 	task: z.string().describe("Task for the sub-agent to complete"),
 	personaId: z
-		.enum([
-			"orion",
-			"lyra",
-			"athena",
-			"atlas",
-			"cipher",
-			"vector",
-			"sentinel",
-			"echo",
-		])
+		.string()
+		.regex(/^[a-z0-9_-]+$/)
 		.optional()
-		.describe(
-			"Specialist persona ID (orion, lyra, athena, atlas, cipher, vector, sentinel, echo)",
-		),
+		.describe("Active specialist persona ID from the current squad manifest"),
 });
 
 export type SpawnAgentInput = z.infer<typeof SpawnAgentInputSchema>;
@@ -127,6 +119,79 @@ export interface SpawnAgentToolConfig {
 	 */
 	logger?: BasicLogger;
 	telemetry?: ITelemetryService;
+	resolvedSquad?: ResolvedSquadSnapshot;
+}
+
+const PERSONA_TOOL_ALIASES: Readonly<Record<string, readonly string[]>> = {
+	read_file: ["read_file", "read_files"],
+	list_files: ["list_files", "read_files"],
+	search_files: ["search_files", "search_codebase"],
+	edit_file: ["edit_file", "editor", "apply_patch"],
+	write_file: ["write_file", "editor", "apply_patch"],
+	run_command: ["run_command", "run_commands"],
+	browser: ["browser", "fetch_web_content", "web_search"],
+};
+
+function findActivePersona(
+	snapshot: ResolvedSquadSnapshot | undefined,
+	personaId: string | undefined,
+): RuntimePersonaDefinition | undefined {
+	if (!snapshot || !personaId) return undefined;
+	const persona = snapshot.personas.find((entry) => entry.id === personaId);
+	if (!persona)
+		throw new Error(
+			`Persona "${personaId}" is not active in this Ultra squad.`,
+		);
+	return persona;
+}
+
+function isPersonaToolAllowed(
+	toolName: string,
+	allowlist: readonly string[],
+): boolean {
+	return allowlist.some((capability) => {
+		if (capability === "mcp")
+			return toolName === "mcp" || toolName.startsWith("mcp_");
+		return (PERSONA_TOOL_ALIASES[capability] ?? [capability]).includes(
+			toolName,
+		);
+	});
+}
+
+function filterPersonaTools(
+	tools: AgentTool[],
+	persona: RuntimePersonaDefinition | undefined,
+): AgentTool[] {
+	if (!persona) return tools;
+	if (persona.scope === "builtin" && persona.tools.length === 0) return tools;
+	return tools.filter((tool) => isPersonaToolAllowed(tool.name, persona.tools));
+}
+
+function personaToolPolicies(
+	base: Record<string, ToolPolicy> | undefined,
+	persona: RuntimePersonaDefinition | undefined,
+	tools: readonly AgentTool[],
+): Record<string, ToolPolicy> | undefined {
+	if (!persona || persona.toolPolicy !== "require_approval") return base;
+	const narrowed = { ...(base ?? {}) };
+	for (const tool of tools) {
+		narrowed[tool.name] = {
+			...(base?.[tool.name] ?? {}),
+			autoApprove: false,
+		};
+	}
+	return narrowed;
+}
+
+function personaPrompt(
+	persona: RuntimePersonaDefinition | undefined,
+	missionNote: string,
+): string {
+	if (!persona) return missionNote;
+	const contract =
+		persona.instructions.trim() ||
+		`You are ${persona.name}, ${persona.role}. Follow the active squad contract.`;
+	return `${contract}\n\n## Current mission\n\n${missionNote.trim()}`;
 }
 
 /**
@@ -140,18 +205,28 @@ export function createSpawnAgentTool(
 		description: `Spawn a sub-agent with a custom system prompt for specialized tasks. Use when delegating work that benefits from focused expertise.`,
 		inputSchema: zodToJsonSchema(SpawnAgentInputSchema),
 		execute: async (input, context) => {
-			const tools = config.createSubAgentTools
+			const personaId = input.personaId || detectPersonaId(input.systemPrompt);
+			const persona = findActivePersona(config.resolvedSquad, personaId);
+			const availableTools = config.createSubAgentTools
 				? await config.createSubAgentTools(input, context)
 				: (config.subAgentTools ?? []);
+			const tools = filterPersonaTools(availableTools, persona);
 
 			const parentAgentId = context.agentId;
-			const personaId = input.personaId || detectPersonaId(input.systemPrompt);
 
 			const subAgent = createDelegatedAgent({
 				kind: "subagent",
-				prompt: input.systemPrompt,
+				prompt: personaPrompt(persona, input.systemPrompt),
 				configProvider: config.configProvider,
 				tools,
+				connectionOverrides: persona
+					? {
+							...(persona.model ? { modelId: persona.model } : {}),
+							...(persona.temperature !== undefined
+								? { temperature: persona.temperature }
+								: {}),
+						}
+					: undefined,
 				maxIterations: config.defaultMaxIterations,
 				parentAgentId,
 				abortSignal: context.signal,
@@ -167,8 +242,9 @@ export function createSpawnAgentTool(
 						}
 					: undefined,
 				hookErrorMode: config.hookErrorMode,
-				toolPolicies: config.toolPolicies,
+				toolPolicies: personaToolPolicies(config.toolPolicies, persona, tools),
 				requestToolApproval: config.requestToolApproval,
+				role: persona?.role,
 			});
 			const subAgentId = subAgent.getAgentId();
 			const conversationId = subAgent.getConversationId();

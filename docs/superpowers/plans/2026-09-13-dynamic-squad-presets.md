@@ -176,12 +176,12 @@
 - Apply persona model/temperature overrides and intersect delegated tools with the persona allowlist.
 - Keep parent runtime `toolPolicies` and `requestToolApproval` enforcement intact.
 
-- [ ] Write failing tests for active custom spawn, inactive rejection, saved prompt precedence, mission-note append, model/temperature overrides, tool intersection, no-tools fallback, approval forwarding, and custom ID lifecycle events.
-- [ ] Run `bun -F @cline/core test:unit -- src/extensions/tools/team/spawn-agent-tool.test.ts src/extensions/tools/team/delegated-agent.test.ts src/runtime/orchestration/runtime-builder.test.ts` and confirm red.
-- [ ] Implement snapshot-aware delegation with a narrow resolver callback/config seam rather than global mutable state.
-- [ ] Re-run focused Core tests and confirm green.
-- [ ] Run `bun run build:sdk`.
-- [ ] Commit as `feat(agents): deploy custom squad personas`.
+- [x] Write failing tests for active custom spawn, inactive rejection, saved prompt precedence, mission-note append, model/temperature overrides, tool intersection, no-tools fallback, approval forwarding, and custom ID lifecycle events.
+- [x] Run `bun -F @cline/core test:unit -- src/extensions/tools/team/spawn-agent-tool.test.ts src/extensions/tools/team/delegated-agent.test.ts src/runtime/orchestration/runtime-builder.test.ts` and confirm red.
+- [x] Implement snapshot-aware delegation with a narrow resolver callback/config seam rather than global mutable state.
+- [x] Re-run focused Core tests and confirm green.
+- [x] Run `bun run build:sdk`.
+- [x] Commit as `feat(agents): deploy custom squad personas`.
 
 ---
 

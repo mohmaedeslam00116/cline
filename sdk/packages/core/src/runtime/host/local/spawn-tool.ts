@@ -183,6 +183,7 @@ export function createSessionSpawnTool(
 			updateConnectionDefaults: () => {},
 		},
 		createSubAgentTools,
+		resolvedSquad: config.resolvedSquad,
 		...lifecycle,
 	}) as AgentTool;
 }

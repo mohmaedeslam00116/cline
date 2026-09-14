@@ -42,4 +42,26 @@ describe("buildDelegatedAgentConfig", () => {
 		expect(config.distinctId).toBeUndefined();
 		expect(config.sessionId).toBeUndefined();
 	});
+
+	it("applies persona model and temperature overrides without mutating defaults", () => {
+		const configProvider = createDelegatedAgentConfigProvider({
+			providerId: "anthropic",
+			modelId: "parent-model",
+			temperature: 0.8,
+		});
+		const config = buildDelegatedAgentConfig({
+			kind: "subagent",
+			prompt: "review the release",
+			tools: [],
+			configProvider,
+			connectionOverrides: { modelId: "audit-model", temperature: 0.2 },
+		});
+
+		expect(config.modelId).toBe("audit-model");
+		expect(config.temperature).toBe(0.2);
+		expect(configProvider.getConnectionConfig()).toMatchObject({
+			modelId: "parent-model",
+			temperature: 0.8,
+		});
+	});
 });

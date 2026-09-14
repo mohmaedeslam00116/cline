@@ -1,4 +1,8 @@
-import type { AgentConfig } from "@cline/shared";
+import type {
+	AgentConfig,
+	AgentTool,
+	ResolvedSquadSnapshot,
+} from "@cline/shared";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createDelegatedAgentConfigProvider } from "./delegated-agent";
 
@@ -8,6 +12,49 @@ const runMock = vi.fn();
 const getAgentIdMock = vi.fn(() => "sub-agent-1");
 const getConversationIdMock = vi.fn(() => "conv-sub-1");
 const agentConstructorSpy = vi.fn();
+
+const customSquad: ResolvedSquadSnapshot = {
+	config: {
+		presetId: "custom:release-review",
+		activePersonaIds: ["orion", "audit-bot"],
+		checkpointGatesEnabled: true,
+	},
+	personas: [
+		{
+			id: "orion",
+			name: "Orion",
+			role: "Lead Orchestrator",
+			stage: "strategy",
+			avatar: { chassis: "orion", accentColor: "#3b82f6" },
+			instructions: "Coordinate the squad.",
+			tools: [],
+			toolPolicy: "auto",
+			scope: "builtin",
+		},
+		{
+			id: "audit-bot",
+			name: "Audit Bot",
+			role: "Release Auditor",
+			stage: "qa",
+			avatar: { chassis: "sentinel", accentColor: "#10b981" },
+			instructions: "Audit the release evidence before approval.",
+			tools: ["read_file", "run_command"],
+			toolPolicy: "require_approval",
+			model: "audit-model",
+			temperature: 0.2,
+			scope: "workspace",
+		},
+	],
+};
+
+function fakeTool(name: string): AgentTool {
+	return {
+		name,
+		description: `${name} tool`,
+		inputSchema: { type: "object", properties: {} },
+		execute: vi.fn(),
+	} as AgentTool;
+}
 
 vi.mock("../../../runtime/orchestration/session-runtime-orchestrator", () => {
 	return {
@@ -375,6 +422,132 @@ describe("createSpawnAgentTool", () => {
 				modelId: "updated-model",
 				temperature: 0.3,
 			}),
+		);
+	});
+
+	it("deploys an active custom persona with narrowed tools and approval", async () => {
+		const { createSpawnAgentTool, SpawnAgentInputSchema } = await import(
+			"./spawn-agent-tool.js"
+		);
+		expect(
+			SpawnAgentInputSchema.parse({
+				systemPrompt: "Inspect candidate 42.",
+				task: "Review release",
+				personaId: "audit-bot",
+			}).personaId,
+		).toBe("audit-bot");
+		runMock.mockResolvedValue({
+			text: "reviewed",
+			iterations: 1,
+			finishReason: "completed",
+			usage: { inputTokens: 1, outputTokens: 1 },
+		});
+		const onSubAgentStart = vi.fn();
+		const tool = createSpawnAgentTool({
+			configProvider: createDelegatedAgentConfigProvider({
+				providerId: "anthropic",
+				modelId: "parent-model",
+				temperature: 0.8,
+			}),
+			resolvedSquad: customSquad,
+			subAgentTools: [
+				fakeTool("read_files"),
+				fakeTool("run_commands"),
+				fakeTool("editor"),
+			],
+			toolPolicies: { "*": { autoApprove: true } },
+			onSubAgentStart,
+		});
+
+		await tool.execute(
+			{
+				systemPrompt: "Inspect candidate 42.",
+				task: "Review release",
+				personaId: "audit-bot",
+			},
+			{ agentId: "parent", conversationId: "conversation", iteration: 1 },
+		);
+
+		expect(agentConstructorSpy).toHaveBeenCalledWith(
+			expect.objectContaining({
+				modelId: "audit-model",
+				temperature: 0.2,
+				tools: [
+					expect.objectContaining({ name: "read_files" }),
+					expect.objectContaining({ name: "run_commands" }),
+				],
+				toolPolicies: expect.objectContaining({
+					"*": { autoApprove: true },
+					read_files: { autoApprove: false },
+					run_commands: { autoApprove: false },
+				}),
+				systemPrompt: expect.stringMatching(
+					/Audit the release evidence[\s\S]*Current mission[\s\S]*Inspect candidate 42/,
+				),
+			}),
+		);
+		expect(onSubAgentStart).toHaveBeenCalledWith(
+			expect.objectContaining({ personaId: "audit-bot" }),
+		);
+	});
+
+	it("rejects inactive persona IDs before creating a delegated agent", async () => {
+		const { createSpawnAgentTool } = await import("./spawn-agent-tool.js");
+		const tool = createSpawnAgentTool({
+			configProvider: createDelegatedAgentConfigProvider({
+				providerId: "anthropic",
+				modelId: "parent-model",
+			}),
+			resolvedSquad: customSquad,
+			subAgentTools: [],
+		});
+
+		await expect(
+			tool.execute(
+				{
+					systemPrompt: "Pretend to be Cipher.",
+					task: "Modify code",
+					personaId: "cipher",
+				},
+				{ agentId: "parent", conversationId: "conversation", iteration: 1 },
+			),
+		).rejects.toThrow('Persona "cipher" is not active');
+		expect(agentConstructorSpy).not.toHaveBeenCalled();
+	});
+
+	it("defaults a custom persona with an empty allowlist to no tools", async () => {
+		const { createSpawnAgentTool } = await import("./spawn-agent-tool.js");
+		runMock.mockResolvedValue({
+			text: "reviewed",
+			iterations: 1,
+			finishReason: "completed",
+			usage: { inputTokens: 1, outputTokens: 1 },
+		});
+		const emptyToolsSquad: ResolvedSquadSnapshot = {
+			...customSquad,
+			personas: customSquad.personas.map((persona) =>
+				persona.id === "audit-bot" ? { ...persona, tools: [] } : persona,
+			),
+		};
+		const tool = createSpawnAgentTool({
+			configProvider: createDelegatedAgentConfigProvider({
+				providerId: "anthropic",
+				modelId: "parent-model",
+			}),
+			resolvedSquad: emptyToolsSquad,
+			subAgentTools: [fakeTool("read_files")],
+		});
+
+		await tool.execute(
+			{
+				systemPrompt: "Inspect candidate 42.",
+				task: "Review release",
+				personaId: "audit-bot",
+			},
+			{ agentId: "parent", conversationId: "conversation", iteration: 1 },
+		);
+		expect(agentConstructorSpy).toHaveBeenCalledWith(
+			expect.objectContaining({ tools: [] }),
 		);
 	});
 });
