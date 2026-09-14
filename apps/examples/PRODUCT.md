@@ -38,6 +38,7 @@ LENS joins a deep technical research loop to a separate coding loop through an i
 - The desktop toolchain is Bun 1.3.13 with Node.js 22 or newer. npm, yarn, and pnpm are not used.
 - Universal Agent Specification files contain YAML frontmatter and a Markdown system prompt.
 - Built-in Specialist Personas are immutable product templates; Custom Personas are editable user artifacts.
+- Ultra squads may replace every built-in specialist except Orion. Persona files can narrow delegated prompts, models, tools, and approval behavior but can never grant capabilities absent from the parent runtime.
 
 ## Brand Commitments
 

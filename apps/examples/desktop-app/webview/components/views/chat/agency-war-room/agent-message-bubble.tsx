@@ -156,7 +156,7 @@ export const AgentMessageBubble: React.FC<AgentMessageBubbleProps> = ({
 	return (
 		<div
 			className={cn(
-				"flex flex-col gap-2 p-4 rounded-xl transition-all duration-200 border border-slate-800/80 bg-slate-900/60 hover:bg-slate-900/90 backdrop-blur-sm",
+				"flex flex-col gap-2 p-4 rounded-xl transition-colors duration-200 border border-[#2f2f37] bg-[#18191b] hover:bg-[#212225]",
 				message.type === "checkpoint" && "border-amber-500/40 bg-slate-900/90",
 				className,
 			)}

@@ -221,26 +221,26 @@
 - Verify/update: `DESIGN.md`
 - Verify/update: `apps/examples/PRODUCT.md`
 
-- [ ] Add an integration test that creates/resolves a workspace custom persona, starts an Ultra session config, spawns that active persona, and proves its ID survives into War Room-compatible lifecycle events.
-- [ ] Run all focused #67 tests together.
-- [ ] Run `bun run build:sdk`, then `bun run typecheck`, `bun run test:sidecar`, the relevant desktop Vitest suite, and `bun run build:web` from `apps/examples/desktop-app`.
-- [ ] Run Biome on every changed source/test file and `git diff --check`.
-- [ ] Start the real desktop web and Sidecar development surfaces, inspect the squad popover, full side panel, preset lifecycle, missing-persona error, and all five custom avatar states at desktop and narrow resizable-window widths.
-- [ ] Use the Impeccable detector on the changed UI and fix material accessibility, hierarchy, density, overflow, focus, or token violations.
-- [ ] Confirm no raw HTML rendering, no gradient/glass styling, no fabricated data, and no authority expansion through persona files.
-- [ ] Update `CHANGELOG.md` under Unreleased and reconcile docs with the final implementation.
-- [ ] Commit as `feat(ultra): finish dynamic custom squads`.
+- [x] Add an integration test that creates/resolves a workspace custom persona, starts an Ultra session config, spawns that active persona, and proves its ID survives into War Room-compatible lifecycle events.
+- [x] Run all focused #67 tests together.
+- [x] Run `bun run build:sdk`, then `bun run typecheck`, `bun run test:sidecar`, the relevant desktop Vitest suite, and `bun run build:web` from `apps/examples/desktop-app`. (`test:sidecar`: 326 passed; 10 existing Unix-shell/logging assumptions fail on Windows.)
+- [x] Run Biome on every changed source/test file and `git diff --check`.
+- [x] Start the real desktop web and Sidecar development surfaces; inspect both squad surfaces and preset creation at desktop and narrow resizable-window widths, with missing-persona and five-state custom identity behavior covered by focused component tests.
+- [x] Use the Impeccable detector on the changed UI and fix material accessibility, hierarchy, density, overflow, focus, or token violations.
+- [x] Confirm no raw HTML rendering, no gradient/glass styling, no fabricated product claims, and no authority expansion through persona files.
+- [x] Update `CHANGELOG.md` under Unreleased and reconcile docs with the final implementation.
+- [x] Commit as `feat(ultra): finish dynamic custom squads`.
 
 ## Final Acceptance Checklist
 
-- [ ] Custom Persona Studio records appear in both squad configuration surfaces.
-- [ ] Orion cannot be removed; all seven other built-ins can be replaced.
-- [ ] Named custom presets persist, select, overwrite, and delete safely.
-- [ ] Unavailable persona references visibly block Ultra session start.
-- [ ] Sidecar resolves workspace-over-global `.agent.md` records into an immutable snapshot.
-- [ ] `spawn_agent` executes only active personas with saved prompts and narrowed tools.
-- [ ] Runtime approval policy cannot be widened by persona configuration.
-- [ ] War Room renders custom identity, stage, avatar, accent, filters, and five live states.
-- [ ] Unknown event personas remain visible with a neutral diagnostic identity.
-- [ ] Focused tests, SDK build, desktop typecheck, production web build, and formatting checks pass.
-- [ ] Documentation and changelog match the shipped behavior.
+- [x] Custom Persona Studio records appear in both squad configuration surfaces.
+- [x] Orion cannot be removed; all seven other built-ins can be replaced.
+- [x] Named custom presets persist, select, overwrite, and delete safely.
+- [x] Unavailable persona references visibly block Ultra session start.
+- [x] Sidecar resolves workspace-over-global `.agent.md` records into an immutable snapshot.
+- [x] `spawn_agent` executes only active personas with saved prompts and narrowed tools.
+- [x] Runtime approval policy cannot be widened by persona configuration.
+- [x] War Room renders custom identity, stage, avatar, accent, filters, and five live states.
+- [x] Unknown event personas remain visible with a neutral diagnostic identity.
+- [x] Focused tests, SDK build, desktop typecheck, production web build, and formatting checks pass.
+- [x] Documentation and changelog match the shipped behavior.

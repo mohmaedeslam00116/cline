@@ -100,9 +100,9 @@ describe("Agency War Room Suite", () => {
 		expect(container.textContent).toContain("Approve & Proceed");
 
 		// Click Approve button
-		const approveBtn = Array.from(
-			container.querySelectorAll("button"),
-		).find((b) => b.textContent?.includes(t.approveAndProceed));
+		const approveBtn = Array.from(container.querySelectorAll("button")).find(
+			(b) => b.textContent?.includes(t.approveAndProceed),
+		);
 		expect(approveBtn).toBeDefined();
 
 		await act(async () => {
@@ -451,9 +451,9 @@ describe("Agency War Room Suite", () => {
 		expect(container.textContent).toContain("Excluded");
 
 		// Click Approve & Proceed
-		const approveBtn = Array.from(
-			container.querySelectorAll("button"),
-		).find((b) => b.textContent?.includes(t.approveAndProceed));
+		const approveBtn = Array.from(container.querySelectorAll("button")).find(
+			(b) => b.textContent?.includes(t.approveAndProceed),
+		);
 		expect(approveBtn).toBeDefined();
 		await act(async () => {
 			approveBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -569,9 +569,9 @@ describe("Agency War Room Suite", () => {
 		);
 
 		// Click Approve & Proceed
-		const approveBtn = Array.from(
-			container.querySelectorAll("button"),
-		).find((b) => b.textContent?.includes(t.approveAndProceed));
+		const approveBtn = Array.from(container.querySelectorAll("button")).find(
+			(b) => b.textContent?.includes(t.approveAndProceed),
+		);
 		expect(approveBtn).toBeDefined();
 		await act(async () => {
 			approveBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));

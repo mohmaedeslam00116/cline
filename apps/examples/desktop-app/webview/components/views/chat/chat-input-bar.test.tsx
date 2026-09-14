@@ -2432,6 +2432,22 @@ describe("ModeSwitcher component", () => {
 		expect(yoloBtn?.classList.contains("text-amber-500")).toBe(false);
 	});
 
+	it("renders the Ultra squad configurator with the active workspace", async () => {
+		await act(async () => {
+			root.render(
+				<ModeSwitcher
+					mode="ultra"
+					onModeChange={vi.fn()}
+					workspaceRoot="C:/workspace/lens"
+				/>,
+			);
+		});
+
+		expect(
+			container.querySelector('button[aria-label="Configure squad"]'),
+		).not.toBeNull();
+	});
+
 	it("supports ArrowRight/ArrowLeft navigation with wraparound", async () => {
 		const onModeChange = vi.fn();
 		await act(async () => {

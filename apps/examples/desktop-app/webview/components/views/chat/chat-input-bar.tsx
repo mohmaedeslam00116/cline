@@ -297,10 +297,12 @@ export const ModeSwitcher = memo(function ModeSwitcher({
 	mode,
 	disabled = false,
 	onModeChange,
+	workspaceRoot,
 }: {
 	mode: "act" | "plan" | "yolo" | "ultra";
 	disabled?: boolean;
 	onModeChange: (nextMode: "act" | "plan" | "yolo" | "ultra") => void;
+	workspaceRoot?: string;
 }) {
 	const t = getLensTranslations().modes;
 
@@ -1663,6 +1665,7 @@ function ChatInputBarImpl({
 						disabled={isBusy}
 						mode={mode}
 						onModeChange={handleModeSelect}
+						workspaceRoot={workspaceRoot}
 					/>
 					<div className="min-w-0 shrink-0">
 						<ModelSelector

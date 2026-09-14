@@ -120,6 +120,7 @@ export interface SpawnAgentToolConfig {
 	logger?: BasicLogger;
 	telemetry?: ITelemetryService;
 	resolvedSquad?: ResolvedSquadSnapshot;
+	delegatedAgentFactory?: typeof createDelegatedAgent;
 }
 
 const PERSONA_TOOL_ALIASES: Readonly<Record<string, readonly string[]>> = {
@@ -214,7 +215,7 @@ export function createSpawnAgentTool(
 
 			const parentAgentId = context.agentId;
 
-			const subAgent = createDelegatedAgent({
+			const subAgent = (config.delegatedAgentFactory ?? createDelegatedAgent)({
 				kind: "subagent",
 				prompt: personaPrompt(persona, input.systemPrompt),
 				configProvider: config.configProvider,

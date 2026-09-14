@@ -76,4 +76,6 @@ Rather than introducing proprietary configuration formats or opaque vector store
 
 - **Portability**: Agent definitions can be checked into repositories and shared across different workstations and AI harnesses.
 - **Visual Parity**: Custom personas inherit the handcrafted cyberpunk vector SVG avatars and dynamic state animations in the Agency War Room.
+- **Session Determinism**: A running Ultra session uses its immutable resolved squad snapshot, so later persona-file edits cannot silently change active delegated agents.
+- **Least-Privilege Delegation**: Persona tool declarations are intersected with the parent runtime and approval requirements can only become stricter, never broader.
 - **High Trust**: Team memory stays clean, relevant, and human-verified through Checkpoint Gate governance.
