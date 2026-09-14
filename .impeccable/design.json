@@ -1,0 +1,183 @@
+{
+	"schemaVersion": 2,
+	"generatedAt": "2026-09-13T00:00:00+03:00",
+	"title": "Design System: LENS Workstation",
+	"extensions": {
+		"colorMeta": {
+			"brand-violet": {
+				"role": "primary",
+				"displayName": "Signal Violet",
+				"canonical": "#6e56cf",
+				"tonalRamp": [
+					"#14121f",
+					"#1b1525",
+					"#291f43",
+					"#3c2e69",
+					"#56468b",
+					"#6e56cf",
+					"#baa7ff",
+					"#e2ddfe"
+				]
+			},
+			"graphite-canvas": {
+				"role": "neutral",
+				"displayName": "Graphite Canvas",
+				"canonical": "#121216",
+				"tonalRamp": [
+					"#121216",
+					"#18191b",
+					"#212225",
+					"#2f2f37",
+					"#43484e",
+					"#696e77",
+					"#b0b4ba",
+					"#fcfcfd"
+				]
+			},
+			"text-primary": {
+				"role": "neutral",
+				"displayName": "Paper White",
+				"canonical": "#fcfcfd",
+				"tonalRamp": [
+					"#121216",
+					"#212225",
+					"#363a3f",
+					"#5a6169",
+					"#777b84",
+					"#b0b4ba",
+					"#e8e8ec",
+					"#fcfcfd"
+				]
+			}
+		},
+		"typographyMeta": {
+			"headline": {
+				"displayName": "Work-area headline",
+				"purpose": "Names the active desktop tool."
+			},
+			"body": {
+				"displayName": "Interface body",
+				"purpose": "Dense forms, descriptions, and working content."
+			},
+			"code": {
+				"displayName": "Machine text",
+				"purpose": "Prompts, paths, IDs, evidence, and terminal content."
+			}
+		},
+		"shadows": [
+			{
+				"name": "overlay-medium",
+				"value": "0 4px 12px rgb(0 0 0 / 0.24)",
+				"purpose": "Detached dialogs, menus, and popovers only."
+			}
+		],
+		"motion": [
+			{
+				"name": "view-enter",
+				"value": "180ms ease-out",
+				"purpose": "Softens work-area swaps with a four-pixel rise; disabled for reduced motion."
+			},
+			{
+				"name": "state-fast",
+				"value": "100ms ease-out",
+				"purpose": "Hover, selection, and compact control feedback."
+			}
+		],
+		"breakpoints": [
+			{ "name": "compact-window", "value": "760px" },
+			{ "name": "window-titlebar-compact", "value": "768px" }
+		]
+	},
+	"components": [
+		{
+			"name": "Primary Button",
+			"kind": "button",
+			"refersTo": "button-primary",
+			"description": "The focused action in a desktop command group.",
+			"html": "<button class=\"ds-btn-primary\">Save persona</button>",
+			"css": ".ds-btn-primary { height: 36px; padding: 8px 12px; border: 0; border-radius: 6px; background: var(--primary, #6e56cf); color: var(--primary-foreground, #fff); font: 500 14px/20px 'Inter Variable', sans-serif; transition: background 100ms ease-out, box-shadow 100ms ease-out; } .ds-btn-primary:hover { background: var(--primary-emphasis, #7d66d9); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring, #6958ad) 50%, transparent); }"
+		},
+		{
+			"name": "Sidebar Destination",
+			"kind": "nav",
+			"description": "A persistent Windows workbench destination.",
+			"html": "<button class=\"ds-nav-item\" aria-current=\"page\">Persona Studio</button>",
+			"css": ".ds-nav-item { width: 100%; height: 32px; padding: 0 8px; border: 0; border-radius: 6px; background: var(--surface-3, #212225); color: var(--text-1, #fcfcfd); text-align: left; font: 500 13px/20px 'Inter Variable', sans-serif; transition: background 100ms ease-out; } .ds-nav-item:hover { background: var(--surface-hover, #ddeaf814); } .ds-nav-item:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--sidebar-ring, #6958ad); }"
+		},
+		{
+			"name": "Desktop Input",
+			"kind": "input",
+			"refersTo": "input",
+			"description": "Compact metadata and search entry.",
+			"html": "<input class=\"ds-input\" aria-label=\"Persona name\" value=\"Orion Custom\">",
+			"css": ".ds-input { width: 100%; height: 36px; padding: 4px 12px; border: 1px solid var(--input, #2e3135); border-radius: 6px; background: transparent; color: var(--foreground, #fcfcfd); font: 400 14px/20px 'Inter Variable', sans-serif; transition: border-color 100ms ease-out, box-shadow 100ms ease-out; } .ds-input:focus { border-color: var(--ring, #6958ad); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring, #6958ad) 50%, transparent); }"
+		},
+		{
+			"name": "Scope Badge",
+			"kind": "chip",
+			"description": "Communicates workspace, global, or built-in ownership.",
+			"html": "<span class=\"ds-scope-badge\">Workspace</span>",
+			"css": ".ds-scope-badge { display: inline-flex; align-items: center; min-height: 22px; padding: 2px 8px; border: 1px solid var(--border, #2f2f37); border-radius: 6px; background: var(--surface-2, #18191b); color: var(--text-2, #b0b4ba); font: 500 12px/16px 'Inter Variable', sans-serif; }"
+		},
+		{
+			"name": "Workbench Panel",
+			"kind": "card",
+			"refersTo": "panel",
+			"description": "An attached information surface within the desktop frame.",
+			"html": "<section class=\"ds-panel\"><h3>Capability grant</h3><p>Start read-only.</p></section>",
+			"css": ".ds-panel { padding: 16px; border: 1px solid var(--border, #2f2f37); border-radius: 8px; background: var(--surface-2, #18191b); color: var(--text-1, #fcfcfd); font-family: 'Inter Variable', sans-serif; } .ds-panel h3 { margin: 0; font-size: 16px; line-height: 24px; } .ds-panel p { margin: 4px 0 0; color: var(--text-2, #b0b4ba); font-size: 13px; line-height: 20px; }"
+		},
+		{
+			"name": "Persona State Tile",
+			"kind": "custom",
+			"description": "Pairs a stable chassis silhouette with one operational-state label.",
+			"html": "<div class=\"ds-persona-state\"><span class=\"ds-persona-signal\"></span><strong>THINKING</strong></div>",
+			"css": ".ds-persona-state { display: grid; place-items: center; gap: 8px; min-height: 112px; padding: 12px; border: 1px solid var(--border, #2f2f37); border-radius: 8px; background: var(--surface-2, #18191b); color: var(--text-2, #b0b4ba); font: 500 12px/16px 'Geist Mono Variable', Consolas, monospace; } .ds-persona-signal { width: 40px; height: 40px; border: 1px solid #3b82f6; border-radius: 6px; background: color-mix(in srgb, #3b82f6 12%, transparent); } .ds-persona-state:hover { background: var(--surface-3, #212225); } .ds-persona-state:focus-within { box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring, #6958ad) 50%, transparent); }"
+		}
+	],
+	"narrative": {
+		"northStar": "The Focused Research Bench",
+		"overview": "LENS Workstation is a dense, precise Windows desktop harness for autonomous developer research and coding. It should feel native to a serious engineering tool: persistent navigation, information-rich split panes, compact controls, and clear agent state. The interface recedes so evidence, code, capability boundaries, and decisions stay in focus. The visual identity pairs graphite tonal layers with a disciplined violet signal. Color marks selection, focus, and action—not decoration. Typography is quiet and technical, geometry is restrained, and motion explains state changes instead of adding spectacle.",
+		"keyCharacteristics": [
+			"Dark graphite hierarchy with violet operational signals.",
+			"Compact, information-dense Windows desktop layouts.",
+			"Inter for interface language and Geist Mono for code or machine data.",
+			"Borders and tonal changes establish structure; effects remain restrained.",
+			"Accessibility state is explicit in labels, focus rings, validation, and status text."
+		],
+		"rules": [
+			{
+				"name": "The One Signal Rule",
+				"body": "Violet identifies the current action or focus; do not scatter it across passive decoration.",
+				"section": "colors"
+			},
+			{
+				"name": "The Semantic Accent Rule",
+				"body": "Persona-specific neon colors may identify an avatar, but they never replace the application accent for controls.",
+				"section": "colors"
+			},
+			{
+				"name": "The Quiet Hierarchy Rule",
+				"body": "Build hierarchy with weight, spacing, and contrast before increasing type size.",
+				"section": "typography"
+			},
+			{
+				"name": "The Attached Surface Rule",
+				"body": "Tool panels belong to the workstation frame; reserve visible shadows for content that truly leaves that frame.",
+				"section": "elevation"
+			}
+		],
+		"dos": [
+			"Do use semantic tokens instead of isolated color literals.",
+			"Do keep primary commands visible while long work surfaces scroll.",
+			"Do expose identity, scope, capability, and validation state in text as well as color.",
+			"Do preserve compact keyboard-friendly Windows desktop behavior when the window resizes."
+		],
+		"donts": [
+			"Don't use gradients, glassmorphism, or decorative glow on application chrome.",
+			"Don't turn persona accent colors into competing control palettes.",
+			"Don't inflate headings or whitespace until the workstation loses useful information density.",
+			"Don't use raw external HTML for rendered research, prompts, or highlighted code."
+		]
+	}
+}

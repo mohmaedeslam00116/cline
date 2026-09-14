@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ChatSessionConfig } from "@/lib/chat-schema";
 import {
 	inferHydratedChatStatus,
+	normalizeRuntimeConfig,
 	resolveCredentialError,
 	resolveCredentialFailureHint,
 } from "./helpers";
@@ -17,6 +18,30 @@ function makeConfig(overrides: Partial<ChatSessionConfig>): ChatSessionConfig {
 		...overrides,
 	};
 }
+
+describe("normalizeRuntimeConfig squad transport", () => {
+	const squadConfig = {
+		presetId: "custom:release-review",
+		activePersonaIds: ["orion", "audit-bot"],
+		checkpointGatesEnabled: true,
+	};
+
+	it("includes the active squad for Ultra mode", () => {
+		expect(
+			normalizeRuntimeConfig(makeConfig({ mode: "ultra" }), squadConfig)
+				.squadConfig,
+		).toEqual(squadConfig);
+	});
+
+	it("omits squad configuration outside Ultra mode", () => {
+		expect(
+			normalizeRuntimeConfig(
+				{ ...makeConfig({ mode: "act" }), squadConfig },
+				squadConfig,
+			).squadConfig,
+		).toBeUndefined();
+	});
+});
 
 describe("resolveCredentialError", () => {
 	it("requires a provider", () => {

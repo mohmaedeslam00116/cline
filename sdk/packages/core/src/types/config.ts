@@ -11,6 +11,7 @@ import type {
 	HookErrorMode,
 	ITelemetryService,
 	MessageWithMetadata,
+	ResolvedSquadSnapshot,
 	SessionExecutionConfig,
 	SessionPromptConfig,
 	SessionWorkspaceConfig,
@@ -297,6 +298,8 @@ export interface CoreSessionConfig
 	 */
 	skills?: string[];
 	workspaceMetadata?: string;
+	/** Immutable persona definitions resolved by a trusted host for Ultra mode. */
+	resolvedSquad?: ResolvedSquadSnapshot;
 }
 
 /**

@@ -1,5 +1,9 @@
 // @vitest-environment jsdom
 
+import type {
+	RuntimePersonaDefinition,
+	SquadConfig,
+} from "@cline/shared/browser";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -19,6 +23,24 @@ const t = getLensTranslations().ultraAgency;
 let container: HTMLDivElement;
 let root: Root;
 
+const AUDIT_PERSONA: RuntimePersonaDefinition = {
+	id: "audit-bot",
+	name: "Audit Bot",
+	role: "Release Auditor",
+	stage: "qa",
+	avatar: { chassis: "sentinel", accentColor: "#10b981" },
+	instructions: "Audit the release evidence.",
+	tools: ["read_files"],
+	toolPolicy: "require_approval",
+	scope: "workspace",
+};
+
+const CUSTOM_SQUAD: SquadConfig = {
+	presetId: "custom",
+	activePersonaIds: ["orion", "audit-bot"],
+	checkpointGatesEnabled: true,
+};
+
 beforeEach(() => {
 	Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 	window.matchMedia = vi.fn().mockReturnValue({
@@ -34,6 +56,7 @@ beforeEach(() => {
 afterEach(async () => {
 	await act(async () => root.unmount());
 	container.remove();
+	window.localStorage.clear();
 });
 
 describe("Agency War Room Suite", () => {
@@ -77,9 +100,9 @@ describe("Agency War Room Suite", () => {
 		expect(container.textContent).toContain("Approve & Proceed");
 
 		// Click Approve button
-		const approveBtn = Array.from(
-			container.querySelectorAll("button"),
-		).find((b) => b.textContent?.includes(t.approveAndProceed));
+		const approveBtn = Array.from(container.querySelectorAll("button")).find(
+			(b) => b.textContent?.includes(t.approveAndProceed),
+		);
 		expect(approveBtn).toBeDefined();
 
 		await act(async () => {
@@ -132,12 +155,10 @@ describe("Agency War Room Suite", () => {
 		expect(container.textContent).toContain("Athena");
 		expect(container.textContent).toContain("Atlas");
 		expect(container.textContent).toContain("Cipher");
-		expect(container.textContent).toContain("Vector");
 		expect(container.textContent).toContain("Sentinel");
-		expect(container.textContent).toContain("Echo");
 
 		// Check telemetry bar
-		expect(container.textContent).toContain("Active Swarm: 8 Vectors");
+		expect(container.textContent).toContain("Active Swarm: 5 Specialists");
 	});
 
 	it("filters messages when a persona filter is selected", async () => {
@@ -430,9 +451,9 @@ describe("Agency War Room Suite", () => {
 		expect(container.textContent).toContain("Excluded");
 
 		// Click Approve & Proceed
-		const approveBtn = Array.from(
-			container.querySelectorAll("button"),
-		).find((b) => b.textContent?.includes(t.approveAndProceed));
+		const approveBtn = Array.from(container.querySelectorAll("button")).find(
+			(b) => b.textContent?.includes(t.approveAndProceed),
+		);
 		expect(approveBtn).toBeDefined();
 		await act(async () => {
 			approveBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -548,9 +569,9 @@ describe("Agency War Room Suite", () => {
 		);
 
 		// Click Approve & Proceed
-		const approveBtn = Array.from(
-			container.querySelectorAll("button"),
-		).find((b) => b.textContent?.includes(t.approveAndProceed));
+		const approveBtn = Array.from(container.querySelectorAll("button")).find(
+			(b) => b.textContent?.includes(t.approveAndProceed),
+		);
 		expect(approveBtn).toBeDefined();
 		await act(async () => {
 			approveBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -647,6 +668,178 @@ describe("Agency War Room Suite", () => {
 			"gate-memory-4",
 			"Revise architecture completely before proceeding.",
 			{ discardProposals: true },
+		);
+	});
+
+	it("renders and filters an active custom persona with its exact chassis and accent", async () => {
+		const { desktopClient } = await import("@/lib/desktop-client");
+
+		await act(async () => {
+			root.render(
+				<WarRoomProvider
+					initialOpen={true}
+					initialPersonaCatalog={[AUDIT_PERSONA]}
+					initialSquadConfig={CUSTOM_SQUAD}
+					sessionId="custom-session"
+				>
+					<AgencyWarRoomPanel />
+				</WarRoomProvider>,
+			);
+		});
+
+		await act(async () => {
+			desktopClient.dispatchLocalEvent("agency_war_room_event", {
+				sessionId: "custom-session",
+				subAgentId: "subagent-audit-bot-1",
+				personaId: "audit-bot",
+				event: {
+					type: "content_start",
+					contentType: "text",
+					text: "Release evidence verified.",
+				},
+				ts: Date.now(),
+			});
+		});
+
+		expect(container.textContent).toContain("Audit Bot");
+		expect(container.textContent).toContain("Active Swarm: 2 Specialists");
+		const avatar = container.querySelector(
+			'svg[aria-label="Audit Bot - Release Auditor"]',
+		);
+		expect(avatar?.textContent).toContain("SENTINEL");
+		expect(avatar?.outerHTML).toContain("#10b981");
+
+		const customFilter = Array.from(container.querySelectorAll("button")).find(
+			(button) => button.textContent?.includes("Audit Bot"),
+		);
+		await act(async () => {
+			customFilter?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		});
+		expect(container.textContent).toContain("Release evidence verified.");
+		expect(container.textContent).not.toContain(
+			"Architecture blueprint formulated",
+		);
+	});
+
+	it("tracks all five live states for a custom persona", async () => {
+		const { desktopClient } = await import("@/lib/desktop-client");
+
+		function StateProbe() {
+			const { activePersonaStates, addMessage } = useWarRoom();
+			return (
+				<>
+					<span data-testid="audit-state">
+						{activePersonaStates["audit-bot"]}
+					</span>
+					<button
+						type="button"
+						onClick={() =>
+							addMessage({
+								senderPersonaId: "audit-bot",
+								recipientPersonaId: "all",
+								stage: "qa",
+								type: "checkpoint",
+								content: "Awaiting release approval.",
+							})
+						}
+					>
+						Checkpoint
+					</button>
+				</>
+			);
+		}
+
+		await act(async () => {
+			root.render(
+				<WarRoomProvider
+					initialPersonaCatalog={[AUDIT_PERSONA]}
+					initialSquadConfig={CUSTOM_SQUAD}
+					sessionId="state-session"
+				>
+					<StateProbe />
+				</WarRoomProvider>,
+			);
+		});
+		const state = () =>
+			container.querySelector('[data-testid="audit-state"]')?.textContent;
+		expect(state()).toBe("idle");
+
+		for (const [event, expected] of [
+			[
+				{ type: "content_start", contentType: "text", text: "Working" },
+				"speaking",
+			],
+			[
+				{
+					type: "content_start",
+					contentType: "tool",
+					toolName: "read_file",
+					toolCallId: "audit-call",
+				},
+				"working",
+			],
+			[
+				{
+					type: "content_end",
+					contentType: "tool",
+					toolName: "read_file",
+					toolCallId: "audit-call",
+				},
+				"thinking",
+			],
+			[{ type: "content_end", contentType: "text" }, "idle"],
+		] as const) {
+			await act(async () => {
+				desktopClient.dispatchLocalEvent("agency_war_room_event", {
+					sessionId: "state-session",
+					subAgentId: "subagent-audit-bot-2",
+					personaId: "audit-bot",
+					event,
+					ts: Date.now(),
+				});
+			});
+			expect(state()).toBe(expected);
+		}
+
+		await act(async () => {
+			container
+				.querySelector("button")
+				?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		});
+		expect(state()).toBe("checkpoint");
+	});
+
+	it("keeps unknown event personas visible with a neutral diagnostic identity", async () => {
+		const { desktopClient } = await import("@/lib/desktop-client");
+		await act(async () => {
+			root.render(
+				<WarRoomProvider initialOpen={true} sessionId="unknown-session">
+					<AgencyWarRoomPanel />
+				</WarRoomProvider>,
+			);
+		});
+
+		await act(async () => {
+			desktopClient.dispatchLocalEvent("agency_war_room_event", {
+				sessionId: "unknown-session",
+				personaId: "retired-agent",
+				event: {
+					type: "content_start",
+					contentType: "text",
+					text: "Historical diagnostic event.",
+				},
+				ts: Date.now(),
+			});
+		});
+
+		expect(container.textContent).toContain("Unknown specialist");
+		expect(container.textContent).toContain("Unavailable persona");
+		const avatar = container.querySelector(
+			'svg[aria-label="Unknown specialist - Unavailable persona"]',
+		);
+		expect(avatar?.textContent).not.toContain("ORION");
+		expect(avatar?.querySelector("desc")?.textContent).toBe(
+			"Unknown specialist",
 		);
 	});
 });

@@ -37,6 +37,9 @@ export interface PersonaAvatarProps {
 	 */
 	showStatusRing?: boolean;
 
+	/** Optional Studio calibration color rendered as the chassis signal rail. */
+	accentColor?: string;
+
 	/**
 	 * Whether hover and click interaction micro-animations are enabled.
 	 * Defaults to false.

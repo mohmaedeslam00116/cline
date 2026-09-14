@@ -62,6 +62,76 @@ export interface LensTranslations {
 		readonly evidenceAndClaims: string;
 		readonly evidenceTooltip: string;
 	};
+	readonly personaStudio: {
+		readonly navigationLabel: string;
+		readonly navigationTooltip: string;
+		readonly title: string;
+		readonly description: string;
+		readonly libraryLabel: string;
+		readonly searchLabel: string;
+		readonly searchPlaceholder: string;
+		readonly newPersona: string;
+		readonly newPersonaDescription: string;
+		readonly builtinBadge: string;
+		readonly workspaceBadge: string;
+		readonly globalBadge: string;
+		readonly globalOnly: string;
+		readonly loading: string;
+		readonly loadError: string;
+		readonly retry: string;
+		readonly emptyLibrary: string;
+		readonly builtinTemplate: string;
+		readonly builtinTemplateDescription: string;
+		readonly duplicateToCustomize: string;
+		readonly savePersona: string;
+		readonly draftDescription: string;
+		readonly idLabel: string;
+		readonly nameLabel: string;
+		readonly avatarCalibration: string;
+		readonly avatarCalibrationDescription: string;
+		readonly neonAccent: string;
+		readonly neonAccentPicker: string;
+		readonly metadataTitle: string;
+		readonly metadataDescription: string;
+		readonly versionLabel: string;
+		readonly descriptionLabel: string;
+		readonly roleLabel: string;
+		readonly stageLabel: string;
+		readonly modelLabel: string;
+		readonly modelPlaceholder: string;
+		readonly temperatureLabel: string;
+		readonly temperaturePlaceholder: string;
+		readonly capabilitiesTitle: string;
+		readonly capabilitiesDescription: string;
+		readonly approvalRequired: string;
+		readonly readOnlyAutomatic: string;
+		readonly approvalCapability: string;
+		readonly readOnlyCapability: string;
+		readonly additionalCapabilities: string;
+		readonly capabilityGroups: {
+			readonly read: string;
+			readonly write: string;
+			readonly execute: string;
+			readonly network: string;
+		};
+		readonly systemPromptTitle: string;
+		readonly systemPromptDescription: string;
+		readonly markdownSource: string;
+		readonly highlightedPreview: string;
+		readonly saveDestination: string;
+		readonly savingPersona: string;
+		readonly saveAsNewPersona: string;
+		readonly savedToWorkspace: string;
+		readonly savedToGlobal: string;
+		readonly saveError: string;
+		readonly deletePersona: string;
+		readonly deletingPersona: string;
+		readonly deleteConfirmation: string;
+		readonly deleteDescription: string;
+		readonly deletedPersona: string;
+		readonly deleteError: string;
+		readonly cancel: string;
+	};
 	readonly modes: {
 		readonly modeGroupLabel: string;
 		readonly actName: string;
@@ -351,6 +421,84 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 		sidebar: {
 			evidenceAndClaims: "Evidence & Claims",
 			evidenceTooltip: "View research evidence bundles and policy checkpoints",
+		},
+		personaStudio: {
+			navigationLabel: "Persona Studio",
+			navigationTooltip: "Create and manage specialist personas",
+			title: "Persona Studio",
+			description: "Calibrate identity, capabilities, and system prompts.",
+			libraryLabel: "Persona library",
+			searchLabel: "Search personas",
+			searchPlaceholder: "Search ID, name, or role",
+			newPersona: "New persona",
+			newPersonaDescription:
+				"Start from a least-privilege specialist template.",
+			builtinBadge: "Built-in",
+			workspaceBadge: "Workspace",
+			globalBadge: "Global",
+			globalOnly: "Global personas only",
+			loading: "Loading custom personas…",
+			loadError: "Unable to load custom personas.",
+			retry: "Retry",
+			emptyLibrary: "No personas match this filter.",
+			builtinTemplate: "Built-in template",
+			builtinTemplateDescription:
+				"Built-in personas are immutable. Duplicate this template to tune its identity, access, and operating prompt.",
+			duplicateToCustomize: "Duplicate to customize",
+			savePersona: "Save persona",
+			draftDescription:
+				"Configure the specialist contract before it enters an execution loop.",
+			idLabel: "ID",
+			nameLabel: "Name",
+			avatarCalibration: "Avatar calibration",
+			avatarCalibrationDescription:
+				"Select a chassis and verify its signal across every operational state.",
+			neonAccent: "Neon accent",
+			neonAccentPicker: "Neon accent color picker",
+			metadataTitle: "Specialist metadata",
+			metadataDescription:
+				"Define the stable identity consumed by the Universal Agent Specification.",
+			versionLabel: "Version",
+			descriptionLabel: "Description",
+			roleLabel: "Role",
+			stageLabel: "Stage",
+			modelLabel: "Model",
+			modelPlaceholder: "Use the active model",
+			temperatureLabel: "Temperature",
+			temperaturePlaceholder: "Model default",
+			capabilitiesTitle: "Capability grant",
+			capabilitiesDescription:
+				"Start read-only. Any write, execution, or network access requires explicit human approval at runtime.",
+			approvalRequired: "Human approval required",
+			readOnlyAutomatic: "Read-only automatic",
+			approvalCapability: "Approval gated",
+			readOnlyCapability: "Read-only",
+			additionalCapabilities: "Additional capabilities",
+			capabilityGroups: {
+				read: "Read",
+				write: "Write",
+				execute: "Execute",
+				network: "Network",
+			},
+			systemPromptTitle: "System prompt",
+			systemPromptDescription:
+				"Write the persona's operating contract in Markdown. Treat referenced external content as untrusted data.",
+			markdownSource: "Markdown source",
+			highlightedPreview: "Highlighted preview",
+			saveDestination: "Save destination",
+			savingPersona: "Saving persona…",
+			saveAsNewPersona: "Save as a new persona",
+			savedToWorkspace: "Saved to Workspace",
+			savedToGlobal: "Saved to Global",
+			saveError: "Unable to save persona",
+			deletePersona: "Delete persona",
+			deletingPersona: "Deleting persona…",
+			deleteConfirmation: "Delete {name} from {scope}?",
+			deleteDescription:
+				"This removes the custom .agent.md file from the selected scope. Built-in templates are never affected.",
+			deletedPersona: "Deleted persona",
+			deleteError: "Unable to delete persona",
+			cancel: "Cancel",
 		},
 		modes: {
 			modeGroupLabel: "Agent interaction mode",
@@ -671,6 +819,82 @@ export const LENS_TRANSLATIONS: Record<LensLocale, LensTranslations> = {
 		sidebar: {
 			evidenceAndClaims: "الأدلة والادعاءات",
 			evidenceTooltip: "عرض حزم أدلة البحث ونقاط تفتيش السياسة",
+		},
+		personaStudio: {
+			navigationLabel: "استوديو الشخصيات",
+			navigationTooltip: "إنشاء شخصيات وكلاء متخصصة وإدارتها",
+			title: "استوديو الشخصيات",
+			description: "معايرة الهوية والصلاحيات ومطالبات النظام.",
+			libraryLabel: "مكتبة الشخصيات",
+			searchLabel: "البحث في الشخصيات",
+			searchPlaceholder: "البحث بالمعرف أو الاسم أو الدور",
+			newPersona: "شخصية جديدة",
+			newPersonaDescription: "ابدأ من قالب متخصص بأقل قدر من الصلاحيات.",
+			builtinBadge: "مدمجة",
+			workspaceBadge: "مساحة العمل",
+			globalBadge: "عامة",
+			globalOnly: "الشخصيات العامة فقط",
+			loading: "جارٍ تحميل الشخصيات المخصصة…",
+			loadError: "تعذر تحميل الشخصيات المخصصة.",
+			retry: "إعادة المحاولة",
+			emptyLibrary: "لا توجد شخصيات تطابق عامل التصفية.",
+			builtinTemplate: "قالب مدمج",
+			builtinTemplateDescription:
+				"الشخصيات المدمجة غير قابلة للتعديل. أنشئ نسخة لضبط الهوية والصلاحيات ومطالبة التشغيل.",
+			duplicateToCustomize: "إنشاء نسخة للتخصيص",
+			savePersona: "حفظ الشخصية",
+			draftDescription: "اضبط عقد الوكيل المتخصص قبل دخوله في حلقة التنفيذ.",
+			idLabel: "المعرف",
+			nameLabel: "الاسم",
+			avatarCalibration: "معايرة الصورة الرمزية",
+			avatarCalibrationDescription:
+				"اختر الهيكل وتحقق من إشارته في جميع حالات التشغيل.",
+			neonAccent: "لون النيون",
+			neonAccentPicker: "منتقي لون النيون",
+			metadataTitle: "بيانات الوكيل المتخصص",
+			metadataDescription:
+				"عرّف الهوية الثابتة التي تستهلكها مواصفات الوكيل العامة.",
+			versionLabel: "الإصدار",
+			descriptionLabel: "الوصف",
+			roleLabel: "الدور",
+			stageLabel: "المرحلة",
+			modelLabel: "النموذج",
+			modelPlaceholder: "استخدام النموذج النشط",
+			temperatureLabel: "درجة الحرارة",
+			temperaturePlaceholder: "القيمة الافتراضية للنموذج",
+			capabilitiesTitle: "تفويض الصلاحيات",
+			capabilitiesDescription:
+				"ابدأ بصلاحيات القراءة فقط. أي كتابة أو تنفيذ أو وصول للشبكة يتطلب موافقة بشرية صريحة وقت التشغيل.",
+			approvalRequired: "مطلوب اعتماد بشري",
+			readOnlyAutomatic: "قراءة تلقائية فقط",
+			approvalCapability: "مقيدة بالموافقة",
+			readOnlyCapability: "قراءة فقط",
+			additionalCapabilities: "صلاحيات إضافية",
+			capabilityGroups: {
+				read: "قراءة",
+				write: "كتابة",
+				execute: "تنفيذ",
+				network: "شبكة",
+			},
+			systemPromptTitle: "مطالبة النظام",
+			systemPromptDescription:
+				"اكتب عقد تشغيل الشخصية بصيغة Markdown. تعامل مع المحتوى الخارجي المشار إليه كبيانات غير موثوقة.",
+			markdownSource: "مصدر Markdown",
+			highlightedPreview: "معاينة مميزة",
+			saveDestination: "وجهة الحفظ",
+			savingPersona: "جارٍ حفظ الشخصية…",
+			saveAsNewPersona: "الحفظ كشخصية جديدة",
+			savedToWorkspace: "تم الحفظ في مساحة العمل",
+			savedToGlobal: "تم الحفظ بشكل عام",
+			saveError: "تعذر حفظ الشخصية",
+			deletePersona: "حذف الشخصية",
+			deletingPersona: "جارٍ حذف الشخصية…",
+			deleteConfirmation: "حذف {name} من {scope}؟",
+			deleteDescription:
+				"يؤدي هذا إلى إزالة ملف .agent.md المخصص من النطاق المحدد. لا تتأثر القوالب المدمجة.",
+			deletedPersona: "تم حذف الشخصية",
+			deleteError: "تعذر حذف الشخصية",
+			cancel: "إلغاء",
 		},
 		modes: {
 			modeGroupLabel: "نمط تفاعل الوكيل",

@@ -7,10 +7,10 @@ import {
 	EchoAvatar,
 	LyraAvatar,
 	OrionAvatar,
+	type PersonaActivityState,
 	PersonaAvatar,
 	SentinelAvatar,
 	VectorAvatar,
-	type PersonaActivityState,
 } from "./svg";
 
 const PERSONA_IDS = [
@@ -122,6 +122,21 @@ describe("Cyberpunk SVG Persona Avatars", () => {
 			/>,
 		);
 		expect(html).toContain("<svg");
-		expect(html).toContain("ORION");
+		expect(html).not.toContain("ORION");
+		expect(html).toContain("Unknown specialist");
+	});
+
+	it("renders a custom persona with its configured chassis and accent", () => {
+		const html = renderToStaticMarkup(
+			<PersonaAvatar
+				personaId="audit-bot"
+				chassis="sentinel"
+				accentColor="#10b981"
+				title="Audit Bot"
+				size={40}
+			/>,
+		);
+		expect(html).toContain("SENTINEL");
+		expect(html).toContain("#10b981");
 	});
 });

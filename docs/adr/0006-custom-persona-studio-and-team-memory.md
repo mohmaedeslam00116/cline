@@ -47,6 +47,8 @@ Rather than introducing proprietary configuration formats or opaque vector store
      - Markdown System Prompt Editor with live linting and syntax highlighting.
      - Squad Preset Builder: Assemble and save custom squads (`SquadConfig`) alongside default presets (`core`, `full`, `rapid`).
 
+   Named squad presets persist only persona identifiers and checkpoint preferences in the desktop profile. At Ultra session start, the privileged Sidecar resolves those identifiers from validated built-in and `.agent.md` definitions, applies workspace-over-global precedence, and passes an immutable `ResolvedSquadSnapshot` into the runtime. Orion remains the required leader; every other specialist may be replaced. Persona prompts can narrow behavior but cannot widen the runtime's tool availability or approval policy.
+
 4. **Structured Agent Team Memory (`<workspace>/.lens/memory/`)**:
    - Institutional memory is maintained in transparent, version-controlled Markdown files:
      - `decisions.md`: Architectural decisions, technical trade-offs, and design constraints.
@@ -74,4 +76,6 @@ Rather than introducing proprietary configuration formats or opaque vector store
 
 - **Portability**: Agent definitions can be checked into repositories and shared across different workstations and AI harnesses.
 - **Visual Parity**: Custom personas inherit the handcrafted cyberpunk vector SVG avatars and dynamic state animations in the Agency War Room.
+- **Session Determinism**: A running Ultra session uses its immutable resolved squad snapshot, so later persona-file edits cannot silently change active delegated agents.
+- **Least-Privilege Delegation**: Persona tool declarations are intersected with the parent runtime and approval requirements can only become stricter, never broader.
 - **High Trust**: Team memory stays clean, relevant, and human-verified through Checkpoint Gate governance.

@@ -1,11 +1,17 @@
 import { z } from "zod";
 
+export const SquadConfigSchema = z.object({
+	presetId: z.string().trim().min(1),
+	activePersonaIds: z.array(z.string().trim().min(1)).min(1),
+	checkpointGatesEnabled: z.boolean(),
+});
+
 export const ChatSessionConfigSchema = z.object({
 	workspaceRoot: z.string().min(1),
 	cwd: z.string().optional(),
 	provider: z.string().min(1),
 	model: z.string().min(1),
-	mode: z.enum(["act", "plan"]).default("act"),
+	mode: z.enum(["act", "plan", "yolo", "ultra"]).default("act"),
 	apiKey: z.string(),
 	systemPrompt: z.string().optional(),
 	rules: z.string().optional(),
@@ -16,6 +22,7 @@ export const ChatSessionConfigSchema = z.object({
 	autoApproveTools: z.boolean().optional(),
 	missionStepInterval: z.number().int().positive().optional(),
 	missionTimeIntervalMs: z.number().int().positive().optional(),
+	squadConfig: SquadConfigSchema.optional(),
 });
 
 export const ChatSessionStatusSchema = z.enum([

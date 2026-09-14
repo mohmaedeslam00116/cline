@@ -84,6 +84,7 @@ export interface BuildDelegatedAgentConfigOptions {
 	) => Promise<ToolApprovalResult> | ToolApprovalResult;
 	role?: string;
 	cwd?: string;
+	connectionOverrides?: Partial<DelegatedAgentConnectionConfig>;
 }
 
 export function createDelegatedAgentConfigProvider(
@@ -128,6 +129,7 @@ export function buildDelegatedAgentConfig(
 
 	return {
 		...options.configProvider.getConnectionConfig(),
+		...options.connectionOverrides,
 		distinctId: runtimeConfig.distinctId,
 		sessionId: runtimeConfig.sessionId,
 		systemPrompt,

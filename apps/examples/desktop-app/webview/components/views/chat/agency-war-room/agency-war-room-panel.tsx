@@ -1,9 +1,6 @@
 "use client";
 
-import {
-	BUILTIN_PERSONAS,
-	type SpecialistPersonaId,
-} from "@cline/shared/browser";
+import type { PersonaId } from "@cline/shared/browser";
 import {
 	Activity,
 	Cpu,
@@ -29,17 +26,6 @@ import { getLensTranslations } from "@/lib/lens-i18n";
 import { cn } from "@/lib/utils";
 import { AgentMessageBubble } from "./agent-message-bubble";
 import { useWarRoom } from "./war-room-context";
-
-const ALL_PERSONA_IDS: SpecialistPersonaId[] = [
-	"orion",
-	"lyra",
-	"athena",
-	"atlas",
-	"cipher",
-	"vector",
-	"sentinel",
-	"echo",
-];
 
 export interface AgencyWarRoomPanelProps {
 	className?: string;
@@ -72,7 +58,20 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 		approveCheckpoint,
 		rejectCheckpoint,
 		addMessage,
+		activePersonaIds,
+		personaById,
+		resolvePersona,
 	} = useWarRoom();
+	const filterPersonaIds = useMemo(() => {
+		const ids = new Set<PersonaId>(activePersonaIds);
+		for (const message of messages) {
+			ids.add(message.senderPersonaId);
+			if (message.recipientPersonaId && message.recipientPersonaId !== "all") {
+				ids.add(message.recipientPersonaId);
+			}
+		}
+		return [...ids];
+	}, [activePersonaIds, messages]);
 
 	// Keyboard focus containment & Escape key trap for fullscreen dialog mode
 	useEffect(() => {
@@ -143,15 +142,15 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 	const innerContent = (
 		<>
 			{/* Top Cyberpunk War Room Header */}
-			<div className="flex flex-col gap-3 px-4 py-3 bg-gradient-to-r from-slate-950 via-[#0a0e1a] to-slate-950 border-b border-slate-800/90 shrink-0">
-				<div className="flex items-center justify-between gap-2">
-					<div className="flex items-center gap-2.5">
+			<div className="flex flex-col gap-3 border-b border-[#2f2f37] bg-[#18191b] px-4 py-3 shrink-0">
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<div className="flex min-w-0 items-center gap-2.5">
 						<span className="relative flex h-2.5 w-2.5">
 							<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
 							<span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500" />
 						</span>
-						<div className="flex items-center gap-2">
-							<h2 className="text-sm font-bold tracking-wider uppercase font-mono text-cyan-400">
+						<div className="flex min-w-0 flex-wrap items-center gap-2">
+							<h2 className="whitespace-nowrap text-sm font-bold tracking-wider uppercase font-mono text-cyan-400">
 								{t.warRoomTitle}
 							</h2>
 							<Badge
@@ -173,7 +172,7 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 					</div>
 
 					{/* Actions: Simulation Controls & Layout Controls */}
-					<div className="flex items-center gap-1.5">
+					<div className="flex max-w-full items-center gap-1.5 overflow-x-auto no-scrollbar">
 						{/* Simulation Controls */}
 						<div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-md border border-slate-800 mr-1">
 							<Button
@@ -256,8 +255,8 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 					<span className="text-[10px] font-mono uppercase text-slate-400 shrink-0">
 						{t.squadRosterLabel}
 					</span>
-					{ALL_PERSONA_IDS.map((personaId) => {
-						const persona = BUILTIN_PERSONAS[personaId];
+					{activePersonaIds.map((personaId) => {
+						const persona = resolvePersona(personaId);
 						const state = activePersonaStates[personaId] || "idle";
 						const isSelected = activeFilterPersona === personaId;
 
@@ -269,14 +268,26 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 								className={cn(
 									"relative group p-1 rounded-lg border transition-all cursor-pointer shrink-0 flex items-center gap-1.5",
 									isSelected
-										? "bg-cyan-950/60 border-cyan-400 shadow-sm shadow-cyan-500/20"
-										: "bg-slate-900/60 border-slate-800 hover:border-slate-700",
+										? "bg-[#212225] border-[#6e56cf]"
+										: "bg-[#18191b] border-[#2f2f37] hover:border-[#4b4b55]",
+									"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6958ad] focus-visible:ring-offset-2 focus-visible:ring-offset-[#18191b]",
 								)}
+								style={
+									isSelected
+										? { borderColor: persona.avatar.accentColor }
+										: undefined
+								}
 								title={`${persona.name} (${persona.role}) - ${state}`}
 								aria-label={`${persona.name} - ${t.filterPersonaAria}`}
 							>
 								<PersonaAvatar
 									personaId={personaId}
+									chassis={
+										persona.scope === "unknown"
+											? undefined
+											: persona.avatar.chassis
+									}
+									accentColor={persona.avatar.accentColor}
 									size={24}
 									state={state}
 									title={`${persona.name} - ${persona.role}`}
@@ -303,13 +314,15 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 						className={cn(
 							"px-2.5 py-0.5 rounded-full text-[10px] font-mono transition-colors shrink-0 cursor-pointer",
 							activeFilterPersona === "all"
-								? "bg-cyan-500 text-black font-semibold"
+								? "bg-[#6e56cf] text-white font-semibold"
 								: "bg-slate-800/80 text-slate-400 hover:text-slate-200",
+							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6958ad]",
 						)}
 					>
 						{t.filterAll} ({messages.length})
 					</button>
-					{ALL_PERSONA_IDS.map((pId) => {
+					{filterPersonaIds.map((pId) => {
+						const persona = resolvePersona(pId);
 						const count = messages.filter(
 							(m) => m.senderPersonaId === pId || m.recipientPersonaId === pId,
 						).length;
@@ -323,11 +336,12 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 								className={cn(
 									"px-2 py-0.5 rounded-full text-[10px] font-mono transition-colors shrink-0 cursor-pointer flex items-center gap-1",
 									isSelected
-										? "bg-cyan-950 text-cyan-300 border border-cyan-500/50"
+										? "bg-[#212225] text-white border border-[#6e56cf]"
 										: "bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800/80",
+									"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6958ad]",
 								)}
 							>
-								<span>{BUILTIN_PERSONAS[pId].name}</span>
+								<span>{persona.name}</span>
 								<span className="opacity-60">({count})</span>
 							</button>
 						);
@@ -356,6 +370,7 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 								key={message.id}
 								message={message}
 								associatedGate={gate}
+								personaById={personaById}
 								onApproveGate={approveCheckpoint}
 								onRejectGate={rejectCheckpoint}
 							/>
@@ -365,13 +380,13 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 			</div>
 
 			{/* Footer: Live Swarm Telemetry & Direct Directive Composer */}
-			<div className="p-3 bg-slate-950 border-t border-slate-800/90 shrink-0 space-y-2">
+			<div className="shrink-0 space-y-2 border-t border-[#2f2f37] bg-[#18191b] p-3">
 				{/* Telemetry Bar */}
-				<div className="flex items-center justify-between text-[11px] font-mono text-slate-400 px-1">
-					<div className="flex items-center gap-3">
+				<div className="flex flex-wrap items-center justify-between gap-1 text-[11px] font-mono text-slate-400 px-1">
+					<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
 						<span className="flex items-center gap-1 text-slate-300">
 							<Cpu className="size-3 text-cyan-400" />
-							{t.telemetryActiveSquad}: 8 Vectors
+							{t.telemetryActiveSquad}: {activePersonaIds.length} Specialists
 						</span>
 						<span className="flex items-center gap-1">
 							<Activity className="size-3 text-emerald-400" />
@@ -383,7 +398,7 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 						</span>
 					</div>
 
-					<span className="text-slate-500 text-[10px]">
+					<span className="whitespace-nowrap text-slate-500 text-[10px]">
 						{t.ultraSopProtocol}
 					</span>
 				</div>
@@ -420,7 +435,7 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 				aria-modal="true"
 				aria-label={t.warRoomTitle}
 				className={cn(
-					"fixed inset-0 z-50 flex flex-col h-full bg-[#070b12] text-slate-100 border-0 shadow-2xl overflow-hidden font-sans",
+					"fixed inset-0 z-50 flex flex-col h-full bg-[#121216] text-[#fcfcfd] border-0 overflow-hidden font-sans",
 					className,
 				)}
 			>
@@ -433,7 +448,7 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 		<aside
 			aria-label={t.warRoomTitle}
 			className={cn(
-				"flex flex-col h-full bg-[#070b12] text-slate-100 border-l border-slate-800 shadow-2xl overflow-hidden font-sans",
+				"flex flex-col h-full bg-[#121216] text-[#fcfcfd] border-l border-[#2f2f37] overflow-hidden font-sans",
 				className,
 			)}
 		>

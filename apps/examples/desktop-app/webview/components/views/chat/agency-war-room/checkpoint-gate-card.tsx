@@ -1,6 +1,12 @@
 "use client";
 
-import { BUILTIN_PERSONAS } from "@cline/shared/browser";
+import {
+	BUILTIN_PERSONAS,
+	getAllPersonas,
+	getBuiltinRuntimePersona,
+	type PersonaId,
+	type RuntimePersonaDefinition,
+} from "@cline/shared/browser";
 import {
 	AlertTriangle,
 	BookOpen,
@@ -27,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { getLensTranslations } from "@/lib/lens-i18n";
 import { cn } from "@/lib/utils";
+import { getPersonaIdentity } from "../squad-selection-model";
 import type {
 	WarRoomCheckpointGate,
 	WarRoomCheckpointMemoryProposal,
@@ -44,26 +51,33 @@ export interface CheckpointGateCardProps {
 		options?: { discardProposals?: boolean },
 	) => void;
 	className?: string;
+	personaById?: ReadonlyMap<PersonaId, RuntimePersonaDefinition>;
 }
+
+const BUILTIN_PERSONA_BY_ID = new Map(
+	getAllPersonas().map((persona) => [
+		persona.id,
+		getBuiltinRuntimePersona(persona.id),
+	]),
+);
 
 export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 	gate,
 	onApprove,
 	onReject,
 	className,
+	personaById = BUILTIN_PERSONA_BY_ID,
 }) => {
 	const t = getLensTranslations().ultraAgency;
 	const [showFeedbackInput, setShowFeedbackInput] = useState(false);
 	const [feedback, setFeedback] = useState("");
 	const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
-
-	const [proposals, setProposals] = useState<
-		WarRoomCheckpointMemoryProposal[]
-	>(() =>
-		(gate.proposedLearnings ?? []).map((p) => ({
-			...p,
-			approved: p.approved ?? true,
-		})),
+	const [proposals, setProposals] = useState<WarRoomCheckpointMemoryProposal[]>(
+		() =>
+			(gate.proposedLearnings ?? []).map((p) => ({
+				...p,
+				approved: p.approved ?? true,
+			})),
 	);
 	const [editingProposalId, setEditingProposalId] = useState<string | null>(
 		null,
@@ -124,6 +138,11 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 		}
 	};
 
+	const requestingPersona = getPersonaIdentity(gate.personaId, personaById);
+	const isPending = gate.status === "pending";
+	const isApproved = gate.status === "approved";
+	const isRejected = gate.status === "rejected";
+
 	const handleSendFeedback = () => {
 		if (!feedback.trim()) return;
 		setIsSubmittingFeedback(true);
@@ -134,23 +153,15 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 		setShowFeedbackInput(false);
 	};
 
-	const requestingPersona = BUILTIN_PERSONAS[gate.personaId];
-	const isPending = gate.status === "pending";
-	const isApproved = gate.status === "approved";
-	const isRejected = gate.status === "rejected";
-
 	return (
 		<Card
 			role="region"
 			aria-label={`${gate.title} - ${isApproved ? t.checkpointApproved : isPending ? t.checkpointPending : t.checkpointRejected}`}
 			className={cn(
-				"relative overflow-hidden transition-all duration-300 border backdrop-blur-md rounded-xl p-5 my-3 shadow-xl",
-				isPending &&
-					"bg-gradient-to-b from-amber-950/30 via-slate-900/90 to-[#0c0a09] border-amber-500/50 shadow-amber-500/10",
-				isApproved &&
-					"bg-gradient-to-b from-emerald-950/20 via-slate-900/90 to-[#022c22]/30 border-emerald-500/40 shadow-emerald-500/10",
-				isRejected &&
-					"bg-gradient-to-b from-rose-950/20 via-slate-900/90 to-[#1e1b4b]/30 border-rose-500/40 shadow-rose-500/10",
+				"relative overflow-hidden transition-colors duration-300 border rounded-xl p-5 my-3",
+				isPending && "bg-[#211d17] border-amber-500/50",
+				isApproved && "bg-[#17211d] border-emerald-500/40",
+				isRejected && "bg-[#24191c] border-rose-500/40",
 				className,
 			)}
 		>
@@ -158,10 +169,9 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 			<div
 				className={cn(
 					"absolute top-0 left-0 right-0 h-1",
-					isPending &&
-						"bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 animate-pulse",
-					isApproved && "bg-gradient-to-r from-emerald-500 to-teal-400",
-					isRejected && "bg-gradient-to-r from-rose-500 to-red-600",
+					isPending && "bg-amber-500 animate-pulse",
+					isApproved && "bg-emerald-500",
+					isRejected && "bg-rose-500",
 				)}
 			/>
 
@@ -171,11 +181,17 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 					<div className="relative shrink-0">
 						<PersonaAvatar
 							personaId={gate.personaId}
+							chassis={
+								requestingPersona.scope === "unknown"
+									? undefined
+									: requestingPersona.avatar.chassis
+							}
+							accentColor={requestingPersona.avatar.accentColor}
 							size={44}
 							state={
 								isPending ? "checkpoint" : isApproved ? "idle" : "thinking"
 							}
-							title={`${requestingPersona?.name || gate.personaId} - ${requestingPersona?.role || ""}`}
+							title={`${requestingPersona.name} - ${requestingPersona.role}`}
 						/>
 						{isPending && (
 							<span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-black ring-2 ring-slate-900 animate-ping" />
@@ -200,7 +216,7 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 								GATE #{gate.gateNumber}
 							</Badge>
 							<span className="text-xs text-slate-400 font-mono">
-								{requestingPersona?.name} ({requestingPersona?.role})
+								{requestingPersona.name} ({requestingPersona.role})
 							</span>
 						</div>
 						<h3 className="text-sm font-semibold text-slate-100 mt-1 font-mono tracking-wide">
@@ -326,10 +342,14 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 									{isEditing ? (
 										<div className="space-y-2">
 											<div>
-												<label className="text-[10px] font-mono uppercase text-slate-400 block mb-1">
+												<label
+													htmlFor={`proposal-topic-${item.id}`}
+													className="text-[10px] font-mono uppercase text-slate-400 block mb-1"
+												>
 													{t.learningTopicLabel}
 												</label>
 												<Input
+													id={`proposal-topic-${item.id}`}
 													value={editTopic}
 													onChange={(e) => setEditTopic(e.target.value)}
 													className="text-xs h-7 bg-[#111111] border-border text-foreground"
@@ -337,10 +357,14 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 												/>
 											</div>
 											<div>
-												<label className="text-[10px] font-mono uppercase text-slate-400 block mb-1">
+												<label
+													htmlFor={`proposal-learning-${item.id}`}
+													className="text-[10px] font-mono uppercase text-slate-400 block mb-1"
+												>
 													{t.learningContentLabel}
 												</label>
 												<Textarea
+													id={`proposal-learning-${item.id}`}
 													value={editLearning}
 													onChange={(e) => setEditLearning(e.target.value)}
 													rows={2}
@@ -501,7 +525,7 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 							type="button"
 							size="sm"
 							onClick={handleApprove}
-							className="bg-[#1E1E1E] hover:bg-border text-foreground font-medium text-xs border border-border/60 gap-1.5 transition-all cursor-pointer"
+							className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs border border-emerald-400/30 gap-1.5 transition-colors cursor-pointer"
 						>
 							<ShieldCheck className="size-4" />
 							<span>{t.approveAndProceed}</span>

@@ -7,6 +7,7 @@ export const CipherAvatar: React.FC<PersonaAvatarProps> = ({
 	className = "",
 	showGlow = true,
 	showStatusRing = true,
+	accentColor,
 	interactive = false,
 	title,
 	onClick,
@@ -25,8 +26,15 @@ export const CipherAvatar: React.FC<PersonaAvatarProps> = ({
 				interactive ? "hover:scale-105 cursor-pointer" : ""
 			} ${className}`}
 			onClick={onClick}
-			role="img"
-			aria-label={title}
+			onKeyDown={(event) => {
+				if (onClick && (event.key === "Enter" || event.key === " ")) {
+					event.preventDefault();
+					onClick();
+				}
+			}}
+			role={onClick ? "button" : "img"}
+			tabIndex={onClick ? 0 : undefined}
+			aria-label={title ?? (onClick ? "Cipher avatar" : undefined)}
 			xmlns="http://www.w3.org/2000/svg"
 		>
 			<defs>
@@ -411,8 +419,21 @@ export const CipherAvatar: React.FC<PersonaAvatarProps> = ({
 				fontWeight="bold"
 				letterSpacing="1.5"
 			>
-				CIPHER // ENGINEER
+				{"CIPHER // ENGINEER"}
 			</text>
+			{accentColor ? (
+				<rect
+					fill="none"
+					height="120"
+					opacity="0.7"
+					rx="12"
+					stroke={accentColor}
+					strokeWidth="2"
+					width="120"
+					x="4"
+					y="4"
+				/>
+			) : null}
 		</svg>
 	);
 };

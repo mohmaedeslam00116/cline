@@ -131,10 +131,10 @@ function historyItemToSessionHistoryRecord(item: HistoryItem): SessionHistoryRec
 	}
 }
 
-/** SdkMessage plus the plan/act mode recovered from its <user_input mode="..."> wrapper. */
-type SdkDisplayMessage = SdkMessage & { uiMode?: "plan" | "act" | "yolo" }
+/** SdkMessage plus the agent mode recovered from its <user_input mode="..."> wrapper. */
+type SdkDisplayMessage = SdkMessage & { uiMode?: "plan" | "act" | "yolo" | "ultra" }
 
-function parseUserMessageMode(content: SdkMessage["content"]): "plan" | "act" | "yolo" | undefined {
+function parseUserMessageMode(content: SdkMessage["content"]): "plan" | "act" | "yolo" | "ultra" | undefined {
 	if (typeof content === "string") {
 		return parseUserInputMode(content)
 	}

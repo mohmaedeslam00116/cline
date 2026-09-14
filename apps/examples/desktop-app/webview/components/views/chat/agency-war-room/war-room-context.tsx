@@ -1,6 +1,10 @@
 "use client";
 
-import type { SpecialistPersonaId } from "@cline/shared/browser";
+import type {
+	PersonaId,
+	RuntimePersonaDefinition,
+	SquadConfig,
+} from "@cline/shared/browser";
 import type React from "react";
 import {
 	createContext,
@@ -12,6 +16,12 @@ import {
 	useState,
 } from "react";
 import type { PersonaActivityState } from "@/components/personas";
+import {
+	getPersonaIdentity,
+	type PersonaIdentity,
+} from "@/components/views/chat/squad-selection-model";
+import { usePersonaCatalog } from "@/hooks/use-persona-catalog";
+import { useSquadConfig } from "@/hooks/use-squad-config";
 import { desktopClient } from "@/lib/desktop-client";
 import { getLensTranslations } from "@/lib/lens-i18n";
 import type {
@@ -25,8 +35,11 @@ import type {
 } from "./types";
 
 export function resolvePersonaStage(
-	personaId: SpecialistPersonaId,
+	personaId: PersonaId,
+	personaById?: ReadonlyMap<PersonaId, RuntimePersonaDefinition>,
 ): WarRoomStage {
+	const configuredStage = personaById?.get(personaId)?.stage;
+	if (configuredStage) return configuredStage;
 	switch (personaId) {
 		case "orion":
 		case "athena":
@@ -131,10 +144,7 @@ export function createInitialCheckpointGates(
 	];
 }
 
-const INITIAL_PERSONA_STATES: Record<
-	SpecialistPersonaId,
-	PersonaActivityState
-> = {
+const INITIAL_PERSONA_STATES: Record<PersonaId, PersonaActivityState> = {
 	orion: "speaking",
 	lyra: "working",
 	athena: "thinking",
@@ -149,7 +159,7 @@ export function createSimulationScenarioSteps(
 	t: ReturnType<typeof getLensTranslations>["ultraAgency"],
 ): Array<{
 	message: Omit<WarRoomMessage, "id" | "timestamp">;
-	personaStates: Partial<Record<SpecialistPersonaId, PersonaActivityState>>;
+	personaStates: Partial<Record<PersonaId, PersonaActivityState>>;
 	gateTrigger?: "gate-1" | "gate-2";
 }> {
 	return [
@@ -283,7 +293,7 @@ interface WarRoomContextValue extends WarRoomState {
 	toggleWarRoom: () => void;
 	setViewMode: (mode: WarRoomViewMode) => void;
 	toggleFullscreen: () => void;
-	setFilterPersona: (persona: SpecialistPersonaId | "all") => void;
+	setFilterPersona: (persona: PersonaId | "all") => void;
 	addMessage: (message: Omit<WarRoomMessage, "id" | "timestamp">) => void;
 	approveCheckpoint: (
 		gateId: string,
@@ -300,6 +310,9 @@ interface WarRoomContextValue extends WarRoomState {
 	resetSimulation: () => void;
 	sessionId: string | null;
 	setSessionId: (sessionId: string | null) => void;
+	activePersonaIds: PersonaId[];
+	personaById: ReadonlyMap<PersonaId, RuntimePersonaDefinition>;
+	resolvePersona: (personaId: PersonaId) => PersonaIdentity;
 }
 
 const WarRoomContext = createContext<WarRoomContextValue | null>(null);
@@ -308,25 +321,60 @@ export function WarRoomProvider({
 	children,
 	initialOpen = false,
 	sessionId: initialSessionId,
+	workspaceRoot,
+	initialPersonaCatalog,
+	initialSquadConfig,
 }: {
 	children: React.ReactNode;
 	initialOpen?: boolean;
 	sessionId?: string | null;
+	workspaceRoot?: string;
+	initialPersonaCatalog?: RuntimePersonaDefinition[];
+	initialSquadConfig?: SquadConfig;
 }) {
 	const t = getLensTranslations().ultraAgency;
 	const scenarioSteps = useMemo(() => createSimulationScenarioSteps(t), [t]);
+	const catalog = usePersonaCatalog(workspaceRoot);
+	const [storedSquadConfig] = useSquadConfig();
+	const squadConfig = initialSquadConfig ?? storedSquadConfig;
+	const personaById = useMemo(() => {
+		const map = new Map(
+			catalog.personas.map((persona) => [persona.id, persona]),
+		);
+		for (const persona of initialPersonaCatalog ?? []) {
+			map.set(persona.id, persona);
+		}
+		return map;
+	}, [catalog.personas, initialPersonaCatalog]);
+	const activePersonaIds = squadConfig.activePersonaIds;
+	const resolvePersona = useCallback(
+		(personaId: PersonaId) => getPersonaIdentity(personaId, personaById),
+		[personaById],
+	);
 
 	const [isOpen, setIsOpen] = useState(initialOpen);
 	const [viewMode, setViewMode] = useState<WarRoomViewMode>("split");
 	const [activeFilterPersona, setActiveFilterPersona] = useState<
-		SpecialistPersonaId | "all"
+		PersonaId | "all"
 	>("all");
 	const [checkpointGates, setCheckpointGates] = useState<
 		WarRoomCheckpointGate[]
 	>(() => createInitialCheckpointGates(t));
 	const [activePersonaStates, setActivePersonaStates] = useState<
-		Record<SpecialistPersonaId, PersonaActivityState>
-	>(INITIAL_PERSONA_STATES);
+		Record<PersonaId, PersonaActivityState>
+	>(() => ({
+		...Object.fromEntries(activePersonaIds.map((id) => [id, "idle" as const])),
+		...INITIAL_PERSONA_STATES,
+	}));
+
+	useEffect(() => {
+		setActivePersonaStates((previous) => ({
+			...Object.fromEntries(
+				activePersonaIds.map((id) => [id, "idle" as const]),
+			),
+			...previous,
+		}));
+	}, [activePersonaIds]);
 
 	// Start with initial 4 messages from the scenario
 	const [messages, setMessages] = useState<WarRoomMessage[]>(() =>
@@ -382,7 +430,7 @@ export function WarRoomProvider({
 					return;
 				}
 
-				const personaId: SpecialistPersonaId | undefined = payload.personaId;
+				const personaId: PersonaId | undefined = payload.personaId;
 				const event = payload.event;
 				const ts = payload.ts || Date.now();
 				const streamKey = payload.subAgentId || personaId || "subagent";
@@ -414,7 +462,7 @@ export function WarRoomProvider({
 									senderPersonaId: personaId || "cipher",
 									recipientPersonaId: "all",
 									stage: personaId
-										? resolvePersonaStage(personaId)
+										? resolvePersonaStage(personaId, personaById)
 										: "development",
 									type: "chat",
 									content: event.text || "",
@@ -437,7 +485,7 @@ export function WarRoomProvider({
 								senderPersonaId: personaId || "cipher",
 								recipientPersonaId: "all",
 								stage: personaId
-									? resolvePersonaStage(personaId)
+									? resolvePersonaStage(personaId, personaById)
 									: "development",
 								type: "tool_call",
 								content: `Executing tool: ${event.toolName || "tool"}`,
@@ -506,7 +554,7 @@ export function WarRoomProvider({
 		return () => {
 			unsubscribe();
 		};
-	}, []);
+	}, [personaById]);
 
 	const openWarRoom = useCallback(() => setIsOpen(true), []);
 	const closeWarRoom = useCallback(() => setIsOpen(false), []);
@@ -524,6 +572,12 @@ export function WarRoomProvider({
 				timestamp: Date.now(),
 			};
 			setMessages((prev) => [...prev, msg]);
+			if (newMsg.type === "checkpoint") {
+				setActivePersonaStates((previous) => ({
+					...previous,
+					[newMsg.senderPersonaId]: "checkpoint",
+				}));
+			}
 		},
 		[],
 	);
@@ -599,7 +653,7 @@ export function WarRoomProvider({
 			let nextStep = currentStep;
 			let nextMessage: WarRoomMessage | null = null;
 			let nextPersonaStates: Partial<
-				Record<SpecialistPersonaId, PersonaActivityState>
+				Record<PersonaId, PersonaActivityState>
 			> | null = null;
 
 			if (currentStep < steps.length) {
@@ -819,6 +873,9 @@ export function WarRoomProvider({
 			resetSimulation,
 			sessionId: activeSessionId,
 			setSessionId: setActiveSessionId,
+			activePersonaIds,
+			personaById,
+			resolvePersona,
 		}),
 		[
 			isOpen,
@@ -830,6 +887,9 @@ export function WarRoomProvider({
 			isSimulating,
 			activeSimulationStep,
 			activeSessionId,
+			activePersonaIds,
+			personaById,
+			resolvePersona,
 			openWarRoom,
 			closeWarRoom,
 			toggleWarRoom,

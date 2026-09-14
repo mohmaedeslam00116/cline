@@ -1066,6 +1066,7 @@ describe("AgentSidebar session organization", () => {
 	it("stacks New, Schedule, and Customize as full-width rows below the logo", async () => {
 		const onHome = vi.fn();
 		const onSettingsSectionChange = vi.fn();
+		const setView = vi.fn();
 		await act(async () => {
 			root.render(
 				<AccountProvider>
@@ -1075,7 +1076,7 @@ describe("AgentSidebar session organization", () => {
 							onHome={onHome}
 							onSettingsSectionChange={onSettingsSectionChange}
 							sessionHistory={makeSessionHistory([], vi.fn())}
-							setView={vi.fn()}
+							setView={setView}
 							settingsSection="General"
 							view="chat"
 						/>
@@ -1101,6 +1102,7 @@ describe("AgentSidebar session organization", () => {
 			"New",
 			"Schedule",
 			"Customize",
+			"Persona Studio",
 			"Evidence & Claims",
 		]);
 		for (const row of rows) {
@@ -1114,6 +1116,8 @@ describe("AgentSidebar session organization", () => {
 		expect(onSettingsSectionChange).toHaveBeenCalledWith("Schedules");
 		await click(buttonWithText("Customize", actionsNav as ParentNode));
 		expect(onSettingsSectionChange).toHaveBeenCalledWith("Customize");
+		await click(buttonWithText("Persona Studio", actionsNav as ParentNode));
+		expect(setView).toHaveBeenCalledWith("studio");
 	});
 
 	it("shows Installed and Marketplace sub-tabs under the open Customize row", async () => {
@@ -1244,7 +1248,7 @@ describe("AgentSidebar session organization", () => {
 		expect(document.querySelector('[data-slot="command-input"]')).toBeNull();
 	});
 
-	it("uses only the LENS logo for home in the collapsed sidebar", async () => {
+	it("uses the LENS logo for home and exposes Studio when collapsed", async () => {
 		await act(async () => {
 			root.render(
 				<AccountProvider>
@@ -1256,7 +1260,7 @@ describe("AgentSidebar session organization", () => {
 							sessionHistory={makeSessionHistory([], vi.fn())}
 							setView={vi.fn()}
 							settingsSection="General"
-							view="chat"
+							view="studio"
 						/>
 					</SidebarProvider>
 				</AccountProvider>,
@@ -1269,6 +1273,11 @@ describe("AgentSidebar session organization", () => {
 		expect(
 			container.querySelector('[aria-label="Sidebar actions"]'),
 		).toBeNull();
+		const studioButton = container.querySelector(
+			'[aria-label="Persona Studio"]',
+		);
+		expect(studioButton).not.toBeNull();
+		expect(studioButton?.getAttribute("aria-current")).toBe("page");
 		expect(
 			container.querySelector('[aria-label="Expand sidebar"]')?.className,
 		).toContain("mt-auto");

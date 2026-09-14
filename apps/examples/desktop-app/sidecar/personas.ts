@@ -11,11 +11,17 @@
 
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { basename, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import {
 	type AgentFrontmatter,
 	type CustomPersonaRecord,
+	getBuiltinRuntimePersona,
+	getDefaultSquadConfig,
+	isBuiltinPersonaId,
 	parseAgentSpecification,
+	type ResolvedSquadSnapshot,
+	type RuntimePersonaDefinition,
+	type SquadConfig,
 	serializeAgentSpecification,
 } from "@cline/shared";
 
@@ -45,7 +51,8 @@ async function scanDirectoryForPersonas(
 		const agentFiles = entries.filter(
 			(entry) =>
 				entry.isFile() &&
-				(entry.name.endsWith(".agent.md") || entry.name.endsWith(".agent.markdown")),
+				(entry.name.endsWith(".agent.md") ||
+					entry.name.endsWith(".agent.markdown")),
 		);
 
 		const personas: CustomPersonaRecord[] = [];
@@ -138,6 +145,73 @@ export async function readCustomPersona(
 	return matched ?? null;
 }
 
+function runtimePersonaFromRecord(
+	record: CustomPersonaRecord,
+): RuntimePersonaDefinition {
+	return Object.freeze({
+		id: record.frontmatter.id,
+		name: record.frontmatter.name,
+		role: record.frontmatter.role,
+		stage: record.frontmatter.stage,
+		avatar: Object.freeze({ ...record.frontmatter.avatar }),
+		instructions: record.instructions,
+		tools: Object.freeze([...record.frontmatter.tools]) as string[],
+		toolPolicy: record.frontmatter.toolPolicy,
+		model: record.frontmatter.model,
+		temperature: record.frontmatter.temperature,
+		scope: record.scope,
+	});
+}
+
+export async function resolveSquadSnapshot(
+	workspaceRoot: string,
+	value?: SquadConfig,
+): Promise<ResolvedSquadSnapshot> {
+	const config = value ?? getDefaultSquadConfig();
+	if (!config.activePersonaIds.includes("orion")) {
+		throw new Error("Orion is required in every Ultra squad.");
+	}
+	if (
+		new Set(config.activePersonaIds).size !== config.activePersonaIds.length
+	) {
+		throw new Error("Ultra squad contains duplicate persona identifiers.");
+	}
+	if (
+		!config.presetId.trim() ||
+		config.activePersonaIds.some(
+			(personaId) => !PERSONA_ID_REGEX.test(personaId),
+		)
+	) {
+		throw new Error("Ultra squad contains an invalid persona identifier.");
+	}
+
+	const customPersonas = await listCustomPersonas(workspaceRoot);
+	const customById = new Map(
+		customPersonas.map((persona) => [persona.frontmatter.id, persona]),
+	);
+	const personas = config.activePersonaIds.map((personaId) => {
+		if (isBuiltinPersonaId(personaId)) {
+			const builtin = getBuiltinRuntimePersona(personaId);
+			return Object.freeze({
+				...builtin,
+				avatar: Object.freeze({ ...builtin.avatar }),
+				tools: Object.freeze([...builtin.tools]) as string[],
+			});
+		}
+		const record = customById.get(personaId);
+		if (!record) throw new Error(`Persona "${personaId}" is unavailable.`);
+		return runtimePersonaFromRecord(record);
+	});
+	const frozenConfig = Object.freeze({
+		...config,
+		activePersonaIds: Object.freeze([...config.activePersonaIds]) as string[],
+	});
+	return Object.freeze({
+		config: frozenConfig,
+		personas: Object.freeze(personas) as RuntimePersonaDefinition[],
+	});
+}
+
 /** Input for saving a custom persona */
 export interface SaveCustomPersonaInput {
 	frontmatter: AgentFrontmatter;
@@ -211,7 +285,8 @@ export async function deleteCustomPersona(
 	scope?: "workspace" | "global",
 ): Promise<{ success: boolean; deletedPath?: string }> {
 	const trimmedId = personaId.trim();
-	if (!trimmedId || !PERSONA_ID_REGEX.test(trimmedId)) return { success: false };
+	if (!trimmedId || !PERSONA_ID_REGEX.test(trimmedId))
+		return { success: false };
 
 	const candidatePaths: string[] = [];
 	const extensions = [".agent.md", ".agent.markdown"];
@@ -219,7 +294,9 @@ export async function deleteCustomPersona(
 	for (const ext of extensions) {
 		const fileName = `${trimmedId}${ext}`;
 		if (!scope || scope === "workspace") {
-			candidatePaths.push(join(resolveWorkspacePersonasDir(workspaceRoot), fileName));
+			candidatePaths.push(
+				join(resolveWorkspacePersonasDir(workspaceRoot), fileName),
+			);
 		}
 		if (!scope || scope === "global") {
 			candidatePaths.push(join(resolveGlobalPersonasDir(), fileName));
@@ -233,7 +310,10 @@ export async function deleteCustomPersona(
 		} catch (err: unknown) {
 			const error = err as { code?: string };
 			if (error.code !== "ENOENT") {
-				console.warn(`[Personas] Failed to delete persona "${candidatePath}":`, err);
+				console.warn(
+					`[Personas] Failed to delete persona "${candidatePath}":`,
+					err,
+				);
 			}
 		}
 	}

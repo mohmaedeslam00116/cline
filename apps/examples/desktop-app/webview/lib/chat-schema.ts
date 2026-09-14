@@ -1,6 +1,12 @@
 import { GeneratedMediaSchema } from "@cline/shared/browser";
 import { z } from "zod";
 
+export const SquadConfigSchema = z.object({
+	presetId: z.string().trim().min(1),
+	activePersonaIds: z.array(z.string().trim().min(1)).min(1),
+	checkpointGatesEnabled: z.boolean(),
+});
+
 export const ChatSessionConfigSchema = z.object({
 	sessionId: z.string().min(1).optional(),
 	workspaceRoot: z.string(),
@@ -18,6 +24,7 @@ export const ChatSessionConfigSchema = z.object({
 	autoApproveTools: z.boolean().optional(),
 	missionStepInterval: z.number().int().positive().optional(),
 	missionTimeIntervalMs: z.number().int().positive().optional(),
+	squadConfig: SquadConfigSchema.optional(),
 });
 
 export const ChatSessionStatusSchema = z.enum([
