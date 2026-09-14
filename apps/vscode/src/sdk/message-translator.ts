@@ -152,7 +152,7 @@ export class MessageTranslatorState {
 	constructor(
 		minter: MessageIdMinter = new MessageIdMinter(),
 		private readonly getActiveProviderId?: () => string | undefined,
-		private readonly getUiMode?: () => "plan" | "act" | "yolo" | undefined,
+		private readonly getUiMode?: () => "plan" | "act" | "yolo" | "ultra" | undefined,
 		private readonly getCwd?: () => string | undefined,
 		private readonly getActiveModelId?: () => string | undefined,
 	) {
@@ -2169,11 +2169,11 @@ type SdkContentBlock = Exclude<SdkMessage["content"], string>[number]
 type SdkToolUseBlock = Extract<SdkContentBlock, { type: "tool_use" }>
 type SdkMessageWithMetrics = SdkMessage & {
 	/**
-	 * Plan/act mode recovered from the persisted <user_input mode="..."> wrapper before display
+	 * Agent mode recovered from the persisted <user_input mode="..."> wrapper before display
 	 * sanitization strips it (see sanitizeSdkUserMessagesForDisplay in sdk-task-history.ts).
 	 * Only meaningful on user messages; governs the turn that follows.
 	 */
-	uiMode?: "plan" | "act" | "yolo"
+	uiMode?: "plan" | "act" | "yolo" | "ultra"
 }
 
 function textContentBlocksToText(content: SdkMessage["content"]): string {
@@ -2309,9 +2309,9 @@ export function sdkMessagesToClineMessages(
 	options?: SdkMessagesToClineMessagesOptions,
 ): ClineMessage[] {
 	const clineMessages: ClineMessage[] = []
-	// Plan/act mode of the turn currently being replayed, recovered from each user message's
+	// Agent mode of the turn currently being replayed, recovered from each user message's
 	// persisted <user_input mode="..."> wrapper (stamped as `uiMode` before sanitization).
-	let currentMode: "plan" | "act" | "yolo" | undefined
+	let currentMode: "plan" | "act" | "yolo" | "ultra" | undefined
 	// Use the process-wide minter when provided so regenerated history ids are globally unique
 	// and never overlap live-session ids. Falls back to a private minter for standalone tests.
 	const state = new MessageTranslatorState(
