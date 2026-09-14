@@ -202,11 +202,11 @@
 - Resolve messages and telemetry through the catalog, including custom name, role, stage, chassis, and accent.
 - Preserve all five states: `idle`, `thinking`, `working`, `speaking`, and `checkpoint`.
 
-- [ ] Write failing tests for a custom message, custom filter, tool lifecycle state changes, streaming state changes, checkpoint state, exact accent/chassis use, and unknown diagnostic fallback.
-- [ ] Run the focused War Room test and confirm red.
-- [ ] Implement dynamic maps and catalog lookups, removing static built-in arrays and Orion-cast fallbacks.
-- [ ] Re-run the War Room test and desktop typecheck.
-- [ ] Commit as `feat(ultra): render custom personas in war room`.
+- [x] Write failing tests for a custom message, custom filter, tool lifecycle state changes, streaming state changes, checkpoint state, exact accent/chassis use, and unknown diagnostic fallback.
+- [x] Run the focused War Room test and confirm red.
+- [x] Implement dynamic maps and catalog lookups, removing static built-in arrays and Orion-cast fallbacks.
+- [x] Re-run the War Room test and desktop typecheck.
+- [x] Commit as `feat(ultra): render custom personas in war room`.
 
 ---
 

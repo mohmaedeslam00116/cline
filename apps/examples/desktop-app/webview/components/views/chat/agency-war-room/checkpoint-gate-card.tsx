@@ -1,6 +1,12 @@
 "use client";
 
-import { BUILTIN_PERSONAS } from "@cline/shared/browser";
+import {
+	BUILTIN_PERSONAS,
+	getAllPersonas,
+	getBuiltinRuntimePersona,
+	type PersonaId,
+	type RuntimePersonaDefinition,
+} from "@cline/shared/browser";
 import {
 	AlertTriangle,
 	BookOpen,
@@ -27,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { getLensTranslations } from "@/lib/lens-i18n";
 import { cn } from "@/lib/utils";
+import { getPersonaIdentity } from "../squad-selection-model";
 import type {
 	WarRoomCheckpointGate,
 	WarRoomCheckpointMemoryProposal,
@@ -44,19 +51,27 @@ export interface CheckpointGateCardProps {
 		options?: { discardProposals?: boolean },
 	) => void;
 	className?: string;
+	personaById?: ReadonlyMap<PersonaId, RuntimePersonaDefinition>;
 }
+
+const BUILTIN_PERSONA_BY_ID = new Map(
+	getAllPersonas().map((persona) => [
+		persona.id,
+		getBuiltinRuntimePersona(persona.id),
+	]),
+);
 
 export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 	gate,
 	onApprove,
 	onReject,
 	className,
+	personaById = BUILTIN_PERSONA_BY_ID,
 }) => {
 	const t = getLensTranslations().ultraAgency;
 	const [showFeedbackInput, setShowFeedbackInput] = useState(false);
 	const [feedback, setFeedback] = useState("");
 	const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
-
 	const [proposals, setProposals] = useState<
 		WarRoomCheckpointMemoryProposal[]
 	>(() =>
@@ -120,9 +135,14 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 		if (proposals.length > 0) {
 			onApprove(gate.id, approvedList);
 		} else {
-			onApprove(gate.id);
+			 onApprove(gate.id);
 		}
 	};
+
+	const requestingPersona = getPersonaIdentity(gate.personaId, personaById);
+	const isPending = gate.status === "pending";
+	const isApproved = gate.status === "approved";
+	const isRejected = gate.status === "rejected";
 
 	const handleSendFeedback = () => {
 		if (!feedback.trim()) return;
@@ -133,11 +153,6 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 		setIsSubmittingFeedback(false);
 		setShowFeedbackInput(false);
 	};
-
-	const requestingPersona = BUILTIN_PERSONAS[gate.personaId];
-	const isPending = gate.status === "pending";
-	const isApproved = gate.status === "approved";
-	const isRejected = gate.status === "rejected";
 
 	return (
 		<Card
@@ -171,11 +186,17 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 					<div className="relative shrink-0">
 						<PersonaAvatar
 							personaId={gate.personaId}
+							chassis={
+								requestingPersona.scope === "unknown"
+									? undefined
+									: requestingPersona.avatar.chassis
+							}
+							accentColor={requestingPersona.avatar.accentColor}
 							size={44}
 							state={
 								isPending ? "checkpoint" : isApproved ? "idle" : "thinking"
 							}
-							title={`${requestingPersona?.name || gate.personaId} - ${requestingPersona?.role || ""}`}
+							title={`${requestingPersona.name} - ${requestingPersona.role}`}
 						/>
 						{isPending && (
 							<span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-black ring-2 ring-slate-900 animate-ping" />
@@ -200,7 +221,7 @@ export const CheckpointGateCard: React.FC<CheckpointGateCardProps> = ({
 								GATE #{gate.gateNumber}
 							</Badge>
 							<span className="text-xs text-slate-400 font-mono">
-								{requestingPersona?.name} ({requestingPersona?.role})
+								{requestingPersona.name} ({requestingPersona.role})
 							</span>
 						</div>
 						<h3 className="text-sm font-semibold text-slate-100 mt-1 font-mono tracking-wide">

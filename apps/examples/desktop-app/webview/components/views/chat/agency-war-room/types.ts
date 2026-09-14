@@ -1,4 +1,4 @@
-import type { SpecialistPersonaId } from "@cline/shared/browser";
+import type { PersonaId } from "@cline/shared/browser";
 import type { PersonaActivityState } from "@/components/personas";
 
 export type WarRoomStage =
@@ -18,8 +18,8 @@ export type WarRoomMessageType =
 
 export interface WarRoomMessage {
 	id: string;
-	senderPersonaId: SpecialistPersonaId;
-	recipientPersonaId?: SpecialistPersonaId | "all";
+	senderPersonaId: PersonaId;
+	recipientPersonaId?: PersonaId | "all";
 	stage: WarRoomStage;
 	type: WarRoomMessageType;
 	content: string;
@@ -69,7 +69,7 @@ export interface WarRoomCheckpointGate {
 	gateNumber: 1 | 2;
 	title: string;
 	description: string;
-	personaId: SpecialistPersonaId;
+	personaId: PersonaId;
 	status: "pending" | "approved" | "rejected";
 	deliverables: WarRoomDeliverable[];
 	proposedLearnings?: WarRoomCheckpointMemoryProposal[];
@@ -83,9 +83,9 @@ export interface WarRoomState {
 	isOpen: boolean;
 	viewMode: WarRoomViewMode;
 	messages: WarRoomMessage[];
-	activeFilterPersona: SpecialistPersonaId | "all";
+	activeFilterPersona: PersonaId | "all";
 	checkpointGates: WarRoomCheckpointGate[];
-	activePersonaStates: Record<SpecialistPersonaId, PersonaActivityState>;
+	activePersonaStates: Record<PersonaId, PersonaActivityState>;
 	isSimulating: boolean;
 	activeSimulationStep: number;
 }
@@ -94,7 +94,7 @@ export interface AgencyWarRoomEventPayload {
 	sessionId: string;
 	subAgentId?: string;
 	parentAgentId?: string;
-	personaId?: SpecialistPersonaId;
+	personaId?: PersonaId;
 	stage?: WarRoomStage;
 	event: {
 		type: string;

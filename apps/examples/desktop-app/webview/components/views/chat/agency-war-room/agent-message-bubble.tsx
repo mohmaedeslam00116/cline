@@ -1,8 +1,10 @@
 "use client";
 
 import {
-	BUILTIN_PERSONAS,
-	type SpecialistPersonaId,
+	getAllPersonas,
+	getBuiltinRuntimePersona,
+	type PersonaId,
+	type RuntimePersonaDefinition,
 } from "@cline/shared/browser";
 import {
 	ArrowRight,
@@ -25,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getLensTranslations } from "@/lib/lens-i18n";
 import { cn } from "@/lib/utils";
+import { getPersonaIdentity } from "../squad-selection-model";
 import { CheckpointGateCard } from "./checkpoint-gate-card";
 import type {
 	WarRoomCheckpointGate,
@@ -47,7 +50,15 @@ export interface AgentMessageBubbleProps {
 	) => void;
 	onOpenArtifact?: (uri: string) => void;
 	className?: string;
+	personaById?: ReadonlyMap<PersonaId, RuntimePersonaDefinition>;
 }
+
+const BUILTIN_PERSONA_BY_ID = new Map(
+	getAllPersonas().map((persona) => [
+		persona.id,
+		getBuiltinRuntimePersona(persona.id),
+	]),
+);
 
 const STAGE_BADGE_CLASSES: Record<
 	WarRoomStage,
@@ -98,14 +109,15 @@ export const AgentMessageBubble: React.FC<AgentMessageBubbleProps> = ({
 	onRejectGate,
 	onOpenArtifact,
 	className,
+	personaById = BUILTIN_PERSONA_BY_ID,
 }) => {
 	const t = getLensTranslations().ultraAgency;
 	const [copiedCode, setCopiedCode] = useState(false);
 
-	const sender = BUILTIN_PERSONAS[message.senderPersonaId];
+	const sender = getPersonaIdentity(message.senderPersonaId, personaById);
 	const recipient =
 		message.recipientPersonaId && message.recipientPersonaId !== "all"
-			? BUILTIN_PERSONAS[message.recipientPersonaId as SpecialistPersonaId]
+			? getPersonaIdentity(message.recipientPersonaId, personaById)
 			: null;
 
 	const stageLabelMap: Record<WarRoomStage, string> = {
@@ -155,16 +167,20 @@ export const AgentMessageBubble: React.FC<AgentMessageBubbleProps> = ({
 					<div className="shrink-0">
 						<PersonaAvatar
 							personaId={message.senderPersonaId}
+							chassis={
+								sender.scope === "unknown" ? undefined : sender.avatar.chassis
+							}
+							accentColor={sender.avatar.accentColor}
 							size={36}
 							state={avatarState}
-							title={`${sender?.name || message.senderPersonaId} - ${sender?.role || ""}`}
+							title={`${sender.name} - ${sender.role}`}
 						/>
 					</div>
 
 					<div className="flex flex-col">
 						<div className="flex items-center gap-1.5 flex-wrap">
 							<span className="text-xs font-semibold text-slate-200 font-mono">
-								{sender?.name || message.senderPersonaId}
+								{sender.name}
 							</span>
 
 							{recipient ? (
@@ -184,7 +200,7 @@ export const AgentMessageBubble: React.FC<AgentMessageBubbleProps> = ({
 							)}
 						</div>
 						<span className="text-[10px] text-slate-400 font-sans">
-							{sender?.role}
+							{sender.role}
 						</span>
 					</div>
 				</div>
@@ -372,6 +388,7 @@ export const AgentMessageBubble: React.FC<AgentMessageBubbleProps> = ({
 				<div className="ml-11 mt-2">
 					<CheckpointGateCard
 						gate={associatedGate}
+						personaById={personaById}
 						onApprove={onApproveGate}
 						onReject={onRejectGate}
 					/>

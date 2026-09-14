@@ -1,9 +1,6 @@
 "use client";
 
-import {
-	BUILTIN_PERSONAS,
-	type SpecialistPersonaId,
-} from "@cline/shared/browser";
+import type { PersonaId } from "@cline/shared/browser";
 import {
 	Activity,
 	Cpu,
@@ -29,17 +26,6 @@ import { getLensTranslations } from "@/lib/lens-i18n";
 import { cn } from "@/lib/utils";
 import { AgentMessageBubble } from "./agent-message-bubble";
 import { useWarRoom } from "./war-room-context";
-
-const ALL_PERSONA_IDS: SpecialistPersonaId[] = [
-	"orion",
-	"lyra",
-	"athena",
-	"atlas",
-	"cipher",
-	"vector",
-	"sentinel",
-	"echo",
-];
 
 export interface AgencyWarRoomPanelProps {
 	className?: string;
@@ -72,7 +58,20 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 		approveCheckpoint,
 		rejectCheckpoint,
 		addMessage,
+		activePersonaIds,
+		personaById,
+		resolvePersona,
 	} = useWarRoom();
+	const filterPersonaIds = useMemo(() => {
+		const ids = new Set<PersonaId>(activePersonaIds);
+		for (const message of messages) {
+			ids.add(message.senderPersonaId);
+			if (message.recipientPersonaId && message.recipientPersonaId !== "all") {
+				ids.add(message.recipientPersonaId);
+			}
+		}
+		return [...ids];
+	}, [activePersonaIds, messages]);
 
 	// Keyboard focus containment & Escape key trap for fullscreen dialog mode
 	useEffect(() => {
@@ -256,8 +255,8 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 					<span className="text-[10px] font-mono uppercase text-slate-400 shrink-0">
 						{t.squadRosterLabel}
 					</span>
-					{ALL_PERSONA_IDS.map((personaId) => {
-						const persona = BUILTIN_PERSONAS[personaId];
+					{activePersonaIds.map((personaId) => {
+						const persona = resolvePersona(personaId);
 						const state = activePersonaStates[personaId] || "idle";
 						const isSelected = activeFilterPersona === personaId;
 
@@ -272,11 +271,22 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 										? "bg-cyan-950/60 border-cyan-400 shadow-sm shadow-cyan-500/20"
 										: "bg-slate-900/60 border-slate-800 hover:border-slate-700",
 								)}
+								style={
+									isSelected
+										? { borderColor: persona.avatar.accentColor }
+										: undefined
+								}
 								title={`${persona.name} (${persona.role}) - ${state}`}
 								aria-label={`${persona.name} - ${t.filterPersonaAria}`}
 							>
 								<PersonaAvatar
 									personaId={personaId}
+									chassis={
+										persona.scope === "unknown"
+											? undefined
+											: persona.avatar.chassis
+									}
+									accentColor={persona.avatar.accentColor}
 									size={24}
 									state={state}
 									title={`${persona.name} - ${persona.role}`}
@@ -309,7 +319,8 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 					>
 						{t.filterAll} ({messages.length})
 					</button>
-					{ALL_PERSONA_IDS.map((pId) => {
+					{filterPersonaIds.map((pId) => {
+						const persona = resolvePersona(pId);
 						const count = messages.filter(
 							(m) => m.senderPersonaId === pId || m.recipientPersonaId === pId,
 						).length;
@@ -327,7 +338,7 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 										: "bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800/80",
 								)}
 							>
-								<span>{BUILTIN_PERSONAS[pId].name}</span>
+								<span>{persona.name}</span>
 								<span className="opacity-60">({count})</span>
 							</button>
 						);
@@ -356,6 +367,7 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 								key={message.id}
 								message={message}
 								associatedGate={gate}
+								personaById={personaById}
 								onApproveGate={approveCheckpoint}
 								onRejectGate={rejectCheckpoint}
 							/>
@@ -371,7 +383,7 @@ export const AgencyWarRoomPanel: React.FC<AgencyWarRoomPanelProps> = ({
 					<div className="flex items-center gap-3">
 						<span className="flex items-center gap-1 text-slate-300">
 							<Cpu className="size-3 text-cyan-400" />
-							{t.telemetryActiveSquad}: 8 Vectors
+							{t.telemetryActiveSquad}: {activePersonaIds.length} Specialists
 						</span>
 						<span className="flex items-center gap-1">
 							<Activity className="size-3 text-emerald-400" />
